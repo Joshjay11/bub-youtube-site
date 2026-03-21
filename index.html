@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUB YouTube Writer - Research-Driven YouTube Scripts</title>
+<meta name="description" content="Retention-engineered YouTube scripts backed by 7 AI models of research. Fact-check reports, argument analysis, and voice-matched scripts starting at $500.">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #08090c;
+    --bg-elevated: #0f1117;
+    --bg-card: #141720;
+    --bg-card-hover: #1a1e2a;
+    --amber: #d4a342;
+    --amber-bright: #eab543;
+    --amber-dim: #9a7530;
+    --amber-glow: rgba(212, 163, 66, 0.08);
+    --amber-glow-strong: rgba(212, 163, 66, 0.15);
+    --text: #c8ccd4;
+    --text-bright: #e8eaf0;
+    --text-dim: #7a8194;
+    --text-muted: #4a5168;
+    --border: #1e2233;
+    --border-light: #2a3048;
+    --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --sans: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  ::selection { background: var(--amber); color: var(--bg); }
+
+  a { color: var(--amber); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: var(--amber-bright); }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-d1 { transition-delay: 0.1s; }
+  .reveal-d2 { transition-delay: 0.2s; }
+  .reveal-d3 { transition-delay: 0.3s; }
+  .reveal-d4 { transition-delay: 0.4s; }
+
+  /* Buttons */
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--amber); color: var(--bg);
+    padding: 14px 32px; border-radius: 6px;
+    font: 700 15px/1 var(--sans); border: none; cursor: pointer;
+    transition: all 0.25s; letter-spacing: 0.01em;
+  }
+  .btn-primary:hover { background: var(--amber-bright); transform: translateY(-1px); }
+
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--amber);
+    padding: 14px 32px; border-radius: 6px;
+    font: 600 15px/1 var(--sans); cursor: pointer;
+    border: 1px solid rgba(212, 163, 66, 0.3);
+    transition: all 0.25s;
+  }
+  .btn-outline:hover { border-color: var(--amber); background: var(--amber-glow); }
+
+  .rule {
+    height: 1px; border: none; margin: 80px 0;
+    background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+  }
+
+  /* Nav */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    transition: all 0.4s;
+    border-bottom: 1px solid transparent;
+  }
+  .nav.scrolled {
+    background: rgba(8,9,12,0.92);
+    backdrop-filter: blur(20px) saturate(1.4);
+    border-bottom-color: var(--border);
+  }
+  .nav-inner {
+    max-width: 1120px; margin: 0 auto; padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between; height: 72px;
+  }
+  .nav-logo {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .nav-logo-text { font: 800 20px/1 var(--sans); color: var(--text-bright); letter-spacing: -0.03em; }
+  .nav-logo-sub { font: 500 11px/1 var(--sans); color: var(--amber); letter-spacing: 0.14em; text-transform: uppercase; }
+  .nav-links { display: flex; align-items: center; gap: 4px; }
+  .nav-link {
+    background: none; border: none; border-radius: 6px;
+    color: var(--text-dim); font: 500 13px/1 var(--sans);
+    padding: 8px 16px; cursor: pointer; transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--text); }
+  .nav-link.active { background: var(--amber-glow); color: var(--amber); font-weight: 600; }
+  .nav-cta { margin-left: 12px; padding: 10px 22px !important; font-size: 13px !important; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Content wrapper */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+  .wrap-narrow { max-width: 800px; margin: 0 auto; padding: 0 32px; }
+  .wrap-form { max-width: 640px; margin: 0 auto; padding: 0 32px; }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh; display: flex; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .hero-glow {
+    position: absolute; top: -200px; right: -100px;
+    width: 700px; height: 700px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,163,66,0.06), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-content { padding: 160px 0 100px; max-width: 720px; position: relative; z-index: 1; }
+  .hero-label {
+    font: 600 12px/1 var(--sans); color: var(--amber);
+    letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 28px;
+  }
+  .hero-title {
+    font: 400 clamp(42px, 5.5vw, 68px)/1.08 var(--serif);
+    color: var(--text-bright); letter-spacing: -0.02em;
+  }
+  .hero-title em { color: var(--amber); font-style: italic; }
+  .hero-sub {
+    font: 400 18px/1.75 var(--sans); color: var(--text-dim);
+    max-width: 520px; margin: 32px 0 0;
+  }
+  .hero-buttons { display: flex; gap: 16px; margin-top: 44px; flex-wrap: wrap; }
+
+  /* Grid cards */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .grid-4-fixed { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .card {
+    background: var(--bg-card); border-radius: 12px; padding: 40px 36px;
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .card-accent { border-color: rgba(212,163,66,0.2); }
+  .card-top-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .card-top-red { background: linear-gradient(90deg, #ef4444, #f87171, transparent); }
+  .card-top-amber { background: linear-gradient(90deg, var(--amber), var(--amber-bright), transparent); }
+
+  .card-label {
+    font: 600 13px/1 var(--sans); letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 20px;
+  }
+  .card-label-red { color: #f87171; }
+  .card-label-amber { color: var(--amber); }
+
+  /* Feature grid (editorial style with borders) */
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px; background: var(--border);
+  }
+  .feature-cell {
+    background: var(--bg-card); padding: 36px 32px;
+    position: relative; min-height: 200px;
+    transition: background 0.3s; cursor: default;
+  }
+  .feature-cell:hover { background: var(--bg-card-hover); }
+  .feature-num {
+    font: 800 72px/1 var(--serif); color: var(--amber);
+    opacity: 0.12; position: absolute; top: -8px; left: -4px;
+    user-select: none; pointer-events: none;
+  }
+  .feature-title {
+    font: 700 16px/1.3 var(--sans); color: var(--text-bright);
+    margin-bottom: 12px; position: relative;
+  }
+  .feature-desc {
+    font: 400 14px/1.65 var(--sans); color: var(--text-dim); position: relative;
+  }
+
+  /* Section headings */
+  .section-title {
+    font: 400 clamp(28px, 3.5vw, 40px)/1.15 var(--serif); color: var(--text-bright);
+  }
+  .section-title em { color: var(--amber); font-style: italic; }
+  .section-title-sm { font: 400 32px/1.15 var(--serif); color: var(--text-bright); }
+  .section-title-sm em { color: var(--amber); font-style: italic; }
+
+  /* Pricing cards */
+  .tier-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 24px; cursor: pointer;
+    display: flex; flex-direction: column; height: 100%;
+    transition: all 0.3s; position: relative;
+  }
+  .tier-card:hover { border-color: var(--amber); transform: translateY(-2px); }
+  .tier-card.featured {
+    background: var(--amber-glow-strong);
+    border-color: rgba(212,163,66,0.25);
+  }
+  .tier-tag {
+    position: absolute; top: -10px; right: 16px;
+    background: var(--amber); color: var(--bg);
+    font: 700 10px/1 var(--sans); padding: 4px 12px;
+    border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .tier-price { font: 700 28px/1 var(--serif); color: var(--text-bright); }
+  .tier-sub { font: 400 11px/1 var(--sans); color: var(--text-muted); margin-top: 4px; }
+  .tier-name { font: 700 15px/1 var(--sans); color: var(--text-bright); margin: 16px 0 8px; }
+  .tier-desc { font: 400 13px/1.55 var(--sans); color: var(--text-dim); flex: 1; }
+
+  /* Process steps */
+  .step {
+    display: flex; gap: 32px; padding: 36px 0;
+    border-top: 1px solid var(--border);
+  }
+  .step-num { flex-shrink: 0; width: 48px; font: 800 14px/1 var(--sans); color: var(--amber); letter-spacing: 0.05em; }
+  .step-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .step-title { font: 700 20px/1.2 var(--sans); color: var(--text-bright); }
+  .step-time { font: 500 12px/1 var(--sans); color: var(--text-muted); }
+  .step-desc { font: 400 15px/1.7 var(--sans); color: var(--text); }
+
+  /* Deliverable cards */
+  .del-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 24px;
+  }
+  .del-title { font: 700 14px/1 var(--sans); color: var(--amber); margin-bottom: 12px; }
+  .del-desc { font: 400 14px/1.6 var(--sans); color: var(--text-dim); }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid var(--border); padding: 24px 0; }
+  .faq-q { font: 600 16px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px; }
+  .faq-a { font: 400 14px/1.6 var(--sans); color: var(--text-dim); }
+
+  /* Work page */
+  .showcase {
+    background: var(--amber-glow-strong);
+    border: 1px solid rgba(212,163,66,0.2);
+    border-radius: 14px; padding: 48px 40px; text-align: center;
+  }
+  .showcase-title { font: 700 22px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 12px; }
+  .showcase-desc { font: 400 15px/1.65 var(--sans); color: var(--text); max-width: 480px; margin: 0 auto 28px; }
+
+  .process-item { border-bottom: 1px solid var(--border); padding: 24px 0; }
+  .process-label { font: 600 14px/1 var(--sans); color: var(--amber); letter-spacing: 0.04em; margin-bottom: 10px; }
+  .process-desc { font: 400 15px/1.65 var(--sans); color: var(--text); }
+
+  .stat-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 16px; text-align: center;
+  }
+  .stat-num { font: 700 36px/1 var(--serif); color: var(--amber); }
+  .stat-label { font: 500 12px/1 var(--sans); color: var(--text-dim); margin-top: 8px; }
+
+  /* Form */
+  .form-group { margin-bottom: 24px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .form-label { font: 600 13px/1 var(--sans); color: var(--text); display: block; margin-bottom: 8px; }
+  .form-input, .form-select, .form-textarea {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; color: var(--text-bright);
+    font: 400 15px/1.4 var(--sans); width: 100%; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--amber); }
+  .form-textarea { min-height: 110px; resize: vertical; }
+  .form-select { cursor: pointer; }
+  .form-note { font: 400 13px/1 var(--sans); color: var(--text-muted); text-align: center; margin-top: 16px; }
+
+  .success-page { max-width: 600px; margin: 0 auto; padding: 240px 32px 100px; text-align: center; }
+  .success-check { font: 400 48px/1 var(--serif); color: var(--amber); margin-bottom: 24px; }
+  .success-title { font: 400 36px/1.2 var(--serif); color: var(--text-bright); margin-bottom: 16px; }
+  .success-desc { font: 400 16px/1.7 var(--sans); color: var(--text-dim); }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border); padding: 40px 32px;
+    max-width: 1120px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .footer-copy { font: 400 13px/1 var(--sans); color: var(--text-muted); }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font: 400 13px/1 var(--sans); color: var(--text-muted); }
+
+  /* Bottom CTA */
+  .bottom-cta { text-align: center; padding: 0 0 60px; }
+  .bottom-cta-title { font: 400 clamp(28px, 3.5vw, 38px)/1.2 var(--serif); color: var(--text-bright); margin-bottom: 16px; }
+  .bottom-cta-title em { color: var(--amber); font-style: italic; }
+  .bottom-cta-sub { font: 400 16px/1.6 var(--sans); color: var(--text-dim); margin-bottom: 36px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .grid-4-fixed { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .step { flex-direction: column; gap: 12px; }
+    .hero-content { padding: 120px 0 60px; }
+    .footer { flex-direction: column; text-align: center; }
+    .pricing-cols { grid-template-columns: 1fr !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ NAVIGATION ═══ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <button class="nav-logo" onclick="goTo(0)">
+      <span class="nav-logo-text">BUB</span>
+      <span class="nav-logo-sub">YouTube Writer</span>
+    </button>
+    <div class="nav-links">
+      <button class="nav-link active" data-page="0" onclick="goTo(0)">Home</button>
+      <button class="nav-link" data-page="1" onclick="goTo(1)">Process</button>
+      <button class="nav-link" data-page="4" onclick="goTo(4)">Pricing</button>
+      <button class="nav-link" data-page="2" onclick="goTo(2)">Work</button>
+      <button class="nav-link" data-page="5" onclick="goTo(5)">Template</button>
+      <button class="nav-link" data-page="3" onclick="goTo(3)">Start</button>
+      <button class="btn-primary nav-cta" onclick="goTo(3)">Start a Project</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ PAGE 0: HOME ═══ -->
+<div class="page active" id="page-0">
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="wrap">
+      <div class="hero-content">
+        <div class="reveal">
+          <p class="hero-label">Research-Driven YouTube Scripts</p>
+        </div>
+        <div class="reveal reveal-d1">
+          <h1 class="hero-title">
+            Scripts that sound<br>
+            like <em>you</em> - backed by<br>
+            <em>seven AI models</em> of research
+          </h1>
+        </div>
+        <div class="reveal reveal-d2">
+          <p class="hero-sub">
+            Retention-engineered voiceover scripts with fact-check reports and argument analysis.
+            From a single script to full video production.
+          </p>
+        </div>
+        <div class="reveal reveal-d3">
+          <div class="hero-buttons">
+            <button class="btn-primary" onclick="goTo(3)">Start Your Project →</button>
+            <button class="btn-outline" onclick="goTo(1)">See the Process</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-bottom: 100px;">
+    <!-- Problem / Solution -->
+    <div class="grid-2">
+      <div class="reveal">
+        <div class="card">
+          <div class="card-top-line card-top-red"></div>
+          <p class="card-label card-label-red">The Problem</p>
+          <p style="font: 400 16px/1.7 var(--sans); color: var(--text);">
+            You spend 20+ hours per video on research. AI tools get you 80% of the way - but that last 20% is where videos succeed or fail.
+            Generic scripts. Thin research. Voice mismatch. One wrong fact triggers Community Notes and kills your engagement by 46%.
+          </p>
+        </div>
+      </div>
+      <div class="reveal reveal-d1">
+        <div class="card card-accent">
+          <div class="card-top-line card-top-amber"></div>
+          <p class="card-label card-label-amber">What We Do</p>
+          <p style="font: 400 16px/1.7 var(--sans); color: var(--text);">
+            Seven AI models research your topic from every angle. A human writes the script in your voice.
+            You get a fact-check report, argument analysis, and a retention-engineered script - ready to shoot or ready to upload.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Features -->
+    <div class="reveal" style="margin-bottom: 56px;">
+      <h2 class="section-title">What makes this <em>different</em></h2>
+    </div>
+
+    <div class="feature-grid">
+      <div class="reveal"><div class="feature-cell"><span class="feature-num">01</span><h4 class="feature-title">7-Model Research</h4><p class="feature-desc">Claude, GPT, Gemini, Mistral, Qwen, Perplexity, and Kimi. Every claim cross-referenced across seven models. No single-model bias. No hallucination loops.</p></div></div>
+      <div class="reveal reveal-d1"><div class="feature-cell"><span class="feature-num">02</span><h4 class="feature-title">Fact-Check Report</h4><p class="feature-desc">Every claim inventoried, categorized as Consensus, Contested, or Opinion, and traced to primary sources. Your insurance against Community Notes.</p></div></div>
+      <div class="reveal reveal-d2"><div class="feature-cell"><span class="feature-num">03</span><h4 class="feature-title">Retention Engineering</h4><p class="feature-desc">Hook formulas, pattern interrupts every 20-30 seconds, the 35% pivot, open loops, session hooks - structurally engineered for the 2026 algorithm.</p></div></div>
+      <div class="reveal"><div class="feature-cell"><span class="feature-num">04</span><h4 class="feature-title">Voice DNA Matching</h4><p class="feature-desc">We study your videos, capture your voice patterns, and build an anti-brand document before writing a word. The script sounds like you.</p></div></div>
+      <div class="reveal reveal-d1"><div class="feature-cell"><span class="feature-num">05</span><h4 class="feature-title">Argument Analysis</h4><p class="feature-desc">Cross-disciplinary synthesis finds the original angle. Counter-arguments pre-addressed. Model consensus vs. disagreement mapped.</p></div></div>
+      <div class="reveal reveal-d2"><div class="feature-cell"><span class="feature-num">06</span><h4 class="feature-title">Full Production</h4><p class="feature-desc">From voiceover script to finished video - visuals, music, AI voiceover, everything. Or just the script. You choose your depth.</p></div></div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Pricing -->
+    <div class="reveal" style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 48px;">
+      <h2 class="section-title">Choose your <em>depth</em></h2>
+      <p style="font: 400 14px/1 var(--sans); color: var(--text-muted);">From DIY templates to turnkey video production.</p>
+    </div>
+
+    <div class="grid-5">
+      <div class="reveal"><div class="tier-card" onclick="goTo(5)"><div class="tier-price">$79</div><div class="tier-sub">one-time</div><div class="tier-name">Template</div><p class="tier-desc">Notion-based script system. Hook formulas, AI prompts, retention checklist.</p></div></div>
+      <div class="reveal reveal-d1"><div class="tier-card" onclick="goTo(4)"><div class="tier-price">$250</div><div class="tier-sub">per project</div><div class="tier-name">Research</div><p class="tier-desc">7-model synthesis, fact-check report, argument analysis. No script.</p></div></div>
+      <div class="reveal reveal-d2"><div class="tier-card featured" onclick="goTo(4)"><span class="tier-tag">Popular</span><div class="tier-price">$500</div><div class="tier-sub">per project</div><div class="tier-name">The Script</div><p class="tier-desc">Full voiceover script + fact-check + argument analysis. 2 revision rounds.</p></div></div>
+      <div class="reveal reveal-d3"><div class="tier-card" onclick="goTo(4)"><div class="tier-price">$1,750</div><div class="tier-sub">per project</div><div class="tier-name">Script + Assets</div><p class="tier-desc">Everything in The Script plus production-ready beats, slides, and prompts.</p></div></div>
+      <div class="reveal reveal-d4"><div class="tier-card" onclick="goTo(4)"><div class="tier-price">$2,500+</div><div class="tier-sub">per project</div><div class="tier-name">Full Video</div><p class="tier-desc">Topic in, finished video out. Voiceover, visuals, music - ready to upload.</p></div></div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Bottom CTA -->
+    <div class="reveal bottom-cta">
+      <h2 class="bottom-cta-title">
+        Kurzgesagt-grade research rigor.<br>
+        <em>Without the 6-person editorial team.</em>
+      </h2>
+      <p class="bottom-cta-sub">Your script comes with a fact-check report and argument analysis - not just words.</p>
+      <button class="btn-primary" onclick="goTo(3)" style="font-size: 16px; padding: 16px 40px;">Start Your Project →</button>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PAGE 1: PROCESS ═══ -->
+<div class="page" id="page-1">
+  <section class="wrap-narrow" style="padding-top: 160px; padding-bottom: 100px;">
+
+    <div class="reveal">
+      <p class="hero-label">How It Works</p>
+      <h1 style="font: 400 clamp(34px, 4.5vw, 52px)/1.1 var(--serif); color: var(--text-bright); margin-bottom: 20px;">
+        Idea to <em style="color: var(--amber);">ready-to-shoot</em><br>in five days
+      </h1>
+      <p style="font: 400 17px/1.75 var(--sans); color: var(--text-dim); max-width: 560px; margin-bottom: 64px;">
+        Every script passes through five quality gates. Research, verification, writing, voice matching, and editorial polish - in that order.
+      </p>
+    </div>
+
+    <div class="reveal"><div class="step"><div class="step-num">01</div><div><div class="step-header"><h3 class="step-title">Multi-Model Research</h3><span class="step-time">Day 1–2</span></div><p class="step-desc">Your topic runs through 7 AI models - Claude, GPT, Gemini, Mistral, Qwen, Perplexity, and Kimi. Each surfaces different angles, data, and cross-disciplinary connections. Everything synthesized into a single research document with consensus claims, contested claims, and original angles.</p></div></div></div>
+    <div class="reveal"><div class="step"><div class="step-num">02</div><div><div class="step-header"><h3 class="step-title">Fact-Check &amp; Logic Audit</h3><span class="step-time">Day 2–3</span></div><p class="step-desc">Every claim gets inventoried and categorized: Consensus, Contested, or Opinion. Sources verified against primary research - journals, official documents, original data. Arguments checked for logical fallacies. High-risk claims in health, finance, or legal get extra scrutiny.</p></div></div></div>
+    <div class="reveal"><div class="step"><div class="step-num">03</div><div><div class="step-header"><h3 class="step-title">Script Draft</h3><span class="step-time">Day 3–4</span></div><p class="step-desc">A voiceover script written in your voice - matched to your channel's tone, humor, pacing, and audience relationship. Two-column format with visual cues alongside dialogue. Retention annotations at 25%, 50%, and 75% marks. Hooks, pattern interrupts, the 35% pivot - all baked in.</p></div></div></div>
+    <div class="reveal"><div class="step"><div class="step-num">04</div><div><div class="step-header"><h3 class="step-title">Canon &amp; Voice Pass</h3><span class="step-time">Day 4</span></div><p class="step-desc">The script runs through a voice guardian that protects your brand identity. Catches anything generic or AI-sounding. Strips language that doesn't match your ethos. Ensures every word sounds like you, not a freelancer.</p></div></div></div>
+    <div class="reveal"><div class="step"><div class="step-num">05</div><div><div class="step-header"><h3 class="step-title">Final Polish &amp; Delivery</h3><span class="step-time">Day 5</span></div><p class="step-desc">A three-pass editorial sweep strips adverbs, tightens sentences, and kills anything that smells like a machine wrote it. You receive the finished script, the fact-check report, and the argument analysis.</p></div></div></div>
+    <div style="border-top: 1px solid var(--border);"></div>
+
+    <hr class="rule">
+
+    <div class="reveal"><h2 class="section-title-sm">What you <em>receive</em></h2></div>
+    <div class="grid-3" style="margin-top: 36px;">
+      <div class="reveal"><div class="del-card"><h4 class="del-title">Two-Column Script</h4><p class="del-desc">Professional format - dialogue and visual/audio cues side by side. Tone markers throughout. Retention annotations at key timestamps.</p></div></div>
+      <div class="reveal reveal-d1"><div class="del-card"><h4 class="del-title">Fact-Check Report</h4><p class="del-desc">Timestamped source log for every claim. Contested data flagged. Anti-brand compliance verified. Your reputation insurance.</p></div></div>
+      <div class="reveal reveal-d2"><div class="del-card"><h4 class="del-title">Argument Analysis</h4><p class="del-desc">Original angle with cross-disciplinary synthesis. Model consensus mapped. Counter-arguments identified and pre-addressed.</p></div></div>
+    </div>
+
+    <hr class="rule">
+
+    <div class="reveal"><h2 class="section-title-sm">Common <em>questions</em></h2></div>
+    <div style="margin-top: 8px;">
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">What's the turnaround?</h4><p class="faq-a">5 business days standard. Rush delivery at $650–$750 (25-50% premium).</p></div></div>
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">How many revisions?</h4><p class="faq-a">2 rounds included. Additional rounds at $75–$100/hour or $100–$150 flat.</p></div></div>
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">What do you need from me?</h4><p class="faq-a">Your video idea, target length, audience info, and 3-5 past videos for voice matching. We handle everything else.</p></div></div>
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">Do you use AI to write?</h4><p class="faq-a">AI powers our research - 7 models cross-referencing every angle. The writing, voice matching, and editorial judgment are human. That's the point.</p></div></div>
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">What if it doesn't sound like me?</h4><p class="faq-a">Our Voice DNA onboarding studies your videos before we write a word. We deliver a 90-second voice sample for approval before the full script.</p></div></div>
+      <div class="reveal"><div class="faq-item"><h4 class="faq-q">Can you produce the video?</h4><p class="faq-a">Yes. Our Full Video tier delivers a ready-to-upload video with AI voiceover, visuals, and music. Starting at $2,500.</p></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PAGE 2: WORK ═══ -->
+<div class="page" id="page-2">
+  <section class="wrap-narrow" style="padding-top: 160px; padding-bottom: 100px;">
+
+    <div class="reveal">
+      <p class="hero-label">Our Work</p>
+      <h1 style="font: 400 clamp(34px, 4.5vw, 48px)/1.1 var(--serif); color: var(--text-bright); margin-bottom: 20px;">
+        The <em style="color: var(--amber);">BUB Show</em> is our<br>living portfolio
+      </h1>
+      <p style="font: 400 17px/1.75 var(--sans); color: var(--text-dim); max-width: 560px; margin-bottom: 48px;">
+        Every video on the BUB channel is produced using the same pipeline we use for client work.
+        The research methodology, retention engineering, fact-checking, and voice consistency - it's all the same process.
+      </p>
+    </div>
+
+    <div class="reveal reveal-d1">
+      <div class="showcase">
+        <h3 class="showcase-title">The BUB Show</h3>
+        <p class="showcase-desc">Consciousness, AI, esoteric research - all produced with multi-model synthesis and retention-engineered scripting. What you'd get as a client, demonstrated on our own channel.</p>
+        <a href="https://youtube.com/@bub" target="_blank" rel="noopener noreferrer" class="btn-primary">Watch on YouTube →</a>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <div class="reveal"><h2 class="section-title-sm" style="margin-bottom: 40px;">What the process <em>produces</em></h2></div>
+
+    <div class="reveal"><div class="process-item"><h4 class="process-label">Multi-Model Research</h4><p class="process-desc">7 AI models queried with tailored prompts. Each surfaces different angles and connections. Synthesized into consensus claims, contested claims, and original angles no single source would find.</p></div></div>
+    <div class="reveal"><div class="process-item"><h4 class="process-label">Retention-Engineered Structure</h4><p class="process-desc">Scripts built on a beat map - hooks, micro-acts, pattern interrupts, the 35% pivot, session hooks. Not generic structure. Engineered for the 2026 satisfaction algorithm.</p></div></div>
+    <div class="reveal"><div class="process-item"><h4 class="process-label">Fact-Check Report</h4><p class="process-desc">Every claim categorized as Consensus, Contested, or Opinion. Sources verified against primary research. High-risk claims flagged. Your insurance against Community Notes.</p></div></div>
+    <div class="reveal"><div class="process-item"><h4 class="process-label">Voice Consistency</h4><p class="process-desc">A canon document ensures every script matches your identity. The anti-brand defines what you never say. A dedicated voice pass catches generic language before delivery.</p></div></div>
+    <div class="reveal"><div class="process-item"><h4 class="process-label">Three-Pass Editorial</h4><p class="process-desc">Hemingway editing strips adverbs. Asimov pass clarifies logic. Bukowski pass kills anything that doesn't sound human. More quality gates than most published books.</p></div></div>
+
+    <hr class="rule">
+
+    <div class="reveal">
+      <div class="grid-4-fixed">
+        <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">AI Models</div></div>
+        <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Quality Gates</div></div>
+        <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Editorial Passes</div></div>
+        <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Production Stages</div></div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 64px;">
+      <div class="reveal">
+        <button class="btn-primary" onclick="goTo(3)" style="font-size: 16px; padding: 16px 40px;">Start Your Project →</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PAGE 3: START ═══ -->
+<div class="page" id="page-3">
+  <section class="wrap-form" id="form-section" style="padding-top: 160px; padding-bottom: 100px;">
+
+    <div class="reveal">
+      <p class="hero-label">Start a Project</p>
+      <h1 style="font: 400 clamp(32px, 4vw, 44px)/1.1 var(--serif); color: var(--text-bright); margin-bottom: 16px;">
+        Tell us about your <em style="color: var(--amber);">video</em>
+      </h1>
+      <p style="font: 400 16px/1.65 var(--sans); color: var(--text-dim); margin-bottom: 48px;">
+        Fill out what you can. We'll follow up within 24 hours.
+      </p>
+    </div>
+
+    <div class="reveal reveal-d1">
+      <div class="form-row">
+        <div><label class="form-label">Name</label><input class="form-input" placeholder="Your name"></div>
+        <div><label class="form-label">Email</label><input class="form-input" type="email" placeholder="you@email.com"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Channel URL</label>
+        <input class="form-input" placeholder="youtube.com/@yourchannel">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">What tier interests you?</label>
+        <select class="form-select">
+          <option value="">Select a tier...</option>
+          <option>DIY Template - $79</option>
+          <option>Research Pack - $250</option>
+          <option>The Script - $500</option>
+          <option>Script + Assets - $1,750</option>
+          <option>Full Video - $2,500+</option>
+          <option>Monthly Retainer</option>
+          <option>Not sure yet</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Video idea or topic</label>
+        <textarea class="form-textarea" placeholder="What's the video about? Even a rough idea works."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label class="form-label">Target length</label>
+          <select class="form-select">
+            <option value="">Select...</option>
+            <option>~5 minutes</option>
+            <option>~8 minutes</option>
+            <option>~10 minutes</option>
+            <option>~12-13 minutes</option>
+            <option>~15 minutes</option>
+            <option>Not sure</option>
+          </select>
+        </div>
+        <div><label class="form-label">Deadline?</label><input class="form-input" placeholder="e.g., April 15"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">How did you find us?</label>
+        <select class="form-select">
+          <option value="">Select...</option>
+          <option>YouTube</option>
+          <option>Reddit</option>
+          <option>Twitter / X</option>
+          <option>LinkedIn</option>
+          <option>Fiverr</option>
+          <option>Upwork</option>
+          <option>Roster / YT Jobs</option>
+          <option>Referral</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" onclick="showSuccess()" style="width: 100%; justify-content: center; margin-top: 8px; font-size: 16px; padding: 16px 0;">
+        Submit Project →
+      </button>
+      <p class="form-note">We respond within 24 hours. No commitment required.</p>
+    </div>
+  </section>
+
+  <section class="success-page" id="success-section" style="display: none;">
+    <div class="success-check">✓</div>
+    <h1 class="success-title">Project submitted</h1>
+    <p class="success-desc">We'll review everything and respond within 24 hours with next steps - including our Voice DNA onboarding questionnaire.</p>
+  </section>
+</div>
+
+<!-- ═══ PAGE 4: PRICING ═══ -->
+<div class="page" id="page-4">
+  <section class="wrap" style="padding-top: 160px; padding-bottom: 100px;">
+
+    <div class="reveal" style="max-width: 720px;">
+      <p class="hero-label">Pricing</p>
+      <h1 style="font: 400 clamp(34px, 4.5vw, 52px)/1.1 var(--serif); color: var(--text-bright); margin-bottom: 20px;">
+        Transparent pricing.<br><em style="color: var(--amber);">No surprises.</em>
+      </h1>
+      <p style="font: 400 17px/1.75 var(--sans); color: var(--text-dim); max-width: 560px; margin-bottom: 64px;">
+        Every tier includes the multi-model research methodology. You choose how deep you want us to go.
+      </p>
+    </div>
+
+    <!-- Tier 1: Research Pack -->
+    <div class="reveal">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 40px 36px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <h3 style="font: 700 22px/1.2 var(--sans); color: var(--text-bright); margin-bottom: 4px;">Research Pack</h3>
+            <p style="font: 400 14px/1 var(--sans); color: var(--text-dim);">For creators who write well but hate researching.</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font: 700 36px/1 var(--serif); color: var(--amber);">$250</div>
+            <div style="font: 400 12px/1 var(--sans); color: var(--text-muted); margin-top: 4px;">per project</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--amber); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> 7-model research sweep</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> NotebookLM synthesis</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Fact-check report</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Argument analysis</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Original angle recommendations</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Counter-argument mapping</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Not included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Script writing</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Voice matching</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Production assets</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border);">
+          <button class="btn-outline" onclick="goTo(3)">Start with Research →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 2: The Script (Featured) -->
+    <div class="reveal reveal-d1">
+      <div style="background: var(--amber-glow-strong); border: 1px solid rgba(212,163,66,0.3); border-radius: 14px; padding: 40px 36px; margin-bottom: 20px; position: relative;">
+        <span style="position: absolute; top: -12px; left: 36px; background: var(--amber); color: var(--bg); font: 700 11px/1 var(--sans); padding: 5px 16px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase;">Most Popular</span>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <h3 style="font: 700 22px/1.2 var(--sans); color: var(--text-bright); margin-bottom: 4px;">The Script</h3>
+            <p style="font: 400 14px/1 var(--sans); color: var(--text-dim);">The full package. Research, writing, and verification.</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font: 700 36px/1 var(--serif); color: var(--amber);">$500</div>
+            <div style="font: 400 12px/1 var(--sans); color: var(--text-muted); margin-top: 4px;">per project</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--amber); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Everything in Research Pack</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Full voiceover script (two-column format)</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Voice DNA matching &amp; onboarding</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Retention engineering (hooks, pivots, loops)</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Tone markers &amp; visual cues</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> 2 revision rounds</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> 5 business day turnaround</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Not included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Production assets (beats, slides, clips)</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> AI voiceover</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Video assembly</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(212,163,66,0.2);">
+          <button class="btn-primary" onclick="goTo(3)">Start Your Script →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 3: Script + Assets -->
+    <div class="reveal reveal-d2">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 40px 36px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <h3 style="font: 700 22px/1.2 var(--sans); color: var(--text-bright); margin-bottom: 4px;">Script + Production Assets</h3>
+            <p style="font: 400 14px/1 var(--sans); color: var(--text-dim);">For creators who have an editor but need the creative package.</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font: 700 36px/1 var(--serif); color: var(--amber);">$1,750</div>
+            <div style="font: 400 12px/1 var(--sans); color: var(--text-muted); margin-top: 4px;">per project</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--amber); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Everything in The Script</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Remotion beat sheet</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> AI-generated image prompts</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Slide deck / Gamma presentations</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Video clip specifications</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Music &amp; SFX cue sheet</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Not included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> AI voiceover production</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0;">-</span> Final video assembly</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border);">
+          <button class="btn-outline" onclick="goTo(3)">Start with Assets →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 4: Full Video -->
+    <div class="reveal reveal-d3">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 40px 36px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+          <div>
+            <h3 style="font: 700 22px/1.2 var(--sans); color: var(--text-bright); margin-bottom: 4px;">Full Video Production</h3>
+            <p style="font: 400 14px/1 var(--sans); color: var(--text-dim);">You give us the topic. We deliver a video. Ready to upload.</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font: 700 36px/1 var(--serif); color: var(--amber);">$2,500+</div>
+            <div style="font: 400 12px/1 var(--sans); color: var(--text-muted); margin-top: 4px;">per project</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--amber); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Included</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Everything in Script + Assets</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> AI voiceover (ElevenLabs)</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Full Remotion video assembly</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Background music &amp; sound design</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Thumbnail concept recommendations</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Ready-to-upload MP4</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="font: 600 13px/1 var(--sans); color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;">Pricing factors</h4>
+            <ul style="list-style: none; padding: 0;">
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--text-muted);">→</span> Video length</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--text-muted);">→</span> Research complexity</li>
+              <li style="font: 400 14px/2.2 var(--sans); color: var(--text-muted); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--text-muted);">→</span> Custom visual requirements</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border);">
+          <button class="btn-outline" onclick="goTo(3)">Start Full Production →</button>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Add-ons & Extras -->
+    <div class="reveal">
+      <h2 class="section-title-sm" style="margin-bottom: 36px;">Add-ons &amp; <em>extras</em></h2>
+    </div>
+
+    <div class="grid-3">
+      <div class="reveal"><div class="del-card">
+        <h4 class="del-title">Rush Delivery</h4>
+        <div style="font: 700 20px/1 var(--serif); color: var(--text-bright); margin-bottom: 8px;">25–50% premium</div>
+        <p class="del-desc">Need it faster? Rush turnaround at $650–$750 for Script tier. Other tiers quoted on request.</p>
+      </div></div>
+      <div class="reveal reveal-d1"><div class="del-card">
+        <h4 class="del-title">Additional Revisions</h4>
+        <div style="font: 700 20px/1 var(--serif); color: var(--text-bright); margin-bottom: 8px;">$75–$150</div>
+        <p class="del-desc">2 rounds included with every project. Additional rounds at $75–$100/hour or $100–$150 flat per round.</p>
+      </div></div>
+      <div class="reveal reveal-d2"><div class="del-card">
+        <h4 class="del-title">Monthly Retainer</h4>
+        <div style="font: 700 20px/1 var(--serif); color: var(--text-bright); margin-bottom: 8px;">$1,800+/mo</div>
+        <p class="del-desc">4 scripts/month with 10% discount. Priority turnaround. Dedicated voice profile. Retainer clients get first in line.</p>
+      </div></div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- What's included in every tier -->
+    <div class="reveal">
+      <h2 class="section-title-sm" style="margin-bottom: 36px;">Included with <em>every</em> tier</h2>
+    </div>
+
+    <div class="reveal">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">7-model research methodology</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">Fact-check report with source log</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">Argument analysis with counter-arguments</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">Notion-based project workspace</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">Async communication &amp; progress tracking</span>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px;">
+          <span style="color: var(--amber); margin-right: 8px;">✓</span>
+          <span style="font: 500 14px/1.4 var(--sans); color: var(--text);">24-hour response time</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 64px;">
+      <div class="reveal">
+        <p style="font: 400 16px/1.6 var(--sans); color: var(--text-dim); margin-bottom: 24px;">Not sure which tier? Tell us what you need and we'll recommend the right one.</p>
+        <button class="btn-primary" onclick="goTo(3)" style="font-size: 16px; padding: 16px 40px;">Start a Conversation →</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ PAGE 5: TEMPLATE ═══ -->
+<div class="page" id="page-5">
+  <section class="wrap" style="padding-top: 160px; padding-bottom: 100px; max-width: 900px;">
+
+    <div class="reveal" style="text-align: center; margin-bottom: 64px;">
+      <p class="hero-label">DIY Script Template</p>
+      <h1 style="font: 400 clamp(34px, 4.5vw, 52px)/1.1 var(--serif); color: var(--text-bright); margin-bottom: 20px;">
+        The system behind our <em style="color: var(--amber);">$500 scripts</em> -<br>for $79
+      </h1>
+      <p style="font: 400 17px/1.75 var(--sans); color: var(--text-dim); max-width: 560px; margin: 0 auto 36px;">
+        A Notion-based scriptwriting system with research frameworks, hook formulas, AI prompt templates, and the retention checklist we use on every client project.
+      </p>
+      <div style="display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap;">
+        <button class="btn-primary" style="font-size: 16px; padding: 16px 36px;">Get the Template - $79</button>
+        <span style="font: 400 13px/1 var(--sans); color: var(--text-muted);">Instant Notion access</span>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin: 48px 0;">
+
+    <!-- Who it's for -->
+    <div class="reveal">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 64px;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 28px;">
+          <h3 style="font: 600 13px/1 var(--sans); color: var(--amber); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 20px;">This is for you if</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> You write your own scripts but want a better system</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> You spend too long staring at a blank page</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> You use AI tools but the output feels generic</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> You want to understand retention engineering</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--amber);">✓</span> Your budget is under $500 per video right now</li>
+          </ul>
+        </div>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 28px;">
+          <h3 style="font: 600 13px/1 var(--sans); color: #f87171; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 20px;">Skip this if</h3>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text-dim); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #f87171;">×</span> You want someone to write the script for you</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text-dim); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #f87171;">×</span> You need niche-specific research done</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text-dim); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #f87171;">×</span> You want voice matching and personalized feedback</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text-dim); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #f87171;">×</span> You need production-ready video assets</li>
+            <li style="font: 400 14px/2.4 var(--sans); color: var(--text-dim); padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #f87171;">×</span> <a onclick="goTo(4)" style="cursor: pointer;">→ Check our done-for-you tiers instead</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Modules -->
+    <div class="reveal"><h2 class="section-title-sm" style="margin-bottom: 40px;">What's <em>inside</em></h2></div>
+
+    <div class="reveal">
+      <div style="border-top: 1px solid var(--border);">
+        <div style="display: flex; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex-shrink: 0;"><span style="font: 800 14px/1 var(--sans); color: var(--amber);">01</span></div>
+          <div>
+            <h4 style="font: 700 17px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px;">Research &amp; Pre-Production Module</h4>
+            <p style="font: 400 14px/1.65 var(--sans); color: var(--text-dim);">Audience avatar quick-build, competitive video analysis framework, idea generation templates, title/thumbnail brainstorm matrix, and framing worksheet. Stop researching in circles.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex-shrink: 0;"><span style="font: 800 14px/1 var(--sans); color: var(--amber);">02</span></div>
+          <div>
+            <h4 style="font: 700 17px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px;">Script Structure Framework</h4>
+            <p style="font: 400 14px/1.65 var(--sans); color: var(--text-dim);">Templates for tutorials, listicles, case studies, and story-driven videos. Pre-built frameworks (Setup-Tension-Payoff, AIDA, PAS). Hook formula bank with 15 fill-in-the-blank formulas.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex-shrink: 0;"><span style="font: 800 14px/1 var(--sans); color: var(--amber);">03</span></div>
+          <div>
+            <h4 style="font: 700 17px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px;">AI Prompt Templates</h4>
+            <p style="font: 400 14px/1.65 var(--sans); color: var(--text-dim);">Brainstorming prompts, outline generators, hook variant prompts, and retention analysis prompts. Designed for Claude, GPT, and Gemini. AI-assisted, human-finished.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex-shrink: 0;"><span style="font: 800 14px/1 var(--sans); color: var(--amber);">04</span></div>
+          <div>
+            <h4 style="font: 700 17px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px;">Retention Optimization Checklist</h4>
+            <p style="font: 400 14px/1.65 var(--sans); color: var(--text-dim);">Self-audit for hooks, curiosity gaps, pattern interrupts, pacing, payoffs, and CTAs. The "Retention Heatmap" reveals exactly where your scripts lose viewers - and how to fix it.</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex-shrink: 0;"><span style="font: 800 14px/1 var(--sans); color: var(--amber);">05</span></div>
+          <div>
+            <h4 style="font: 700 17px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 8px;">Workflow Process Guide</h4>
+            <p style="font: 400 14px/1.65 var(--sans); color: var(--text-dim);">"First script in under 2 hours" quick-start path plus a deep-dive optimization path for when you want to go further. Step-by-step, not theory.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Upgrade path -->
+    <div class="reveal">
+      <div style="background: var(--amber-glow-strong); border: 1px solid rgba(212,163,66,0.2); border-radius: 14px; padding: 40px 36px; text-align: center;">
+        <h3 style="font: 700 20px/1.3 var(--sans); color: var(--text-bright); margin-bottom: 12px;">Ready for the done-for-you version?</h3>
+        <p style="font: 400 15px/1.65 var(--sans); color: var(--text); max-width: 480px; margin: 0 auto 24px;">
+          Template buyers can apply their $79 toward their first Script project. The template shows you what great scripts require - we do the heavy lifting.
+        </p>
+        <button class="btn-primary" onclick="goTo(3)">Upgrade to Done-For-You →</button>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 48px;">
+      <div class="reveal">
+        <button class="btn-primary" style="font-size: 16px; padding: 16px 36px;">Get the Template - $79</button>
+        <p style="font: 400 13px/1 var(--sans); color: var(--text-muted); margin-top: 12px;">Instant access via Notion. No subscription. Use it forever.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <span class="footer-copy">© 2026 BUB YouTube Writer · Part of the <a href="https://bubwriter.com">BUB</a> family</span>
+  <div class="footer-links">
+    <a href="https://bubwriter.com">bubwriter.com</a>
+    <a href="https://bubai.me">bubai.me</a>
+  </div>
+</footer>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+  // Page navigation
+  function goTo(pageNum) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageNum).classList.add('active');
+
+    document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+      link.classList.toggle('active', parseInt(link.dataset.page) === pageNum);
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Reset form visibility if going to Start page
+    if (pageNum === 3) {
+      document.getElementById('form-section').style.display = '';
+      document.getElementById('success-section').style.display = 'none';
+    }
+
+    // Re-trigger scroll reveals for the new page
+    setTimeout(initReveals, 100);
+  }
+
+  // Form submission
+  function showSuccess() {
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('success-section').style.display = '';
+  }
+
+  // Nav scroll effect
+  window.addEventListener('scroll', function() {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 60);
+  }, { passive: true });
+
+  // Intersection Observer for scroll reveals
+  function initReveals() {
+    const reveals = document.querySelectorAll('.reveal:not(.visible)');
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    reveals.forEach(function(el) {
+      observer.observe(el);
+    });
+  }
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded', initReveals);
+</script>
+
+</body>
+</html>
