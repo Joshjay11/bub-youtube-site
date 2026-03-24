@@ -77,8 +77,8 @@ export default function ScriptCanvas() {
       </div>
 
       {/* Live stats bar */}
-      <div className="bg-bg-card border border-border rounded-xl p-4 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="bg-bg-card border border-border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-6 flex-wrap">
           <div>
             <div className="text-[12px] text-text-muted uppercase tracking-wider">Total Words</div>
             <div className={`text-[24px] font-mono font-bold ${getWordCountColor(totalWords, totalTarget)}`}>

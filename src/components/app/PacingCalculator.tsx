@@ -124,7 +124,7 @@ export default function PacingCalculator({ onCalculate }: { onCalculate?: (resul
       </div>
 
       {/* Section breakdown table */}
-      <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-bg-card border border-border rounded-xl overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">

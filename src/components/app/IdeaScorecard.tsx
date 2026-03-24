@@ -121,18 +121,18 @@ export default function IdeaScorecard() {
               key={criterion.key}
               className="bg-bg-card border border-border rounded-xl p-5 hover:border-border-light transition-colors"
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                     <span className="text-[15px] font-medium text-text-bright">{criterion.label}</span>
                     <span className="text-[13px] text-text-dim">— {criterion.question}</span>
                   </div>
-                  <div className="flex items-center gap-4 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
                     <span className="text-[12px] text-text-muted">1: {criterion.low}</span>
                     <span className="text-[12px] text-text-muted">5: {criterion.high}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 ml-4 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}

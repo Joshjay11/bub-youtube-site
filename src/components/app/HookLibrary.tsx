@@ -63,7 +63,7 @@ export default function HookLibrary() {
           className="w-full bg-bg-card border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors"
         />
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Hook Type */}
           <select
             value={typeFilter}

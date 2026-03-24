@@ -144,8 +144,8 @@ export default function ScriptAudit() {
 
       {/* Progress overview */}
       <div className="bg-bg-card border border-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-6 flex-wrap">
             <div>
               <div className="text-[12px] text-text-muted uppercase tracking-wider">Must Pass</div>
               <div className={`text-[24px] font-mono font-bold ${mustPassChecked === MUST_PASS_COUNT ? 'text-green' : 'text-red'}`}>

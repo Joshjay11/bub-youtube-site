@@ -191,7 +191,7 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {!isRunning ? (
           <button
             onClick={handleRun}
