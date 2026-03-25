@@ -1,10 +1,27 @@
 import { getStripe } from '@/lib/stripe';
 
+function getBaseUrl(request: Request): string {
+  // Try origin header first, then construct from host
+  const origin = request.headers.get('origin');
+  if (origin) return origin;
+
+  const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
+  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  if (host) return `${proto}://${host}`;
+
+  // Fallback to env var for Vercel deployments
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+
+  return 'https://youtube.bubwriter.com';
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email } = body;
 
+    const baseUrl = getBaseUrl(request);
     const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
@@ -17,8 +34,8 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${request.headers.get('origin')}/app?session_id={CHECKOUT_SESSION_ID}&onboarding=true`,
-      cancel_url: `${request.headers.get('origin')}/template`,
+      success_url: `${baseUrl}/app?session_id={CHECKOUT_SESSION_ID}&onboarding=true`,
+      cancel_url: `${baseUrl}/template`,
       metadata: {
         product: 'bub_script_system',
       },
