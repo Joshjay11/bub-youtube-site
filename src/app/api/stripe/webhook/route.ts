@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const email = session.customer_email || session.customer_details?.email;
+    const email = session.customer_details?.email || session.customer_email;
 
     if (email) {
       const supabase = createServerSupabase();
