@@ -1,23 +1,22 @@
-'use client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import AppShell from '@/components/app/AppShell';
 
-import { Suspense } from 'react';
-import Sidebar from '@/components/app/Sidebar';
-import { ProjectProvider } from '@/lib/project-context';
-import Onboarding from '@/components/app/Onboarding';
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // Auth gate: check for Supabase auth cookie
+  // Skip when Supabase isn't configured (local dev)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    const cookieStore = await cookies();
+    const allCookies = cookieStore.getAll();
+    const hasAuth = allCookies.some(
+      (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+    );
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ProjectProvider>
-      <div className="flex min-h-screen">
-        <Sidebar />
-        {/* Main content: responsive margin for sidebar */}
-        <main className="flex-1 ml-0 md:ml-[240px] p-4 md:p-8 pt-[68px] md:pt-8 transition-all duration-300">
-          {children}
-        </main>
-      </div>
-      <Suspense fallback={null}>
-        <Onboarding />
-      </Suspense>
-    </ProjectProvider>
-  );
+    if (!hasAuth) {
+      redirect('/template');
+    }
+  }
+
+  return <AppShell>{children}</AppShell>;
 }
