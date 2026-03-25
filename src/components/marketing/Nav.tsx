@@ -74,7 +74,7 @@ export default function Nav() {
           ))}
           <Link
             href="/start"
-            className="ml-3 inline-flex items-center gap-2 bg-amber text-bg px-[22px] py-2.5 rounded-md font-bold text-[13px] no-underline transition-all hover:bg-amber-bright hover:-translate-y-px"
+            className="ml-3 inline-flex items-center gap-2 bg-amber text-bg px-[22px] py-2.5 rounded-md font-bold text-[13px] no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
           >
             Start a Project
           </Link>

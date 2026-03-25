@@ -112,7 +112,7 @@ export default function StartPage() {
 
           <button
             onClick={() => setSubmitted(true)}
-            className="w-full bg-amber text-bg py-4 rounded-md font-bold text-base cursor-pointer transition-all hover:bg-amber-bright border-none mt-2"
+            className="w-full bg-amber text-bg py-4 rounded-md font-bold text-base cursor-pointer transition-all hover:bg-amber-bright hover:text-bg border-none mt-2"
           >
             Submit Project →
           </button>

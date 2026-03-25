@@ -159,7 +159,7 @@ export default function PacingCalculator({ onCalculate }: { onCalculate?: (resul
       {onCalculate && (
         <button
           onClick={handleApply}
-          className="w-full bg-amber hover:bg-amber-bright text-bg font-medium py-3 rounded-xl transition-colors text-[15px]"
+          className="w-full bg-amber hover:bg-amber-bright hover:text-bg text-bg font-medium py-3 rounded-xl transition-colors text-[15px]"
         >
           Apply to Script Canvas
         </button>

@@ -69,7 +69,7 @@ export default function ProjectsPage() {
         <button
           onClick={handleCreate}
           disabled={!newTitle.trim()}
-          className="px-5 py-3 bg-amber hover:bg-amber-bright disabled:bg-bg-card disabled:text-text-muted text-bg text-[14px] font-medium rounded-xl transition-colors shrink-0"
+          className="px-5 py-3 bg-amber hover:bg-amber-bright hover:text-bg disabled:bg-bg-card disabled:text-text-muted text-bg text-[14px] font-medium rounded-xl transition-colors shrink-0"
         >
           Create Project
         </button>

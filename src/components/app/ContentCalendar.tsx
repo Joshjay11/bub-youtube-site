@@ -96,7 +96,7 @@ export default function ContentCalendar() {
         {!isAdding && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-bright text-bg text-[14px] font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-amber hover:bg-amber-bright hover:text-bg text-bg text-[14px] font-medium rounded-xl transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -189,7 +189,7 @@ export default function ContentCalendar() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handleSave} className="px-5 py-2 bg-amber hover:bg-amber-bright text-bg text-[14px] font-medium rounded-lg transition-colors">
+            <button onClick={handleSave} className="px-5 py-2 bg-amber hover:bg-amber-bright hover:text-bg text-bg text-[14px] font-medium rounded-lg transition-colors">
               {editing ? 'Save Changes' : 'Add to Calendar'}
             </button>
             <button onClick={handleCancel} className="px-4 py-2 text-[14px] text-text-muted hover:text-text-dim transition-colors">

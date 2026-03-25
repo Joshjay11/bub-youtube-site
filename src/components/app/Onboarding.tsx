@@ -100,14 +100,14 @@ export default function Onboarding() {
             {isLast ? (
               <button
                 onClick={() => setShow(false)}
-                className="px-5 py-2.5 bg-amber hover:bg-amber-bright text-bg text-[14px] font-medium rounded-xl transition-colors"
+                className="px-5 py-2.5 bg-amber hover:bg-amber-bright hover:text-bg text-bg text-[14px] font-medium rounded-xl transition-colors"
               >
                 Get Started
               </button>
             ) : (
               <button
                 onClick={() => setStep(step + 1)}
-                className="px-5 py-2.5 bg-amber hover:bg-amber-bright text-bg text-[14px] font-medium rounded-xl transition-colors"
+                className="px-5 py-2.5 bg-amber hover:bg-amber-bright hover:text-bg text-bg text-[14px] font-medium rounded-xl transition-colors"
               >
                 Next
               </button>

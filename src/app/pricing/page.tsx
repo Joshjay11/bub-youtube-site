@@ -139,7 +139,7 @@ export default function PricingPage() {
               </div>
             </div>
             <div className="mt-7 pt-6 border-t border-[rgba(212,163,66,0.2)]">
-              <Link href="/start" className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:-translate-y-px">
+              <Link href="/start" className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
                 Start Your Script →
               </Link>
             </div>
@@ -340,7 +340,7 @@ export default function PricingPage() {
             <p className="text-base text-text-dim mb-6">Not sure which tier? Tell us what you need and we&apos;ll recommend the right one.</p>
             <Link
               href="/start"
-              className="inline-flex items-center gap-2 bg-amber text-bg px-10 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:-translate-y-px"
+              className="inline-flex items-center gap-2 bg-amber text-bg px-10 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
             >
               Start a Conversation →
             </Link>

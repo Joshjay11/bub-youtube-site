@@ -75,13 +75,15 @@ body::after {
   color: var(--bg);
 }
 
-a {
+a:not([class*="text-"]) {
   color: var(--amber);
+}
+a:not([class*="text-"]):hover {
+  color: var(--amber-bright);
+}
+a {
   text-decoration: none;
   transition: color 0.2s;
-}
-a:hover {
-  color: var(--amber-bright);
 }
 
 /* Scroll reveal animations */

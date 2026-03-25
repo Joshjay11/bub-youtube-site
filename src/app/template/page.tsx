@@ -27,7 +27,7 @@ export default function TemplatePage() {
               An interactive web app with research frameworks, hook formulas, AI-powered prompts, retention tools, a pacing calculator, and the script canvas we use on every client project.
             </p>
             <div className="flex gap-4 justify-center items-center flex-wrap">
-              <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:-translate-y-px">
+              <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
                 Get the Script System — $79
               </button>
               <span className="text-[13px] text-text-muted">Instant access. Updates forever.</span>
@@ -112,7 +112,7 @@ export default function TemplatePage() {
             </p>
             <Link
               href="/start"
-              className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:-translate-y-px"
+              className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
             >
               Upgrade to Done-For-You →
             </Link>
@@ -121,7 +121,7 @@ export default function TemplatePage() {
 
         <div className="text-center mt-12">
           <RevealOnScroll>
-            <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:-translate-y-px">
+            <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
               Get the Script System — $79
             </button>
             <p className="text-[13px] text-text-muted mt-3">Instant access. No subscription. Updates included forever.</p>

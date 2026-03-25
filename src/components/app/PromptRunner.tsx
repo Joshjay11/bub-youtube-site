@@ -198,7 +198,7 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
             disabled={!allFilled || remaining === 0}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
               allFilled && remaining !== 0
-                ? 'bg-amber hover:bg-amber-bright text-bg'
+                ? 'bg-amber hover:bg-amber-bright hover:text-bg text-bg'
                 : 'bg-bg-card text-text-muted cursor-not-allowed border border-border'
             }`}
           >
