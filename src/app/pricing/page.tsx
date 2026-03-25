@@ -38,6 +38,25 @@ export default function PricingPage() {
           </div>
         </RevealOnScroll>
 
+        {/* Script System — DIY */}
+        <RevealOnScroll>
+          <Link href="/template" className="block no-underline mb-5">
+            <div className="bg-bg-card border border-amber/20 rounded-[14px] p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:border-amber/40 hover:bg-amber-glow group">
+              <div>
+                <p className="font-sans font-semibold text-xs text-amber tracking-[0.14em] uppercase mb-2">Do it yourself</p>
+                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1 group-hover:text-amber transition-colors">BUB Script System</h3>
+                <p className="text-sm text-text-dim max-w-[480px] leading-relaxed">
+                  Start with the system behind our $500 scripts. Interactive scorecards, pacing calculators, AI prompts, and the full retention framework — in a web app you keep forever.
+                </p>
+              </div>
+              <div className="shrink-0 text-left md:text-right">
+                <div className="font-serif font-bold text-4xl text-amber">$79</div>
+                <div className="text-xs text-text-muted mt-1">one-time</div>
+              </div>
+            </div>
+          </Link>
+        </RevealOnScroll>
+
         {/* Research Pack */}
         <RevealOnScroll>
           <div className="bg-bg-card border border-border rounded-[14px] p-10 mb-5">

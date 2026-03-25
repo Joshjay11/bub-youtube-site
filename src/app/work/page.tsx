@@ -33,7 +33,7 @@ export default function WorkPage() {
               Consciousness, AI, esoteric research — all produced with multi-model synthesis and retention-engineered scripting. What you&apos;d get as a client, demonstrated on our own channel.
             </p>
             <a
-              href="https://youtube.com/@bub"
+              href="https://www.youtube.com/@bubai4reallife"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:-translate-y-px"
