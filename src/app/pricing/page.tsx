@@ -1,6 +1,7 @@
 import Link from "next/link";
 import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
+import CheckoutButton from "@/components/marketing/CheckoutButton";
 
 function CheckItem({ children }: { children: React.ReactNode }) {
   return (
@@ -40,21 +41,24 @@ export default function PricingPage() {
 
         {/* Script System — DIY */}
         <RevealOnScroll>
-          <Link href="/template" className="block no-underline mb-5">
-            <div className="bg-bg-card border border-amber/20 rounded-[14px] p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all hover:border-amber/40 hover:bg-amber-glow group">
+          <div className="bg-bg-card border border-amber/20 rounded-[14px] p-8 md:p-10 mb-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <p className="font-sans font-semibold text-xs text-amber tracking-[0.14em] uppercase mb-2">Do it yourself</p>
-                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1 group-hover:text-amber transition-colors">BUB Script System</h3>
-                <p className="text-sm text-text-dim max-w-[480px] leading-relaxed">
+                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1">BUB Script System</h3>
+                <p className="text-sm text-text-dim max-w-[480px] leading-relaxed mb-5">
                   Start with the system behind our $500 scripts. Interactive scorecards, pacing calculators, AI prompts, and the full retention framework — in a web app you keep forever.
                 </p>
+                <CheckoutButton className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60">
+                  Get the Script System — $79
+                </CheckoutButton>
               </div>
               <div className="shrink-0 text-left md:text-right">
                 <div className="font-serif font-bold text-4xl text-amber">$79</div>
                 <div className="text-xs text-text-muted mt-1">one-time</div>
               </div>
             </div>
-          </Link>
+          </div>
         </RevealOnScroll>
 
         {/* Research Pack */}

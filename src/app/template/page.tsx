@@ -1,6 +1,7 @@
 import Link from "next/link";
 import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
+import CheckoutButton from "@/components/marketing/CheckoutButton";
 
 const modules = [
   { num: "01", title: "Research & Pre-Production Module", desc: "Audience avatar quick-build, competitive video analysis framework, idea generation templates, title/thumbnail brainstorm matrix, and framing worksheet. Stop researching in circles." },
@@ -27,9 +28,9 @@ export default function TemplatePage() {
               An interactive web app with research frameworks, hook formulas, AI-powered prompts, retention tools, a pacing calculator, and the script canvas we use on every client project.
             </p>
             <div className="flex gap-4 justify-center items-center flex-wrap">
-              <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
+              <CheckoutButton className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60">
                 Get the Script System — $79
-              </button>
+              </CheckoutButton>
               <span className="text-[13px] text-text-muted">Instant access. Updates forever.</span>
             </div>
           </div>
