@@ -30,16 +30,25 @@ export async function POST(request: Request) {
     if (email) {
       const supabase = createServerSupabase();
 
-      // Upsert user with access granted
-      await supabase.from('users').upsert(
+      // Insert into purchases table (no auth user required)
+      await supabase.from('purchases').upsert(
         {
           email,
-          stripe_customer_id: session.customer as string || null,
+          stripe_customer_id: (session.customer as string) || null,
           has_access: true,
-          updated_at: new Date().toISOString(),
         },
         { onConflict: 'email' },
       );
+
+      // Also update users table if the user already exists
+      await supabase
+        .from('users')
+        .update({
+          has_access: true,
+          stripe_customer_id: (session.customer as string) || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', email);
     }
   }
 
