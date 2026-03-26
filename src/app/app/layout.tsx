@@ -1,54 +1,32 @@
-import { cookies } from 'next/headers';
+import { createCookieSupabase, createAdminSupabase } from '@/lib/supabase';
 import { redirect } from 'next/navigation';
-import { createServerSupabase } from '@/lib/supabase';
 import AppShell from '@/components/app/AppShell';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Skip when Supabase isn't configured (local dev)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return <AppShell>{children}</AppShell>;
   }
 
-  // Gate 1: Must be logged in (have auth cookie)
-  const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-  const hasAuth = allCookies.some(
-    (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
-  );
+  // 1. Get the current session from cookies
+  const supabase = await createCookieSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!hasAuth) {
+  if (!user) {
     redirect('/template');
   }
 
-  // Gate 2: Must have paid — check users table, then purchases table
-  const supabase = createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  // 2. Check users table for this user's id with has_access = true
+  const admin = createAdminSupabase();
+  const { data: userRow } = await admin
+    .from('users')
+    .select('has_access')
+    .eq('id', user.id)
+    .single();
 
-  if (user?.email) {
-    // Check users table first
-    const { data: userRow } = await supabase
-      .from('users')
-      .select('has_access')
-      .eq('email', user.email)
-      .single();
-
-    if (userRow?.has_access) {
-      return <AppShell>{children}</AppShell>;
-    }
-
-    // Fall back to purchases table
-    const { data: purchase } = await supabase
-      .from('purchases')
-      .select('has_access')
-      .eq('email', user.email)
-      .single();
-
-    if (purchase?.has_access) {
-      return <AppShell>{children}</AppShell>;
-    }
+  if (!userRow?.has_access) {
+    redirect('/template?access=required');
   }
 
-  // Logged in but no purchase — send to sales page
-  redirect('/template?access=required');
+  return <AppShell>{children}</AppShell>;
 }

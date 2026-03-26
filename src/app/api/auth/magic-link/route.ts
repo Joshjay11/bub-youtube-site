@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
 
 function getBaseUrl(request: Request): string {
   const origin = request.headers.get('origin');
@@ -19,13 +19,13 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const supabase = createServerSupabase();
+    const supabase = createAdminSupabase();
     const baseUrl = getBaseUrl(request);
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${baseUrl}/api/auth/callback?next=${encodeURIComponent('/app?onboarding=true')}`,
+        emailRedirectTo: `${baseUrl}/api/auth/callback`,
       },
     });
 
