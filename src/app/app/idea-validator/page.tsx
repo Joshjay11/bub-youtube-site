@@ -18,7 +18,7 @@ export default function IdeaValidatorPage() {
       <div className="space-y-12">
         <IdeaEntry onIdeaSet={setCurrentIdea} currentIdea={currentIdea} />
         <hr className="rule" style={{ margin: '0' }} />
-        <IdeaScorecard />
+        <IdeaScorecard idea={currentIdea} />
         <hr className="rule" style={{ margin: '0' }} />
         <ViewerBeliefMap />
       </div>

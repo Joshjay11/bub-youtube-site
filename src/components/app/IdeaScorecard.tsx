@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ScoreChecker from '@/components/app/ScoreChecker';
 
 const CRITERIA = [
   {
@@ -82,7 +83,7 @@ function getVerdictAdvice(total: number): string {
   return "Archive it. Don't delete — your worst idea today might be perfect in 6 months.";
 }
 
-export default function IdeaScorecard() {
+export default function IdeaScorecard({ idea = '' }: { idea?: string }) {
   const [scores, setScores] = useState<Scores>(
     Object.fromEntries(CRITERIA.map((c) => [c.key, 3]))
   );
@@ -166,6 +167,9 @@ export default function IdeaScorecard() {
         </div>
         <p className="text-text-dim text-[14px] mt-3">{getVerdictAdvice(total)}</p>
       </div>
+
+      {/* Score Checker */}
+      <ScoreChecker idea={idea} userScores={scores} />
     </div>
   );
 }
