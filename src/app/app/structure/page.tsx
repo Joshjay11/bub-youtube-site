@@ -1,5 +1,9 @@
+'use client';
+
 import HookScorecard from '@/components/app/HookScorecard';
 import Link from 'next/link';
+import UpstreamContext from '@/components/app/UpstreamContext';
+import RunningBrief from '@/components/app/RunningBrief';
 
 const REFERENCE_PAGES = [
   {
@@ -32,12 +36,13 @@ export default function StructurePage() {
         Score your hooks, pick a structure template, and master the 35% Pivot.
       </p>
 
+      <UpstreamContext section="structure" />
+
       <div className="space-y-12">
         <HookScorecard />
 
         <hr className="rule" style={{ margin: '0' }} />
 
-        {/* Reference pages */}
         <div>
           <h2 className="font-serif text-[22px] text-text-bright mb-4">Reference Guides</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -55,6 +60,9 @@ export default function StructurePage() {
             ))}
           </div>
         </div>
+
+        <hr className="rule" style={{ margin: '0' }} />
+        <RunningBrief />
       </div>
     </div>
   );

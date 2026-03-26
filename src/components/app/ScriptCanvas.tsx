@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useProject } from '@/lib/project-context';
+import { loadProjectBundle, compileBrief } from '@/lib/project-bundle';
 
 const DEFAULT_WPM = 140;
 const DEFAULT_MINUTES = 12;
@@ -41,6 +43,7 @@ function getWordCountBg(actual: number, target: number): string {
 type SectionTexts = Record<string, string>;
 
 export default function ScriptCanvas() {
+  const { currentProject } = useProject();
   const [texts, setTexts] = useState<SectionTexts>(
     Object.fromEntries(SECTIONS.map((s) => [s.key, '']))
   );
@@ -49,10 +52,13 @@ export default function ScriptCanvas() {
   );
   const [wpm] = useState(DEFAULT_WPM);
   const [targetMinutes] = useState(DEFAULT_MINUTES);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
 
   const totalWords = Object.values(texts).reduce((sum, t) => sum + countWords(t), 0);
   const totalTarget = targetMinutes * wpm;
   const estimatedMinutes = totalWords / wpm;
+  const hasContent = Object.values(texts).some((t) => t.trim().length > 0);
 
   const handleTextChange = useCallback((key: string, value: string) => {
     setTexts((prev) => ({ ...prev, [key]: value }));
@@ -62,19 +68,94 @@ export default function ScriptCanvas() {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  async function handleGenerateOutline() {
+    if (!currentProject?.id || generating) return;
+    setGenerating(true);
+    setGenError('');
+
+    try {
+      const bundle = await loadProjectBundle(currentProject.id);
+      const brief = compileBrief(bundle);
+
+      if (!brief || brief.length < 20) {
+        setGenError('Fill out upstream sections first (Idea Validator, Research) to generate an outline.');
+        setGenerating(false);
+        return;
+      }
+
+      const res = await fetch('/api/ai/compile-outline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief }),
+      });
+
+      const data = await res.json();
+
+      if (data.outline) {
+        // Populate canvas sections from the outline (only empty sections)
+        setTexts((prev) => {
+          const updated = { ...prev };
+          for (const section of data.outline) {
+            if (section.key && updated[section.key] !== undefined && !updated[section.key].trim()) {
+              const lines = [];
+              if (section.description) lines.push(`// ${section.description}`);
+              if (section.bullets) {
+                for (const b of section.bullets) lines.push(`- ${b}`);
+              }
+              if (section.transition) lines.push(`\n→ ${section.transition}`);
+              updated[section.key] = lines.join('\n');
+            }
+          }
+          return updated;
+        });
+      } else {
+        setGenError(data.error || 'Failed to generate outline.');
+      }
+    } catch {
+      setGenError('Connection error. Please try again.');
+    }
+
+    setGenerating(false);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="font-serif text-[24px] text-text-bright">Script Draft Canvas</h2>
           <p className="text-text-dim text-[13px] mt-1">Write section by section. Word counts update live.</p>
         </div>
-        <div className="flex items-center gap-4 text-[13px]">
-          <span className="text-text-muted">
-            Target: <span className="text-text-dim">{targetMinutes}m @ {wpm} WPM = {totalTarget.toLocaleString()} words</span>
+        <div className="flex items-center gap-3">
+          {currentProject && (
+            <button
+              onClick={handleGenerateOutline}
+              disabled={generating}
+              className="flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-lg transition-all border-none cursor-pointer disabled:opacity-50 bg-amber/10 text-amber hover:bg-amber/20"
+            >
+              {generating && (
+                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
+              {generating ? 'Generating...' : 'Generate Outline from Brief'}
+            </button>
+          )}
+          <span className="text-text-muted text-[13px] hidden sm:block">
+            {targetMinutes}m @ {wpm} WPM = {totalTarget.toLocaleString()} words
           </span>
         </div>
       </div>
+
+      {genError && (
+        <div className="text-[13px] text-red bg-red/5 border border-red/20 rounded-lg px-4 py-3">{genError}</div>
+      )}
+
+      {hasContent && !generating && (
+        <div className="text-[11px] text-text-muted">
+          Outline populates empty sections only. Your written content is never overwritten.
+        </div>
+      )}
 
       {/* Live stats bar */}
       <div className="bg-bg-card border border-border rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -95,7 +176,6 @@ export default function ScriptCanvas() {
             </div>
           </div>
         </div>
-        {/* Progress bar */}
         <div className="w-48">
           <div className="h-2 bg-bg-elevated rounded-full overflow-hidden">
             <div
@@ -123,7 +203,6 @@ export default function ScriptCanvas() {
                 isExpanded ? getWordCountBg(wordCount, wordTarget) : 'bg-bg-card border-border'
               }`}
             >
-              {/* Header */}
               <button
                 onClick={() => toggleSection(section.key)}
                 className="w-full flex items-center justify-between p-4 text-left"
@@ -147,12 +226,9 @@ export default function ScriptCanvas() {
                 </div>
               </button>
 
-              {/* Content */}
               {isExpanded && (
                 <div className="px-4 pb-4">
-                  <div className="text-[12px] text-text-dim mb-2 pl-7">
-                    {section.job}
-                  </div>
+                  <div className="text-[12px] text-text-dim mb-2 pl-7">{section.job}</div>
                   <textarea
                     value={texts[section.key]}
                     onChange={(e) => handleTextChange(section.key, e.target.value)}

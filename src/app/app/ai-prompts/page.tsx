@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import PromptRunner from '@/components/app/PromptRunner';
 import { PROMPTS } from '@/lib/prompts';
+import UpstreamContext from '@/components/app/UpstreamContext';
+import RunningBrief from '@/components/app/RunningBrief';
 
 export default function AIPromptsPage() {
   const [activeId, setActiveId] = useState(PROMPTS[0].id);
@@ -17,6 +19,8 @@ export default function AIPromptsPage() {
       <p className="text-text-muted text-[13px] mb-8">
         These are thinking-partner prompts — not &quot;make me a script&quot; prompts. Always edit the output. Your voice goes in AFTER the AI helps with structure.
       </p>
+
+      <UpstreamContext section="ai-prompts" />
 
       {/* Prompt selector tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -47,6 +51,10 @@ export default function AIPromptsPage() {
 
       {/* PromptRunner keyed to force remount on switch */}
       <PromptRunner key={activeId} prompt={activePrompt} />
+
+      <div className="mt-12">
+        <RunningBrief />
+      </div>
     </div>
   );
 }
