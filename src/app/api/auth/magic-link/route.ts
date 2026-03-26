@@ -1,6 +1,20 @@
-import { createAdminSupabase } from '@/lib/supabase';
+import { createServerClient } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
 
-function getBaseUrl(request: Request): string {
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: Record<string, unknown>;
+};
+
+function withSupabaseCookies(response: NextResponse, cookiesToSet: CookieToSet[]) {
+  cookiesToSet.forEach(({ name, value, options }) => {
+    response.cookies.set(name, value, options as never);
+  });
+  return response;
+}
+
+function getBaseUrl(request: NextRequest): string {
   const origin = request.headers.get('origin');
   if (origin) return origin;
   const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
@@ -11,15 +25,37 @@ function getBaseUrl(request: Request): string {
   return 'https://youtube.bubwriter.com';
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const cookiesToSet: CookieToSet[] = [];
   try {
     const { email } = await request.json();
 
     if (!email || typeof email !== 'string') {
-      return Response.json({ error: 'Email is required' }, { status: 400 });
+      return withSupabaseCookies(
+        NextResponse.json({ error: 'Email is required' }, { status: 400 }),
+        cookiesToSet,
+      );
     }
 
-    const supabase = createAdminSupabase();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'pkce',
+        },
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(nextCookiesToSet) {
+            nextCookiesToSet.forEach((cookie) => {
+              cookiesToSet.push(cookie);
+            });
+          },
+        },
+      },
+    );
     const baseUrl = getBaseUrl(request);
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -30,12 +66,21 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      return Response.json({ error: error.message }, { status: 400 });
+      return withSupabaseCookies(
+        NextResponse.json({ error: error.message }, { status: 400 }),
+        cookiesToSet,
+      );
     }
 
-    return Response.json({ success: true });
+    return withSupabaseCookies(
+      NextResponse.json({ success: true }),
+      cookiesToSet,
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to send magic link';
-    return Response.json({ error: message }, { status: 500 });
+    return withSupabaseCookies(
+      NextResponse.json({ error: message }, { status: 500 }),
+      cookiesToSet,
+    );
   }
 }
