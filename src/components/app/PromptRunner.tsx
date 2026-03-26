@@ -15,15 +15,21 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [source, setSource] = useState<string>('');
+  const [needsUpgrade, setNeedsUpgrade] = useState(false);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
 
   // Fetch remaining runs on mount
   useEffect(() => {
-    fetch('/api/ai/run-prompt?user_id=demo')
+    fetch('/api/ai/run-prompt')
       .then((r) => r.json())
-      .then((data) => setRemaining(data.remaining))
+      .then((data) => {
+        setRemaining(data.remaining);
+        setSource(data.source || '');
+        setNeedsUpgrade(data.source === 'none');
+      })
       .catch(() => {});
   }, []);
 
@@ -45,7 +51,7 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
       const response = await fetch('/api/ai/run-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: injected, user_id: 'demo' }),
+        body: JSON.stringify({ prompt: injected }),
         signal: abortRef.current.signal,
       });
 
@@ -53,6 +59,7 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
         const data = await response.json();
         setError(data.error || 'Request failed');
         if (data.remaining !== undefined) setRemaining(data.remaining);
+        if (data.needsUpgrade) setNeedsUpgrade(true);
         setIsRunning(false);
         return;
       }
@@ -82,6 +89,7 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
             const event = JSON.parse(jsonStr);
             if (event.type === 'meta') {
               setRemaining(event.remaining);
+              if (event.source) setSource(event.source);
             } else if (event.type === 'text') {
               setOutput((prev) => prev + event.text);
             } else if (event.type === 'error') {
@@ -153,7 +161,13 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
           <span className="text-[12px] text-text-muted uppercase tracking-wider">Prompt Template</span>
           {remaining !== null && (
             <span className="text-[12px] text-text-muted">
-              <span className={remaining === 0 ? 'text-red' : 'text-amber'}>{remaining}</span> runs remaining today
+              {source === 'byok' ? (
+                <span className="text-green">Using your API key</span>
+              ) : remaining === -1 ? (
+                <span className="text-green">Unlimited (BYOK)</span>
+              ) : (
+                <><span className={remaining === 0 ? 'text-red' : 'text-amber'}>{remaining}</span> credits remaining</>
+              )}
             </span>
           )}
         </div>
@@ -190,14 +204,26 @@ export default function PromptRunner({ prompt }: PromptRunnerProps) {
         ))}
       </div>
 
+      {/* Upgrade prompt */}
+      {needsUpgrade && (
+        <div className="bg-amber/5 border border-amber/20 rounded-xl p-5">
+          <div className="text-[15px] text-text-bright font-medium mb-2">No AI credits remaining</div>
+          <p className="text-[13px] text-text-dim mb-3">
+            Add your own Anthropic API key in{' '}
+            <a href="/app/settings" className="text-amber hover:text-amber-bright transition-colors">Settings</a>
+            {' '}for unlimited prompts, or subscribe for more credits.
+          </p>
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="flex flex-wrap items-center gap-3">
         {!isRunning ? (
           <button
             onClick={handleRun}
-            disabled={!allFilled || remaining === 0}
+            disabled={!allFilled || remaining === 0 || needsUpgrade}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-              allFilled && remaining !== 0
+              allFilled && remaining !== 0 && !needsUpgrade
                 ? 'bg-amber hover:bg-amber-bright hover:text-bg text-bg'
                 : 'bg-bg-card text-text-muted cursor-not-allowed border border-border'
             }`}

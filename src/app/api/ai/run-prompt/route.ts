@@ -1,35 +1,77 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { createServerSupabase } from '@/lib/supabase';
 
-// In-memory rate limiter (per-process; swap for Redis/Supabase in production)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-const MAX_RUNS_PER_DAY = 20;
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now >= entry.resetAt) {
-    // New window: midnight UTC rollover
-    const tomorrow = new Date();
-    tomorrow.setUTCHours(24, 0, 0, 0);
-    rateLimitMap.set(userId, { count: 1, resetAt: tomorrow.getTime() });
-    return { allowed: true, remaining: MAX_RUNS_PER_DAY - 1 };
-  }
-
-  if (entry.count >= MAX_RUNS_PER_DAY) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  entry.count += 1;
-  return { allowed: true, remaining: MAX_RUNS_PER_DAY - entry.count };
+// Simple XOR deobfuscation matching the settings route
+function deobfuscate(encoded: string): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-key';
+  const bytes = Buffer.from(encoded, 'base64');
+  return bytes.map((b, i) => b ^ key.charCodeAt(i % key.length)).reduce((s, b) => s + String.fromCharCode(b), '');
 }
 
-function getRemainingRuns(userId: string): number {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-  if (!entry || now >= entry.resetAt) return MAX_RUNS_PER_DAY;
-  return Math.max(0, MAX_RUNS_PER_DAY - entry.count);
+async function resolveApiKey(email: string | null): Promise<{
+  apiKey: string | null;
+  source: 'byok' | 'credits' | 'platform' | null;
+  creditsRemaining: number;
+}> {
+  // If no Supabase configured (local dev), use platform key
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !email) {
+    return { apiKey: process.env.ANTHROPIC_API_KEY || null, source: 'platform', creditsRemaining: 999 };
+  }
+
+  const supabase = createServerSupabase();
+
+  // 1. Check BYOK key
+  const { data: settings } = await supabase
+    .from('user_settings')
+    .select('anthropic_api_key_encrypted')
+    .eq('email', email)
+    .single();
+
+  if (settings?.anthropic_api_key_encrypted) {
+    const byokKey = deobfuscate(settings.anthropic_api_key_encrypted);
+    if (byokKey.startsWith('sk-ant-')) {
+      return { apiKey: byokKey, source: 'byok', creditsRemaining: -1 };
+    }
+  }
+
+  // 2. Check credits
+  const { data: purchase } = await supabase
+    .from('purchases')
+    .select('ai_credits_remaining')
+    .eq('email', email)
+    .single();
+
+  const remaining = purchase?.ai_credits_remaining ?? 0;
+  if (remaining > 0) {
+    return { apiKey: process.env.ANTHROPIC_API_KEY || null, source: 'credits', creditsRemaining: remaining };
+  }
+
+  // 3. No key, no credits
+  return { apiKey: null, source: null, creditsRemaining: 0 };
+}
+
+async function decrementCredits(email: string) {
+  const supabase = createServerSupabase();
+  // Use raw SQL decrement via RPC, or just read-update
+  const { data } = await supabase
+    .from('purchases')
+    .select('ai_credits_remaining')
+    .eq('email', email)
+    .single();
+
+  if (data && data.ai_credits_remaining > 0) {
+    await supabase
+      .from('purchases')
+      .update({ ai_credits_remaining: data.ai_credits_remaining - 1 })
+      .eq('email', email);
+  }
+}
+
+async function getUserEmail(): Promise<string | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
+  const supabase = createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.email || null;
 }
 
 export async function POST(request: Request) {
@@ -41,40 +83,38 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing or invalid prompt' }, { status: 400 });
     }
 
-    // Use user_id or fall back to IP-based identification
-    // In production, this would verify against Supabase auth
-    const identifier = user_id || request.headers.get('x-forwarded-for') || 'anonymous';
+    const email = await getUserEmail() || user_id || null;
+    const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
-    const { allowed, remaining } = checkRateLimit(identifier);
-    if (!allowed) {
-      return Response.json(
-        { error: 'Daily limit reached. You can run 20 AI prompts per day. Resets at midnight UTC.', remaining: 0 },
-        { status: 429 }
-      );
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return Response.json({ error: 'AI service not configured' }, { status: 503 });
+      return Response.json({
+        error: 'No AI credits remaining. Add your own Anthropic API key in Settings, or subscribe for more credits.',
+        remaining: 0,
+        needsUpgrade: true,
+      }, { status: 402 });
     }
 
     const client = new Anthropic({ apiKey });
 
-    // Stream the response using SSE
     const stream = await client.messages.stream({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    // Create a ReadableStream that emits SSE events
+    // Decrement credits after starting stream (only for credit-based usage)
+    if (source === 'credits' && email) {
+      await decrementCredits(email);
+    }
+
+    const newRemaining = source === 'byok' ? -1 : source === 'credits' ? creditsRemaining - 1 : 999;
+
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          // Send remaining count as first event
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'meta', remaining })}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({ type: 'meta', remaining: newRemaining, source })}\n\n`)
           );
 
           for await (const event of stream) {
@@ -110,10 +150,13 @@ export async function POST(request: Request) {
   }
 }
 
-// GET endpoint to check remaining runs without consuming one
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const userId = url.searchParams.get('user_id') || request.headers.get('x-forwarded-for') || 'anonymous';
-  const remaining = getRemainingRuns(userId);
-  return Response.json({ remaining, limit: MAX_RUNS_PER_DAY });
+export async function GET() {
+  const email = await getUserEmail();
+  const { source, creditsRemaining } = await resolveApiKey(email);
+
+  return Response.json({
+    remaining: source === 'byok' ? -1 : creditsRemaining,
+    source: source || 'none',
+    hasByok: source === 'byok',
+  });
 }
