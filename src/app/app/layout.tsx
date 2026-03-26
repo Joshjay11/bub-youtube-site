@@ -25,7 +25,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .single();
 
   if (!userRow?.has_access) {
-    redirect('/template?access=required');
+    const { data: purchaseRow } = await admin
+      .from('purchases')
+      .select('has_access, stripe_customer_id')
+      .eq('email', user.email ?? '')
+      .single();
+
+    if (purchaseRow?.has_access) {
+      await admin.from('users').upsert(
+        {
+          id: user.id,
+          email: user.email!,
+          has_access: true,
+          stripe_customer_id: purchaseRow.stripe_customer_id,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'email' },
+      );
+    } else {
+      redirect('/template?access=required');
+    }
   }
 
   return <AppShell>{children}</AppShell>;
