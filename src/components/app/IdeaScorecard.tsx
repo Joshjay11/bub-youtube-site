@@ -1,75 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import ScoreChecker from '@/components/app/ScoreChecker';
+import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 
 const CRITERIA = [
-  {
-    key: 'curiosity',
-    label: 'Curiosity',
-    question: 'Would a stranger click this?',
-    low: 'Generic topic, no surprise',
-    high: 'Specific claim that demands an answer',
-  },
-  {
-    key: 'audienceRelevance',
-    label: 'Audience Relevance',
-    question: 'Does YOUR audience need this?',
-    low: 'Tangentially related',
-    high: "They're asking for this in comments",
-  },
-  {
-    key: 'novelty',
-    label: 'Novelty',
-    question: 'Has this angle been done to death?',
-    low: '10 videos with this exact take exist',
-    high: 'Nobody has approached it this way',
-  },
-  {
-    key: 'proofAvailable',
-    label: 'Proof Available',
-    question: 'Can you back it up?',
-    low: 'Opinion only, no data',
-    high: 'Studies, examples, receipts',
-  },
-  {
-    key: 'emotionalTension',
-    label: 'Emotional Tension',
-    question: 'Does it create a feeling?',
-    low: 'Pure information transfer',
-    high: 'Makes them angry, hopeful, or curious',
-  },
-  {
-    key: 'titlePotential',
-    label: 'Title Potential',
-    question: 'Can you write a title with a knowledge gap?',
-    low: 'Descriptive but flat',
-    high: "You'd click it yourself",
-  },
-  {
-    key: 'thumbnailPotential',
-    label: 'Thumbnail Potential',
-    question: 'Can you make a thumb that stops scrolling?',
-    low: 'Text-heavy, no visual hook',
-    high: 'Clear visual concept, high contrast',
-  },
-  {
-    key: 'satisfactionPotential',
-    label: 'Satisfaction Potential',
-    question: 'Will viewers feel the video delivered?',
-    low: 'Vague payoff, lots of filler',
-    high: 'Crystal clear delivery on promise',
-  },
-  {
-    key: 'productionFeasibility',
-    label: 'Production Feasibility',
-    question: 'Can you actually make this?',
-    low: "Requires assets you don't have",
-    high: 'Fully within your capability',
-  },
+  { key: 'curiosity', label: 'Curiosity', question: 'Would a stranger click this?', low: 'Generic topic, no surprise', high: 'Specific claim that demands an answer' },
+  { key: 'audienceRelevance', label: 'Audience Relevance', question: 'Does YOUR audience need this?', low: 'Tangentially related', high: "They're asking for this in comments" },
+  { key: 'novelty', label: 'Novelty', question: 'Has this angle been done to death?', low: '10 videos with this exact take exist', high: 'Nobody has approached it this way' },
+  { key: 'proofAvailable', label: 'Proof Available', question: 'Can you back it up?', low: 'Opinion only, no data', high: 'Studies, examples, receipts' },
+  { key: 'emotionalTension', label: 'Emotional Tension', question: 'Does it create a feeling?', low: 'Pure information transfer', high: 'Makes them angry, hopeful, or curious' },
+  { key: 'titlePotential', label: 'Title Potential', question: 'Can you write a title with a knowledge gap?', low: 'Descriptive but flat', high: "You'd click it yourself" },
+  { key: 'thumbnailPotential', label: 'Thumbnail Potential', question: 'Can you make a thumb that stops scrolling?', low: 'Text-heavy, no visual hook', high: 'Clear visual concept, high contrast' },
+  { key: 'satisfactionPotential', label: 'Satisfaction Potential', question: 'Will viewers feel the video delivered?', low: 'Vague payoff, lots of filler', high: 'Crystal clear delivery on promise' },
+  { key: 'productionFeasibility', label: 'Production Feasibility', question: 'Can you actually make this?', low: "Requires assets you don't have", high: 'Fully within your capability' },
 ] as const;
 
 type Scores = Record<string, number>;
+
+const DEFAULT_SCORES: Scores = Object.fromEntries(CRITERIA.map((c) => [c.key, 3]));
+
+interface ScorecardData {
+  scores: Scores;
+}
 
 function getVerdict(total: number): { label: string; color: string; bg: string; glow: string } {
   if (total >= 40) return { label: 'GO', color: 'text-green', bg: 'bg-green/10', glow: 'shadow-[0_0_24px_rgba(34,197,94,0.3)]' };
@@ -84,27 +37,36 @@ function getVerdictAdvice(total: number): string {
 }
 
 export default function IdeaScorecard({ idea = '' }: { idea?: string }) {
-  const [scores, setScores] = useState<Scores>(
-    Object.fromEntries(CRITERIA.map((c) => [c.key, 3]))
-  );
+  const { data, setData, saveStatus } = useProjectData<ScorecardData>('idea_scorecard', { scores: DEFAULT_SCORES });
 
+  const scores = { ...DEFAULT_SCORES, ...data.scores };
   const total = Object.values(scores).reduce((sum, v) => sum + v, 0);
   const verdict = getVerdict(total);
 
   function handleChange(key: string, value: number) {
-    setScores((prev) => ({ ...prev, [key]: value }));
+    setData((prev) => ({ ...prev, scores: { ...prev.scores, [key]: value } }));
   }
 
   function handleReset() {
-    setScores(Object.fromEntries(CRITERIA.map((c) => [c.key, 3])));
+    setData({ scores: DEFAULT_SCORES });
   }
+
+  // Keep data.scores populated on first render
+  useEffect(() => {
+    if (!data.scores || Object.keys(data.scores).length === 0) {
+      setData({ scores: DEFAULT_SCORES });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-2">
-        <div>
-          <h2 className="font-serif text-[24px] text-text-bright">Idea Scorecard</h2>
-          <p className="text-text-dim text-[13px] mt-1">Rate each criterion 1–5. Score determines if you should script it, hold it, or kill it.</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="font-serif text-[24px] text-text-bright">Idea Scorecard</h2>
+            <p className="text-text-dim text-[13px] mt-1">Rate each criterion 1–5. Score determines if you should script it, hold it, or kill it.</p>
+          </div>
+          <SaveIndicator status={saveStatus} />
         </div>
         <button
           onClick={handleReset}

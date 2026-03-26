@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 
 interface AiScore {
   criterion: string;
@@ -40,14 +41,34 @@ function getGapStyle(gap: number): { color: string; label: string } {
   return { color: 'text-green', label: '' };
 }
 
+interface ScoreCheckerData {
+  aiScores: AiScore[] | null;
+  gapResponses: Record<string, string>;
+}
+
+const CHECKER_DEFAULTS: ScoreCheckerData = { aiScores: null, gapResponses: {} };
+
 export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
-  const [aiScores, setAiScores] = useState<AiScore[] | null>(null);
+  const { data: persisted, setData: setPersisted, saveStatus } = useProjectData<ScoreCheckerData>('score_checker', CHECKER_DEFAULTS);
+
+  const [aiScores, setAiScores] = useState<AiScore[] | null>(persisted.aiScores);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [stale, setStale] = useState(false);
-  const [gapResponses, setGapResponses] = useState<Record<string, string>>({});
+  const [gapResponses, setGapResponses] = useState<Record<string, string>>(persisted.gapResponses);
   const [copied, setCopied] = useState(false);
   const lastCheckedScoresRef = useRef<string>('');
+
+  // Sync from persisted data when project loads
+  useEffect(() => {
+    setAiScores(persisted.aiScores);
+    setGapResponses(persisted.gapResponses ?? {});
+  }, [persisted]);
+
+  // Persist changes
+  useEffect(() => {
+    setPersisted({ aiScores, gapResponses });
+  }, [aiScores, gapResponses, setPersisted]);
 
   const hasIdea = idea.trim().length > 0;
   const hasEngaged = Object.values(userScores).some((v) => v !== 3);
@@ -180,8 +201,9 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
       {/* Comparison */}
       {comparison && (
         <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border">
+          <div className="px-5 py-3 border-b border-border flex items-center gap-3">
             <h3 className="text-[15px] font-medium text-text-bright">Score Check</h3>
+            <SaveIndicator status={saveStatus} />
           </div>
 
           {/* Header row */}

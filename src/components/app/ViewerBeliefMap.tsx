@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 
 interface BeliefMapData {
   currentBelief: string;
@@ -59,14 +59,18 @@ function TextArea({ label, value, onChange, placeholder }: {
 }
 
 export default function ViewerBeliefMap() {
-  const [data, setData] = useState<BeliefMapData>(EMPTY);
+  const { data, setData, saveStatus } = useProjectData<BeliefMapData>('viewer_belief_map', EMPTY);
 
   function update(key: keyof BeliefMapData, value: string) {
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
-  const filledBefore = BEFORE_FIELDS.filter((f) => data[f.key].trim().length > 0).length;
-  const filledAfter = AFTER_FIELDS.filter((f) => data[f.key].trim().length > 0).length;
+  function handleClear() {
+    setData(EMPTY);
+  }
+
+  const filledBefore = BEFORE_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
+  const filledAfter = AFTER_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
   const filledTotal = filledBefore + filledAfter;
   const totalFields = BEFORE_FIELDS.length + AFTER_FIELDS.length;
 
@@ -77,14 +81,17 @@ export default function ViewerBeliefMap() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-serif text-[24px] text-text-bright">Viewer Belief Map</h2>
-          <p className="text-text-dim text-[13px] mt-1">
-            Map what&apos;s happening inside your viewer&apos;s head for THIS specific video.
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="font-serif text-[24px] text-text-bright">Viewer Belief Map</h2>
+            <p className="text-text-dim text-[13px] mt-1">
+              Map what&apos;s happening inside your viewer&apos;s head for THIS specific video.
+            </p>
+          </div>
+          <SaveIndicator status={saveStatus} />
         </div>
         <button
-          onClick={() => setData(EMPTY)}
+          onClick={handleClear}
           className="text-[13px] text-text-muted hover:text-text-dim transition-colors px-3 py-1.5 rounded-lg border border-border hover:border-border-light"
         >
           Clear
@@ -103,7 +110,7 @@ export default function ViewerBeliefMap() {
             <TextArea
               key={field.key}
               label={field.label}
-              value={data[field.key]}
+              value={data[field.key] ?? ''}
               onChange={(v) => update(field.key, v)}
               placeholder={field.placeholder}
             />
@@ -123,7 +130,7 @@ export default function ViewerBeliefMap() {
             <TextArea
               key={field.key}
               label={field.label}
-              value={data[field.key]}
+              value={data[field.key] ?? ''}
               onChange={(v) => update(field.key, v)}
               placeholder={field.placeholder}
             />
