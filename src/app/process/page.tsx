@@ -1,4 +1,3 @@
-import Link from "next/link";
 import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
 

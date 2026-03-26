@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function Footer() {
   return (
     <footer className="border-t border-border max-w-[1120px] mx-auto px-8 py-10 flex justify-between items-center flex-wrap gap-4">

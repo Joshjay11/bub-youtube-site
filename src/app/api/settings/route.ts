@@ -8,12 +8,6 @@ function obfuscate(text: string): string {
   ).toString('base64');
 }
 
-function deobfuscate(encoded: string): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-key';
-  const bytes = Buffer.from(encoded, 'base64');
-  return bytes.map((b, i) => b ^ key.charCodeAt(i % key.length)).reduce((s, b) => s + String.fromCharCode(b), '');
-}
-
 async function getUserEmail(): Promise<string | null> {
   const supabase = createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
