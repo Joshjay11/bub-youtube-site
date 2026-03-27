@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { askThinkingPartner } from '@/lib/use-thinking-partner';
 
 interface AiScore {
   criterion: string;
@@ -256,6 +257,14 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
                       rows={2}
                       className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5 text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y"
                     />
+                    <button
+                      onClick={() => askThinkingPartner(
+                        `Help me respond to this gap. I scored ${row.label} as ${row.userScore} but the AI scored it ${row.aiScore}. The AI says: "${row.reason}". My idea is: "${idea}". How should I think about this?`
+                      )}
+                      className="text-[11px] text-text-muted hover:text-amber transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                      Ask Thinking Partner about this gap
+                    </button>
                   </div>
                 )}
               </div>

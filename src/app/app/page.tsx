@@ -1,52 +1,83 @@
+'use client';
+
+import { useState } from 'react';
+import { useProject } from '@/lib/project-context';
+import { useRouter } from 'next/navigation';
+
 export default function DashboardPage() {
+  const { projects, currentProject, createProject } = useProject();
+  const [newTitle, setNewTitle] = useState('');
+  const router = useRouter();
+
+  function handleCreate() {
+    if (!newTitle.trim()) return;
+    createProject(newTitle.trim());
+    setNewTitle('');
+    router.push('/app/idea-validator');
+  }
+
+  // First-visit gate: no projects exist
+  if (projects.length === 0) {
+    return (
+      <div className="max-w-lg mx-auto pt-20">
+        <div className="bg-bg-card border border-border rounded-2xl p-10 text-center">
+          <h1 className="font-serif text-[28px] text-text-bright mb-3">Welcome to BUB Script System</h1>
+          <p className="text-[15px] text-text-dim mb-8 leading-relaxed">
+            Every video starts as a project. Create one to get started — your work saves automatically.
+          </p>
+          <div className="flex gap-3 max-w-sm mx-auto">
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              placeholder="My first video idea..."
+              className="flex-1 bg-bg-elevated border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20"
+            />
+            <button
+              onClick={handleCreate}
+              disabled={!newTitle.trim()}
+              className="px-5 py-3 bg-amber text-bg font-medium text-[14px] rounded-xl border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No-project warning
+  const noProjectBanner = !currentProject && projects.length > 0 ? (
+    <div className="bg-amber/5 border border-amber/20 rounded-xl px-5 py-3 mb-8 flex items-center justify-between">
+      <span className="text-[13px] text-amber">No project selected. Your work won&apos;t save.</span>
+      <a href="/app/projects" className="text-[13px] text-amber font-medium hover:text-amber-bright transition-colors">
+        Select Project
+      </a>
+    </div>
+  ) : null;
+
   return (
     <div>
+      {noProjectBanner}
+
       <h1 className="font-serif text-[32px] text-text-bright mb-2">
-        Welcome to the Script System
+        {currentProject ? currentProject.title : 'Welcome to the Script System'}
       </h1>
       <p className="text-text-dim text-[15px] mb-10 max-w-[560px]">
-        Your interactive toolkit for research-driven, retention-engineered
-        YouTube scripts. Pick a module to get started.
+        {currentProject
+          ? 'Your interactive toolkit for research-driven, retention-engineered YouTube scripts. Pick a module to continue.'
+          : 'Pick a module to get started.'}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          {
-            title: "Idea Validator",
-            desc: "Score your video ideas and map viewer beliefs before committing.",
-            href: "/app/idea-validator",
-            num: "01",
-          },
-          {
-            title: "Research",
-            desc: "Audience avatars, competitive analysis, and framing worksheets.",
-            href: "/app/research",
-            num: "02",
-          },
-          {
-            title: "Structure",
-            desc: "Beat maps, templates, hooks, and the 35% pivot guide.",
-            href: "/app/structure",
-            num: "03",
-          },
-          {
-            title: "AI Prompts",
-            desc: "Run AI-powered prompts for brainstorming, outlines, and hooks.",
-            href: "/app/ai-prompts",
-            num: "04",
-          },
-          {
-            title: "Write",
-            desc: "Pacing calculator and script draft canvas with live word counts.",
-            href: "/app/write",
-            num: "05",
-          },
-          {
-            title: "Optimize",
-            desc: "Script audit, retention prediction, and failure mode analysis.",
-            href: "/app/optimize",
-            num: "06",
-          },
+          { title: 'Idea Validator', desc: 'Score your video ideas and map viewer beliefs before committing.', href: '/app/idea-validator', num: '01' },
+          { title: 'Research', desc: 'Audience avatars, competitive analysis, and framing worksheets.', href: '/app/research', num: '02' },
+          { title: 'Structure', desc: 'Beat maps, templates, hooks, and the 35% pivot guide.', href: '/app/structure', num: '03' },
+          { title: 'AI Prompts', desc: 'Run AI-powered prompts for brainstorming, outlines, and hooks.', href: '/app/ai-prompts', num: '04' },
+          { title: 'Write', desc: 'Pacing calculator and script draft canvas with live word counts.', href: '/app/write', num: '05' },
+          { title: 'Optimize', desc: 'Script audit, retention prediction, and failure mode analysis.', href: '/app/optimize', num: '06' },
         ].map((mod) => (
           <a
             key={mod.href}
@@ -56,12 +87,8 @@ export default function DashboardPage() {
             <span className="font-serif font-extrabold text-[72px] leading-none text-amber opacity-[0.08] absolute -top-2 -left-1 select-none pointer-events-none">
               {mod.num}
             </span>
-            <h3 className="font-sans font-bold text-[16px] text-text-bright mb-2 relative">
-              {mod.title}
-            </h3>
-            <p className="font-sans text-[14px] text-text-dim leading-relaxed relative">
-              {mod.desc}
-            </p>
+            <h3 className="font-sans font-bold text-[16px] text-text-bright mb-2 relative">{mod.title}</h3>
+            <p className="font-sans text-[14px] text-text-dim leading-relaxed relative">{mod.desc}</p>
           </a>
         ))}
       </div>

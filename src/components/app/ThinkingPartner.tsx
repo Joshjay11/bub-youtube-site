@@ -59,6 +59,38 @@ export default function ThinkingPartner() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
+  // Listen for programmatic "ask" events from other components
+  useEffect(() => {
+    function handleAskEvent(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        setOpen(true);
+        // Queue the message send after state updates
+        setTimeout(() => {
+          setInput(detail.message);
+          // Trigger send on next tick
+          setTimeout(() => {
+            const sendBtn = document.querySelector('[data-tp-send]') as HTMLButtonElement;
+            sendBtn?.click();
+          }, 50);
+        }, 100);
+      }
+    }
+    window.addEventListener('thinking-partner:ask', handleAskEvent);
+    return () => window.removeEventListener('thinking-partner:ask', handleAskEvent);
+  }, []);
+
+  function handleCapturePage() {
+    const ctx = getPageContext();
+    if (!ctx) return;
+    setInput(`Here's what I have so far on this page. What should I focus on next?`);
+    // The page context will be automatically prepended by handleSend
+    setTimeout(() => {
+      const sendBtn = document.querySelector('[data-tp-send]') as HTMLButtonElement;
+      sendBtn?.click();
+    }, 50);
+  }
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || streaming) return;
@@ -212,6 +244,16 @@ export default function ThinkingPartner() {
                   <span className="text-[11px] text-text-muted mr-2">{remaining} left today</span>
                 )}
                 <button
+                  onClick={handleCapturePage}
+                  className="p-1.5 text-text-muted hover:text-amber transition-colors bg-transparent border-none cursor-pointer"
+                  title="Capture page context"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                  </svg>
+                </button>
+                <button
                   onClick={handleClear}
                   className="p-1.5 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer"
                   title="Clear conversation"
@@ -285,6 +327,7 @@ export default function ThinkingPartner() {
                   style={{ minHeight: '40px' }}
                 />
                 <button
+                  data-tp-send
                   onClick={handleSend}
                   disabled={!input.trim() || streaming}
                   className="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-amber text-bg transition-all hover:bg-amber-bright hover:text-bg disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer"

@@ -111,15 +111,6 @@ const modules = [
   },
   { type: 'divider' as const, label: '', href: '' },
   {
-    label: 'Projects',
-    href: '/app/projects',
-    icon: (
-      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <path d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-      </svg>
-    ),
-  },
-  {
     label: 'Settings',
     href: '/app/settings',
     icon: (
@@ -135,14 +126,15 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { currentProject } = useProject();
+  const [projectDropdown, setProjectDropdown] = useState(false);
+  const { projects, currentProject, setCurrentProject, createProject } = useProject();
+  const [newProjectName, setNewProjectName] = useState('');
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
+    setProjectDropdown(false);
   }, [pathname]);
 
-  // Close mobile menu on window resize to desktop
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth >= 768) setMobileOpen(false);
@@ -150,6 +142,13 @@ export default function Sidebar() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  function handleQuickCreate() {
+    if (!newProjectName.trim()) return;
+    createProject(newProjectName.trim());
+    setNewProjectName('');
+    setProjectDropdown(false);
+  }
 
   return (
     <>
@@ -179,19 +178,14 @@ export default function Sidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-bg/60 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 bg-bg/60 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-bg-elevated border-r border-border flex flex-col z-50 transition-all duration-300 ${
-          // Mobile: slide in/out
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 ${
-          // Desktop: collapsible width
           collapsed ? 'md:w-[60px]' : 'md:w-[240px]'
         } w-[280px] md:w-[240px]`}
       >
@@ -205,15 +199,83 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* Active project indicator */}
-        {currentProject && !collapsed && (
-          <Link
-            href="/app/projects"
-            className="mx-2 mt-2 px-3 py-2 rounded-lg bg-amber/5 border border-amber/15 no-underline hover:border-amber/30 transition-colors"
-          >
-            <div className="text-[10px] text-text-muted uppercase tracking-wider">Project</div>
-            <div className="text-[13px] text-amber truncate">{currentProject.title}</div>
-          </Link>
+        {/* Project selector */}
+        {!collapsed && (
+          <div className="px-2 pt-2 relative">
+            <button
+              onClick={() => setProjectDropdown(!projectDropdown)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-bg-card border border-border hover:border-amber/30 transition-colors cursor-pointer text-left"
+            >
+              <div className="min-w-0">
+                <div className="text-[10px] text-text-muted uppercase tracking-wider">Project</div>
+                <div className="text-[13px] text-text-bright truncate">
+                  {currentProject?.title || 'No project selected'}
+                </div>
+              </div>
+              <svg className={`w-3.5 h-3.5 text-text-muted shrink-0 ml-2 transition-transform ${projectDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Project dropdown */}
+            {projectDropdown && (
+              <div className="absolute left-2 right-2 top-full mt-1 bg-bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                {/* Quick create */}
+                <div className="p-2 border-b border-border/50">
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleQuickCreate()}
+                      placeholder="New project..."
+                      className="flex-1 bg-bg-elevated border border-border rounded px-2.5 py-1.5 text-[12px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50"
+                    />
+                    <button
+                      onClick={handleQuickCreate}
+                      disabled={!newProjectName.trim()}
+                      className="px-2.5 py-1.5 bg-amber text-bg text-[11px] font-medium rounded border-none cursor-pointer disabled:opacity-40 hover:bg-amber-bright hover:text-bg"
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+
+                {/* Project list */}
+                <div className="max-h-[200px] overflow-y-auto">
+                  {projects.length === 0 ? (
+                    <div className="px-3 py-4 text-[12px] text-text-muted text-center">No projects yet</div>
+                  ) : (
+                    projects.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setCurrentProject(p);
+                          setProjectDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-[13px] transition-colors bg-transparent border-none cursor-pointer ${
+                          currentProject?.id === p.id
+                            ? 'text-amber bg-amber/5'
+                            : 'text-text-dim hover:text-text-primary hover:bg-bg-card-hover'
+                        }`}
+                      >
+                        {p.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {/* Manage link */}
+                <Link
+                  href="/app/projects"
+                  onClick={() => setProjectDropdown(false)}
+                  className="block px-3 py-2 text-[11px] text-text-muted hover:text-amber transition-colors border-t border-border/50 no-underline text-center"
+                >
+                  Manage Projects
+                </Link>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Nav items */}
