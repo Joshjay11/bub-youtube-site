@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import Sidebar from '@/components/app/Sidebar';
 import { ProjectProvider } from '@/lib/project-context';
 import Onboarding from '@/components/app/Onboarding';
+import ThinkingPartner from '@/components/app/ThinkingPartner';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <Onboarding />
       </Suspense>
+      <ThinkingPartner />
     </ProjectProvider>
   );
 }
