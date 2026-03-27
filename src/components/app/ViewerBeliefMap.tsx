@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useCallback } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { usePageContext } from '@/contexts/PageContextProvider';
 
 interface BeliefMapData {
   currentBelief: string;
@@ -68,6 +70,34 @@ export default function ViewerBeliefMap() {
   function handleClear() {
     setData(EMPTY);
   }
+
+  const { registerPageContext, unregisterPageContext } = usePageContext();
+  const buildCtx = useCallback(() => {
+    const hasBefore = BEFORE_FIELDS.some((f) => (data[f.key] ?? '').trim());
+    const hasAfter = AFTER_FIELDS.some((f) => (data[f.key] ?? '').trim());
+    if (!hasBefore && !hasAfter) return null;
+    const lines = ['Tool: Viewer Belief Map'];
+    if (hasBefore) {
+      lines.push('Before They Click:');
+      for (const f of BEFORE_FIELDS) {
+        const v = (data[f.key] ?? '').trim();
+        if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
+      }
+    }
+    if (hasAfter) {
+      lines.push('After They Watch:');
+      for (const f of AFTER_FIELDS) {
+        const v = (data[f.key] ?? '').trim();
+        if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
+      }
+    }
+    return lines.join('\n');
+  }, [data]);
+
+  useEffect(() => {
+    registerPageContext('viewer_belief_map', buildCtx);
+    return () => unregisterPageContext('viewer_belief_map');
+  }, [buildCtx, registerPageContext, unregisterPageContext]);
 
   const filledBefore = BEFORE_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
   const filledAfter = AFTER_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;

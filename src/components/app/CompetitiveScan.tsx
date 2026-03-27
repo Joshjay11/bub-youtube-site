@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useCallback } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { usePageContext } from '@/contexts/PageContextProvider';
 
 interface VideoEntry {
   title: string;
@@ -50,6 +52,24 @@ export default function CompetitiveScan() {
   }
 
   const filledVideos = videos.filter((v) => v.title.trim().length > 0).length;
+
+  const { registerPageContext, unregisterPageContext } = usePageContext();
+  const buildCtx = useCallback(() => {
+    const hasVids = filledVideos > 0;
+    const hasAngle = (data.uniqueAngle ?? '').trim();
+    if (!hasVids && !hasAngle) return null;
+    const lines = [`Tool: Competitive Scan`, `Videos logged: ${filledVideos}`];
+    for (const v of videos) {
+      if (v.title.trim()) lines.push(`  "${v.title}"${v.views ? ` (${v.views})` : ''}: ${v.angle || v.missed || '(no notes)'}`);
+    }
+    if (hasAngle) lines.push(`Unique angle: ${data.uniqueAngle}`);
+    if ((data.marketGap ?? '').trim()) lines.push(`Market gap: ${data.marketGap}`);
+    return lines.join('\n');
+  }, [videos, filledVideos, data.uniqueAngle, data.marketGap]);
+  useEffect(() => {
+    registerPageContext('competitive_scan', buildCtx);
+    return () => unregisterPageContext('competitive_scan');
+  }, [buildCtx, registerPageContext, unregisterPageContext]);
 
   return (
     <div className="space-y-6">

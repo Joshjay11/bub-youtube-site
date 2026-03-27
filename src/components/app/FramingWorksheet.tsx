@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useCallback } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { usePageContext } from '@/contexts/PageContextProvider';
 
 interface FramingData {
   oneSentence: string;
@@ -34,6 +36,21 @@ export default function FramingWorksheet() {
   }
 
   const filled = FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
+
+  const { registerPageContext, unregisterPageContext } = usePageContext();
+  const buildCtx = useCallback(() => {
+    if (filled === 0) return null;
+    const lines = ['Tool: Framing Worksheet'];
+    for (const f of FIELDS) {
+      const v = (data[f.key] ?? '').trim();
+      if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
+    }
+    return lines.join('\n');
+  }, [data, filled]);
+  useEffect(() => {
+    registerPageContext('framing_worksheet', buildCtx);
+    return () => unregisterPageContext('framing_worksheet');
+  }, [buildCtx, registerPageContext, unregisterPageContext]);
 
   return (
     <div className="space-y-6">

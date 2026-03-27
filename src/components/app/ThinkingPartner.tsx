@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { STAGE_MAP, STAGE_LABELS } from '@/lib/thinking-partner-prompts';
+import { usePageContext } from '@/contexts/PageContextProvider';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,10 +18,16 @@ function getStage(pathname: string): string {
   );
 }
 
+// Strip page context blocks from messages for clean history
+function stripPageContext(content: string): string {
+  return content.replace(/\[CURRENT PAGE DATA\][\s\S]*?\[END PAGE DATA\]\n*/g, '').trim();
+}
+
 export default function ThinkingPartner() {
   const pathname = usePathname();
   const stage = getStage(pathname);
   const stageLabel = STAGE_LABELS[stage] || 'General';
+  const { getPageContext } = usePageContext();
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -56,12 +63,24 @@ export default function ThinkingPartner() {
     const text = input.trim();
     if (!text || streaming) return;
 
+    // Show the raw user message in the chat UI
     const userMessage: Message = { role: 'user', content: text };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setStreaming(true);
     setError('');
+
+    // Inject current page context into the message sent to the API
+    const pageContext = getPageContext();
+    const enrichedMessage = pageContext
+      ? `[CURRENT PAGE DATA]\n${pageContext}\n[END PAGE DATA]\n\n${text}`
+      : text;
+
+    // Build clean history (strip page context from previous messages)
+    const cleanHistory = messages.slice(-20).map((m) => ({
+      role: m.role,
+      content: stripPageContext(m.content),
+    }));
 
     abortRef.current = new AbortController();
 
@@ -70,9 +89,9 @@ export default function ThinkingPartner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          message: enrichedMessage,
           stage,
-          history: messages.slice(-20),
+          history: cleanHistory,
         }),
         signal: abortRef.current.signal,
       });
@@ -136,7 +155,7 @@ export default function ThinkingPartner() {
     }
 
     setStreaming(false);
-  }, [input, streaming, messages, stage]);
+  }, [input, streaming, messages, stage, getPageContext]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
