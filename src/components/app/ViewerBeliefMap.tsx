@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
-import { usePageContext } from '@/contexts/PageContextProvider';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
 interface BeliefMapData {
   currentBelief: string;
@@ -71,8 +70,7 @@ export default function ViewerBeliefMap() {
     setData(EMPTY);
   }
 
-  const { registerPageContext, unregisterPageContext } = usePageContext();
-  const buildCtx = useCallback(() => {
+  useRegisterPageContext('viewer_belief_map', () => {
     const hasBefore = BEFORE_FIELDS.some((f) => (data[f.key] ?? '').trim());
     const hasAfter = AFTER_FIELDS.some((f) => (data[f.key] ?? '').trim());
     if (!hasBefore && !hasAfter) return null;
@@ -92,12 +90,7 @@ export default function ViewerBeliefMap() {
       }
     }
     return lines.join('\n');
-  }, [data]);
-
-  useEffect(() => {
-    registerPageContext('viewer_belief_map', buildCtx);
-    return () => unregisterPageContext('viewer_belief_map');
-  }, [buildCtx, registerPageContext, unregisterPageContext]);
+  });
 
   const filledBefore = BEFORE_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
   const filledAfter = AFTER_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;

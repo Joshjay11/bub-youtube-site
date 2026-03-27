@@ -18,9 +18,31 @@ function getStage(pathname: string): string {
   );
 }
 
-// Strip page context blocks from messages for clean history
 function stripPageContext(content: string): string {
   return content.replace(/\[CURRENT PAGE DATA\][\s\S]*?\[END PAGE DATA\]\n*/g, '').trim();
+}
+
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className="inline-flex items-center gap-1 text-[11px] text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer p-0"
+      title="Copy"
+    >
+      {copied ? (
+        <svg className="w-3 h-3 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      )}
+      {label && <span>{copied ? 'Copied' : label}</span>}
+    </button>
+  );
 }
 
 export default function ThinkingPartner() {
@@ -30,6 +52,7 @@ export default function ThinkingPartner() {
   const { getPageContext } = usePageContext();
 
   const [open, setOpen] = useState(false);
+  const [maximized, setMaximized] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -40,7 +63,6 @@ export default function ThinkingPartner() {
   const abortRef = useRef<AbortController | null>(null);
   const prevStageRef = useRef(stage);
 
-  // Reset conversation on stage change
   useEffect(() => {
     if (prevStageRef.current !== stage) {
       setMessages([]);
@@ -49,26 +71,22 @@ export default function ThinkingPartner() {
     }
   }, [stage]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streaming]);
 
-  // Focus input when panel opens
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Listen for programmatic "ask" events from other components
+  // Listen for programmatic "ask" events
   useEffect(() => {
     function handleAskEvent(e: Event) {
       const detail = (e as CustomEvent).detail;
       if (detail?.message) {
         setOpen(true);
-        // Queue the message send after state updates
         setTimeout(() => {
           setInput(detail.message);
-          // Trigger send on next tick
           setTimeout(() => {
             const sendBtn = document.querySelector('[data-tp-send]') as HTMLButtonElement;
             sendBtn?.click();
@@ -83,32 +101,35 @@ export default function ThinkingPartner() {
   function handleCapturePage() {
     const ctx = getPageContext();
     if (!ctx) return;
-    setInput(`Here's what I have so far on this page. What should I focus on next?`);
-    // The page context will be automatically prepended by handleSend
+    setInput('Here\'s what I have so far on this page. What should I focus on next?');
     setTimeout(() => {
       const sendBtn = document.querySelector('[data-tp-send]') as HTMLButtonElement;
       sendBtn?.click();
     }, 50);
   }
 
+  function formatConversation(): string {
+    return messages
+      .map((m) => `${m.role === 'user' ? 'ME' : 'THINKING PARTNER'}: ${stripPageContext(m.content)}`)
+      .join('\n\n');
+  }
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || streaming) return;
 
-    // Show the raw user message in the chat UI
     const userMessage: Message = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setStreaming(true);
     setError('');
 
-    // Inject current page context into the message sent to the API
+    // Inject FRESH page context
     const pageContext = getPageContext();
     const enrichedMessage = pageContext
       ? `[CURRENT PAGE DATA]\n${pageContext}\n[END PAGE DATA]\n\n${text}`
       : text;
 
-    // Build clean history (strip page context from previous messages)
     const cleanHistory = messages.slice(-20).map((m) => ({
       role: m.role,
       content: stripPageContext(m.content),
@@ -142,7 +163,6 @@ export default function ThinkingPartner() {
         return;
       }
 
-      // Add empty assistant message that we'll append to
       let assistantContent = '';
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
@@ -203,6 +223,11 @@ export default function ThinkingPartner() {
     setStreaming(false);
   }
 
+  // Panel size classes
+  const panelSize = maximized
+    ? 'w-full md:w-[60vw] h-[90vh] md:h-[70vh]'
+    : 'w-full md:w-[420px] h-[85vh] md:h-[540px]';
+
   return (
     <>
       {/* Floating button */}
@@ -227,7 +252,7 @@ export default function ThinkingPartner() {
             onClick={() => setOpen(false)}
           />
 
-          <div className="fixed bottom-0 right-0 md:bottom-4 md:right-4 z-50 w-full md:w-[420px] h-[85vh] md:h-[600px] md:max-h-[80vh] bg-bg-elevated border border-border md:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+          <div className={`fixed bottom-0 right-0 md:bottom-4 md:right-4 z-50 ${panelSize} md:max-h-[80vh] bg-bg-elevated border border-border md:rounded-2xl flex flex-col shadow-2xl overflow-hidden transition-all duration-200`}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -235,14 +260,16 @@ export default function ThinkingPartner() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
                 </svg>
                 <span className="text-[14px] text-text-bright font-medium">Thinking Partner</span>
-                <span className="text-[11px] text-text-muted bg-bg-card px-2 py-0.5 rounded">
-                  {stageLabel}
-                </span>
+                <span className="text-[11px] text-text-muted bg-bg-card px-2 py-0.5 rounded">{stageLabel}</span>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 {remaining !== null && (
-                  <span className="text-[11px] text-text-muted mr-2">{remaining} left today</span>
+                  <span className="text-[11px] text-text-muted mr-1">{remaining}</span>
                 )}
+                {messages.length > 0 && (
+                  <CopyButton text={formatConversation()} label="All" />
+                )}
+                {/* Capture page */}
                 <button
                   onClick={handleCapturePage}
                   className="p-1.5 text-text-muted hover:text-amber transition-colors bg-transparent border-none cursor-pointer"
@@ -253,6 +280,19 @@ export default function ThinkingPartner() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
                   </svg>
                 </button>
+                {/* Maximize */}
+                <button
+                  onClick={() => setMaximized(!maximized)}
+                  className="p-1.5 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer hidden md:block"
+                  title={maximized ? 'Minimize' : 'Maximize'}
+                >
+                  {maximized ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>
+                  )}
+                </button>
+                {/* Clear */}
                 <button
                   onClick={handleClear}
                   className="p-1.5 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer"
@@ -262,6 +302,7 @@ export default function ThinkingPartner() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
                   </svg>
                 </button>
+                {/* Close */}
                 <button
                   onClick={() => setOpen(false)}
                   className="p-1.5 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer"
@@ -280,14 +321,14 @@ export default function ThinkingPartner() {
                 <div className="text-center py-8">
                   <p className="text-[14px] text-text-dim mb-2">Ask me anything about your current stage.</p>
                   <p className="text-[12px] text-text-muted">
-                    I&apos;ll challenge your thinking, flag weak spots, and suggest directions. I won&apos;t write script prose — that&apos;s your job.
+                    I&apos;ll help you sharpen your thinking and find gaps. I won&apos;t write script prose — that&apos;s your job.
                   </p>
                 </div>
               )}
 
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
+                  <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed relative group ${
                     msg.role === 'user'
                       ? 'bg-amber/15 text-text-bright rounded-br-md'
                       : 'bg-bg-card text-text-primary rounded-bl-md border border-border/50'
@@ -300,14 +341,18 @@ export default function ThinkingPartner() {
                         <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" style={{ animationDelay: '300ms' }} />
                       </span>
                     )}
+                    {/* Copy button on assistant messages */}
+                    {msg.role === 'assistant' && msg.content && !streaming && (
+                      <div className="absolute bottom-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <CopyButton text={msg.content} />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
 
               {error && (
-                <div className="text-[12px] text-red bg-red/5 border border-red/20 rounded-lg px-3 py-2">
-                  {error}
-                </div>
+                <div className="text-[12px] text-red bg-red/5 border border-red/20 rounded-lg px-3 py-2">{error}</div>
               )}
 
               <div ref={messagesEndRef} />

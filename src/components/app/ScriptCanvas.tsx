@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle, compileBrief } from '@/lib/project-bundle';
-import { usePageContext } from '@/contexts/PageContextProvider';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
 const DEFAULT_WPM = 140;
 const DEFAULT_MINUTES = 12;
@@ -69,9 +69,8 @@ export default function ScriptCanvas() {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  // Register page context for Thinking Partner
-  const { registerPageContext, unregisterPageContext } = usePageContext();
-  const buildCtx = useCallback(() => {
+  // Register page context for Thinking Partner (always reads latest state via ref)
+  useRegisterPageContext('script_canvas', () => {
     if (!hasContent) return null;
     const lines = [`Tool: Script Canvas`, `Target: ${targetMinutes}m @ ${wpm} WPM = ${totalTarget} words`, `Total Written: ${totalWords} / ${totalTarget}`, `Est. Duration: ${estimatedMinutes.toFixed(1)} min`, ''];
     for (const s of SECTIONS) {
@@ -81,12 +80,7 @@ export default function ScriptCanvas() {
       lines.push(`${s.label}: ${wc}/${tgt} words${preview ? ` — "${preview}${preview.length >= 80 ? '...' : ''}"` : ' (empty)'}`);
     }
     return lines.join('\n');
-  }, [texts, hasContent, totalWords, totalTarget, estimatedMinutes, targetMinutes, wpm]);
-
-  useEffect(() => {
-    registerPageContext('script_canvas', buildCtx);
-    return () => unregisterPageContext('script_canvas');
-  }, [buildCtx, registerPageContext, unregisterPageContext]);
+  });
 
   async function handleGenerateOutline() {
     if (!currentProject?.id || generating) return;

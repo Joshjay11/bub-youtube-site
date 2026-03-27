@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import ScoreChecker from '@/components/app/ScoreChecker';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
-import { usePageContext } from '@/contexts/PageContextProvider';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
 const CRITERIA = [
   { key: 'curiosity', label: 'Curiosity', question: 'Would a stranger click this?', low: 'Generic topic, no surprise', high: 'Specific claim that demands an answer' },
@@ -52,21 +52,15 @@ export default function IdeaScorecard({ idea = '' }: { idea?: string }) {
     setData({ scores: DEFAULT_SCORES });
   }
 
-  // Register page context for Thinking Partner
-  const { registerPageContext, unregisterPageContext } = usePageContext();
-  const buildCtx = useCallback(() => {
+  // Register page context for Thinking Partner (always reads latest state via ref)
+  useRegisterPageContext('idea_scorecard', () => {
     const lines = [`Tool: Idea Scorecard`, `Video Idea: ${idea || '(not entered yet)'}`, `Total: ${total}/45`, `Verdict: ${verdict.label}`];
     lines.push('Scores:');
     for (const c of CRITERIA) {
       lines.push(`  ${c.label}: ${scores[c.key]}`);
     }
     return lines.join('\n');
-  }, [idea, total, verdict.label, scores]);
-
-  useEffect(() => {
-    registerPageContext('idea_scorecard', buildCtx);
-    return () => unregisterPageContext('idea_scorecard');
-  }, [buildCtx, registerPageContext, unregisterPageContext]);
+  });
 
   // Keep data.scores populated on first render
   useEffect(() => {
