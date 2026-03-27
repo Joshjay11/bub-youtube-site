@@ -5,15 +5,25 @@ import { useProject } from '@/lib/project-context';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { projects, currentProject, createProject } = useProject();
+  const { projects, currentProject, createProject, loading } = useProject();
   const [newTitle, setNewTitle] = useState('');
+  const [creating, setCreating] = useState(false);
   const router = useRouter();
 
-  function handleCreate() {
-    if (!newTitle.trim()) return;
-    createProject(newTitle.trim());
-    setNewTitle('');
-    router.push('/app/idea-validator');
+  async function handleCreate() {
+    if (!newTitle.trim() || creating) return;
+    setCreating(true);
+    const project = await createProject(newTitle.trim());
+    setCreating(false);
+    if (project) {
+      setNewTitle('');
+      router.push('/app/idea-validator');
+    }
+  }
+
+  // Show nothing while loading projects from Supabase
+  if (loading) {
+    return <div className="pt-20 text-center text-text-muted">Loading...</div>;
   }
 
   // First-visit gate: no projects exist

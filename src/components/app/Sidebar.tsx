@@ -143,9 +143,9 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  function handleQuickCreate() {
+  async function handleQuickCreate() {
     if (!newProjectName.trim()) return;
-    createProject(newProjectName.trim());
+    await createProject(newProjectName.trim());
     setNewProjectName('');
     setProjectDropdown(false);
   }

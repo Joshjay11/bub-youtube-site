@@ -29,9 +29,9 @@ export default function ProjectsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!newTitle.trim()) return;
-    createProject(newTitle.trim());
+    await createProject(newTitle.trim());
     setNewTitle('');
   }
 
