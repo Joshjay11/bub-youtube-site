@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import ScoreChecker from '@/components/app/ScoreChecker';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
@@ -52,15 +52,15 @@ export default function IdeaScorecard({ idea = '' }: { idea?: string }) {
     setData({ scores: DEFAULT_SCORES });
   }
 
-  // Register page context for Thinking Partner (always reads latest state via ref)
-  useRegisterPageContext('idea_scorecard', () => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('idea_scorecard', 'Idea Scorecard', () => {
     const lines = [`Tool: Idea Scorecard`, `Video Idea: ${idea || '(not entered yet)'}`, `Total: ${total}/45`, `Verdict: ${verdict.label}`];
     lines.push('Scores:');
     for (const c of CRITERIA) {
       lines.push(`  ${c.label}: ${scores[c.key]}`);
     }
     return lines.join('\n');
-  });
+  }, wrapperRef);
 
   // Keep data.scores populated on first render
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function IdeaScorecard({ idea = '' }: { idea?: string }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div>

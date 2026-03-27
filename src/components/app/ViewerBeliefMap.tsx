@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
@@ -70,27 +71,20 @@ export default function ViewerBeliefMap() {
     setData(EMPTY);
   }
 
-  useRegisterPageContext('viewer_belief_map', () => {
-    const hasBefore = BEFORE_FIELDS.some((f) => (data[f.key] ?? '').trim());
-    const hasAfter = AFTER_FIELDS.some((f) => (data[f.key] ?? '').trim());
-    if (!hasBefore && !hasAfter) return null;
-    const lines = ['Tool: Viewer Belief Map'];
-    if (hasBefore) {
-      lines.push('Before They Click:');
-      for (const f of BEFORE_FIELDS) {
-        const v = (data[f.key] ?? '').trim();
-        if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
-      }
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('viewer_belief_map', 'Viewer Belief Map', () => {
+    const lines = ['Tool: Viewer Belief Map', 'Before They Click:'];
+    for (const f of BEFORE_FIELDS) {
+      const v = (data[f.key] ?? '').trim();
+      lines.push(`  ${f.label.split('?')[0]}: ${v || '(empty)'}`);
     }
-    if (hasAfter) {
-      lines.push('After They Watch:');
-      for (const f of AFTER_FIELDS) {
-        const v = (data[f.key] ?? '').trim();
-        if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
-      }
+    lines.push('After They Watch:');
+    for (const f of AFTER_FIELDS) {
+      const v = (data[f.key] ?? '').trim();
+      lines.push(`  ${f.label.split('?')[0]}: ${v || '(empty)'}`);
     }
     return lines.join('\n');
-  });
+  }, wrapperRef);
 
   const filledBefore = BEFORE_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
   const filledAfter = AFTER_FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
@@ -102,7 +96,7 @@ export default function ViewerBeliefMap() {
     filledTotal >= 5 ? 'developing' : 'incomplete';
 
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
@@ -52,21 +53,19 @@ export default function CompetitiveScan() {
 
   const filledVideos = videos.filter((v) => v.title.trim().length > 0).length;
 
-  useRegisterPageContext('competitive_scan', () => {
-    const hasVids = filledVideos > 0;
-    const hasAngle = (data.uniqueAngle ?? '').trim();
-    if (!hasVids && !hasAngle) return null;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('competitive_scan', 'Competitive Scan', () => {
     const lines = [`Tool: Competitive Scan`, `Videos logged: ${filledVideos}`];
     for (const v of videos) {
       if (v.title.trim()) lines.push(`  "${v.title}"${v.views ? ` (${v.views})` : ''}: ${v.angle || v.missed || '(no notes)'}`);
     }
-    if (hasAngle) lines.push(`Unique angle: ${data.uniqueAngle}`);
-    if ((data.marketGap ?? '').trim()) lines.push(`Market gap: ${data.marketGap}`);
+    lines.push(`Unique angle: ${(data.uniqueAngle ?? '').trim() || '(empty)'}`);
+    lines.push(`Market gap: ${(data.marketGap ?? '').trim() || '(empty)'}`);
     return lines.join('\n');
-  });
+  }, wrapperRef);
 
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>

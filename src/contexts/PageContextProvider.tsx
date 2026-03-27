@@ -1,11 +1,17 @@
 'use client';
 
-import { createContext, useContext, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useRef, useEffect, type ReactNode, type RefObject } from 'react';
 
-type GetPageContext = () => string | null;
+type GetPageContext = () => string;
+
+interface ToolRegistration {
+  buildContext: GetPageContext;
+  isVisible: () => boolean;
+  label: string;
+}
 
 interface PageContextValue {
-  registerPageContext: (id: string, fn: GetPageContext) => void;
+  registerPageContext: (id: string, reg: ToolRegistration) => void;
   unregisterPageContext: (id: string) => void;
   getPageContext: () => string | null;
 }
@@ -17,24 +23,33 @@ const PageContextCtx = createContext<PageContextValue>({
 });
 
 export function PageContextProvider({ children }: { children: ReactNode }) {
-  const contextFns = useRef<Map<string, GetPageContext>>(new Map());
+  const tools = useRef<Map<string, ToolRegistration>>(new Map());
 
-  const registerPageContext = useCallback((id: string, fn: GetPageContext) => {
-    contextFns.current.set(id, fn);
+  const registerPageContext = useCallback((id: string, reg: ToolRegistration) => {
+    tools.current.set(id, reg);
   }, []);
 
   const unregisterPageContext = useCallback((id: string) => {
-    contextFns.current.delete(id);
+    tools.current.delete(id);
   }, []);
 
-  // Calls each registered function FRESH — no caching
   const getPageContext = useCallback(() => {
-    const parts: string[] = [];
-    for (const fn of contextFns.current.values()) {
-      const ctx = fn();
-      if (ctx) parts.push(ctx);
+    const visibleParts: string[] = [];
+    const otherParts: string[] = [];
+
+    for (const [, reg] of tools.current) {
+      const ctx = reg.buildContext();
+      if (!ctx) continue;
+
+      if (reg.isVisible()) {
+        visibleParts.push(`[CURRENTLY VIEWING - ${reg.label}]\n${ctx}\n[END CURRENTLY VIEWING]`);
+      } else {
+        otherParts.push(ctx);
+      }
     }
-    return parts.length > 0 ? parts.join('\n\n') : null;
+
+    const all = [...visibleParts, ...otherParts];
+    return all.length > 0 ? all.join('\n\n') : null;
   }, []);
 
   return (
@@ -47,20 +62,42 @@ export function PageContextProvider({ children }: { children: ReactNode }) {
 export const usePageContext = () => useContext(PageContextCtx);
 
 /**
- * Hook to register a page context function that always reads the latest state.
- * Uses a ref so the registered function is never stale — it always calls
- * through to the latest buildContext.
+ * Hook to register a page context function with visibility tracking.
+ * The build function should ALWAYS return a string (include empty field labels).
+ * The ref is used to detect whether the component is in the viewport.
  */
-export function useRegisterPageContext(id: string, buildContext: () => string | null) {
+export function useRegisterPageContext(
+  id: string,
+  label: string,
+  buildContext: () => string,
+  wrapperRef: RefObject<HTMLElement | null>,
+) {
   const { registerPageContext, unregisterPageContext } = usePageContext();
   const buildRef = useRef(buildContext);
+  const visibleRef = useRef(false);
 
-  // Always keep the ref up to date (runs every render, no effect needed)
+  // Keep build function fresh
   buildRef.current = buildContext;
 
+  // IntersectionObserver for viewport detection
   useEffect(() => {
-    // Register a stable wrapper that calls through the ref
-    registerPageContext(id, () => buildRef.current());
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => { visibleRef.current = entry.isIntersecting; },
+      { threshold: 0.2 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [wrapperRef]);
+
+  useEffect(() => {
+    registerPageContext(id, {
+      buildContext: () => buildRef.current(),
+      isVisible: () => visibleRef.current,
+      label,
+    });
     return () => unregisterPageContext(id);
-  }, [id, registerPageContext, unregisterPageContext]);
+  }, [id, label, registerPageContext, unregisterPageContext]);
 }

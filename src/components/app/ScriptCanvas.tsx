@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle, compileBrief } from '@/lib/project-bundle';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
@@ -69,9 +69,8 @@ export default function ScriptCanvas() {
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  // Register page context for Thinking Partner (always reads latest state via ref)
-  useRegisterPageContext('script_canvas', () => {
-    if (!hasContent) return null;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('script_canvas', 'Script Canvas', () => {
     const lines = [`Tool: Script Canvas`, `Target: ${targetMinutes}m @ ${wpm} WPM = ${totalTarget} words`, `Total Written: ${totalWords} / ${totalTarget}`, `Est. Duration: ${estimatedMinutes.toFixed(1)} min`, ''];
     for (const s of SECTIONS) {
       const wc = countWords(texts[s.key]);
@@ -80,7 +79,7 @@ export default function ScriptCanvas() {
       lines.push(`${s.label}: ${wc}/${tgt} words${preview ? ` — "${preview}${preview.length >= 80 ? '...' : ''}"` : ' (empty)'}`);
     }
     return lines.join('\n');
-  });
+  }, wrapperRef);
 
   async function handleGenerateOutline() {
     if (!currentProject?.id || generating) return;
@@ -133,7 +132,7 @@ export default function ScriptCanvas() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="font-serif text-[24px] text-text-bright">Script Draft Canvas</h2>

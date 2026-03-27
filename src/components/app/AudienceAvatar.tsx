@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
@@ -36,18 +37,18 @@ export default function AudienceAvatar() {
 
   const filled = FIELDS.filter((f) => (data[f.key] ?? '').trim().length > 0).length;
 
-  useRegisterPageContext('audience_avatar', () => {
-    if (filled === 0) return null;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('audience_avatar', 'Audience Avatar', () => {
     const lines = ['Tool: Audience Avatar'];
     for (const f of FIELDS) {
       const v = (data[f.key] ?? '').trim();
-      if (v) lines.push(`  ${f.label.split('?')[0]}: ${v}`);
+      lines.push(`  ${f.label.split('?')[0]}: ${v || '(empty)'}`);
     }
     return lines.join('\n');
-  });
+  }, wrapperRef);
 
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
