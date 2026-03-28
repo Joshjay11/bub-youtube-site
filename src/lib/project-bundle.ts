@@ -29,9 +29,11 @@ export interface ProjectBundle {
     subscribeReason?: string;
   };
   competitive_scan?: {
-    videos?: Array<{ title: string; views: string; angle: string; missed: string }>;
+    videos?: Array<{ title: string; views: string; angle: string; missed: string; stillWantToKnow?: string }>;
     uniqueAngle?: string;
     marketGap?: string;
+    overplayed?: string;
+    entryPoint?: string;
   };
   framing_worksheet?: {
     oneSentence?: string;
@@ -106,17 +108,22 @@ export function compileBrief(bundle: ProjectBundle): string {
     lines.push('');
   }
 
-  // Competitive landscape
+  // What's already out there
   const cs = bundle.competitive_scan;
-  if (cs && (cs.uniqueAngle || (cs.videos && cs.videos.some((v) => v.title)))) {
-    lines.push('COMPETITIVE LANDSCAPE');
+  if (cs && (cs.overplayed || cs.uniqueAngle || cs.entryPoint || cs.marketGap || (cs.videos && cs.videos.some((v) => v.title)))) {
+    lines.push("WHAT'S ALREADY OUT THERE");
     if (cs.videos) {
       for (const v of cs.videos) {
-        if (v.title) lines.push(`  - ${v.title}${v.views ? ` (${v.views})` : ''}: ${v.missed || v.angle || ''}`);
+        if (v.title) {
+          lines.push(`  - ${v.title}${v.views ? ` (${v.views})` : ''}: ${v.angle || ''}`);
+          if (v.missed) lines.push(`    Left out: ${v.missed}`);
+          if (v.stillWantToKnow) lines.push(`    Viewer still wants: ${v.stillWantToKnow}`);
+        }
       }
     }
-    if (cs.uniqueAngle) lines.push(`Our angle: ${cs.uniqueAngle}`);
-    if (cs.marketGap) lines.push(`Gap: ${cs.marketGap}`);
+    if (cs.overplayed || cs.uniqueAngle) lines.push(`Overplayed: ${cs.overplayed || cs.uniqueAngle}`);
+    if (cs.marketGap) lines.push(`Missing: ${cs.marketGap}`);
+    if (cs.entryPoint) lines.push(`Entry point: ${cs.entryPoint}`);
     lines.push('');
   }
 

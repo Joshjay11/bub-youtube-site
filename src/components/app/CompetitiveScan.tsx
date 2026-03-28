@@ -9,30 +9,38 @@ interface VideoEntry {
   views: string;
   angle: string;
   missed: string;
+  stillWantToKnow: string;
 }
 
 interface ScanData {
   videos: VideoEntry[];
   uniqueAngle: string;
   marketGap: string;
+  overplayed: string;
+  entryPoint: string;
 }
 
-const EMPTY_VIDEO: VideoEntry = { title: '', views: '', angle: '', missed: '' };
+const EMPTY_VIDEO: VideoEntry = { title: '', views: '', angle: '', missed: '', stillWantToKnow: '' };
 
 const DEFAULTS: ScanData = {
   videos: [{ ...EMPTY_VIDEO }, { ...EMPTY_VIDEO }, { ...EMPTY_VIDEO }],
   uniqueAngle: '',
   marketGap: '',
+  overplayed: '',
+  entryPoint: '',
 };
 
 export default function CompetitiveScan() {
   const { data, setData, saveStatus } = useProjectData<ScanData>('competitive_scan', DEFAULTS);
 
-  const videos: VideoEntry[] = data.videos?.length ? data.videos : DEFAULTS.videos;
+  const videos: VideoEntry[] = (data.videos?.length ? data.videos : DEFAULTS.videos).map((v) => ({
+    ...EMPTY_VIDEO,
+    ...v,
+  }));
 
   function updateVideo(index: number, field: keyof VideoEntry, value: string) {
     setData((prev) => {
-      const updated = [...(prev.videos || DEFAULTS.videos)];
+      const updated = [...(prev.videos || DEFAULTS.videos)].map((v) => ({ ...EMPTY_VIDEO, ...v }));
       updated[index] = { ...updated[index], [field]: value };
       return { ...prev, videos: updated };
     });
@@ -54,13 +62,19 @@ export default function CompetitiveScan() {
   const filledVideos = videos.filter((v) => v.title.trim().length > 0).length;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
-  useRegisterPageContext('competitive_scan', 'Competitive Scan', () => {
-    const lines = [`Tool: Competitive Scan`, `Videos logged: ${filledVideos}`];
+  useRegisterPageContext('competitive_scan', "What's Already Out There", () => {
+    const lines = [`Tool: What's Already Out There`, `Videos logged: ${filledVideos}`];
     for (const v of videos) {
-      if (v.title.trim()) lines.push(`  "${v.title}"${v.views ? ` (${v.views})` : ''}: ${v.angle || v.missed || '(no notes)'}`);
+      if (v.title.trim()) {
+        lines.push(`  "${v.title}"${v.views ? ` (${v.views})` : ''}`);
+        if (v.angle) lines.push(`    Angle: ${v.angle}`);
+        if (v.missed) lines.push(`    Left out: ${v.missed}`);
+        if (v.stillWantToKnow) lines.push(`    Viewer still wants: ${v.stillWantToKnow}`);
+      }
     }
-    lines.push(`Unique angle: ${(data.uniqueAngle ?? '').trim() || '(empty)'}`);
-    lines.push(`Market gap: ${(data.marketGap ?? '').trim() || '(empty)'}`);
+    lines.push(`What's overplayed: ${(data.overplayed ?? '').trim() || (data.uniqueAngle ?? '').trim() || '(empty)'}`);
+    lines.push(`What's missing: ${(data.marketGap ?? '').trim() || '(empty)'}`);
+    lines.push(`Entry point: ${(data.entryPoint ?? '').trim() || '(empty)'}`);
     return lines.join('\n');
   }, wrapperRef);
 
@@ -69,17 +83,19 @@ export default function CompetitiveScan() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="font-serif text-[24px] text-text-bright">Competitive Scan</h2>
-            <p className="text-text-dim text-[13px] mt-1">What&apos;s already out there on this topic? Look before you leap.</p>
+            <h2 className="font-serif text-[24px] text-text-bright">What&apos;s Already Out There</h2>
+            <p className="text-text-dim text-[13px] mt-1">Search YouTube the way your viewer would. Find the videos they&apos;ve probably already watched.</p>
           </div>
           <SaveIndicator status={saveStatus} />
         </div>
         <span className="text-[12px] text-text-muted">{filledVideos} video{filledVideos !== 1 ? 's' : ''} logged</span>
       </div>
 
-      <div className="bg-bg-card border border-border rounded-xl p-6 space-y-5">
-        <p className="text-[13px] text-text-dim">Search YouTube for your topic. List the top 3–5 existing videos:</p>
+      <div className="bg-bg-elevated border border-border/50 rounded-lg px-4 py-3 text-[13px] text-text-dim leading-relaxed">
+        Search YouTube the way your viewer would. Find 3–5 videos they&apos;ve probably already watched on this topic. Don&apos;t look for the biggest channels — look for the videos YOUR audience saw before clicking yours.
+      </div>
 
+      <div className="bg-bg-card border border-border rounded-xl p-6 space-y-5">
         {videos.map((video, i) => (
           <div key={i} className="bg-bg-elevated border border-border/50 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -98,7 +114,7 @@ export default function CompetitiveScan() {
                 type="text"
                 value={video.title}
                 onChange={(e) => updateVideo(i, 'title', e.target.value)}
-                placeholder="Video title"
+                placeholder="Video title or URL"
                 className="bg-bg-card border border-border rounded-lg px-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20"
               />
               <input
@@ -119,7 +135,14 @@ export default function CompetitiveScan() {
             <textarea
               value={video.missed}
               onChange={(e) => updateVideo(i, 'missed', e.target.value)}
-              placeholder="What did they miss or get wrong?"
+              placeholder="What did they leave out?"
+              rows={2}
+              className="w-full bg-bg-card border border-border rounded-lg px-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 resize-y"
+            />
+            <textarea
+              value={video.stillWantToKnow}
+              onChange={(e) => updateVideo(i, 'stillWantToKnow', e.target.value)}
+              placeholder="What would your viewer still want to know after watching this?"
               rows={2}
               className="w-full bg-bg-card border border-border rounded-lg px-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 resize-y"
             />
@@ -142,22 +165,32 @@ export default function CompetitiveScan() {
       {/* Synthesis */}
       <div className="bg-bg-card border border-border rounded-xl p-6 space-y-4">
         <div>
-          <label className="block text-[14px] text-text-bright mb-2">Based on what exists, what&apos;s YOUR unique angle?</label>
+          <label className="block text-[14px] text-text-bright mb-2">What&apos;s overplayed?</label>
           <textarea
-            value={data.uniqueAngle ?? ''}
-            onChange={(e) => setData((prev) => ({ ...prev, uniqueAngle: e.target.value }))}
-            placeholder="What will YOUR video say that none of these did?"
+            value={data.overplayed ?? data.uniqueAngle ?? ''}
+            onChange={(e) => setData((prev) => ({ ...prev, overplayed: e.target.value }))}
+            placeholder="Angles or takes your viewer has already seen too many times"
             rows={3}
             className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y"
           />
         </div>
         <div>
-          <label className="block text-[14px] text-text-bright mb-2">What&apos;s the gap in the market?</label>
+          <label className="block text-[14px] text-text-bright mb-2">What&apos;s missing?</label>
           <textarea
             value={data.marketGap ?? ''}
             onChange={(e) => setData((prev) => ({ ...prev, marketGap: e.target.value }))}
-            placeholder="What question do the comments on those videos keep asking that nobody answered?"
+            placeholder="The gap in your viewer's understanding that your video fills"
             rows={3}
+            className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y"
+          />
+        </div>
+        <div>
+          <label className="block text-[14px] text-text-bright mb-2">Your entry point</label>
+          <textarea
+            value={data.entryPoint ?? ''}
+            onChange={(e) => setData((prev) => ({ ...prev, entryPoint: e.target.value }))}
+            placeholder="One sentence: why does your video belong on their watch list after these?"
+            rows={2}
             className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y"
           />
         </div>
