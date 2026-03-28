@@ -5,12 +5,20 @@ import { type PromptTemplate, injectVariables } from '@/lib/prompts';
 
 interface PromptRunnerProps {
   prompt: PromptTemplate;
+  prefill?: Record<string, string>;
 }
 
-export default function PromptRunner({ prompt }: PromptRunnerProps) {
-  const [values, setValues] = useState<Record<string, string>>(
-    Object.fromEntries(prompt.variables.map((v) => [v.key, '']))
-  );
+export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const empty = Object.fromEntries(prompt.variables.map((v) => [v.key, '']));
+    // Apply prefill to empty fields only
+    if (prefill) {
+      for (const [k, v] of Object.entries(prefill)) {
+        if (v && k in empty && !empty[k]) empty[k] = v;
+      }
+    }
+    return empty;
+  });
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState('');

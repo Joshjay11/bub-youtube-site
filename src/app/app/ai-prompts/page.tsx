@@ -1,14 +1,95 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PromptRunner from '@/components/app/PromptRunner';
 import { PROMPTS } from '@/lib/prompts';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
+import { useProject } from '@/lib/project-context';
+import { type ProjectBundle, loadProjectBundle, compileBrief } from '@/lib/project-bundle';
+
+function buildPrefills(promptId: string, bundle: ProjectBundle): Record<string, string> {
+  const idea = bundle.idea_entry?.currentIdea || '';
+  const fw = bundle.framing_worksheet;
+  const aa = bundle.audience_avatar;
+  const vbm = bundle.viewer_belief_map;
+  const rk = bundle.research_keeper?.notes?.trim() || '';
+
+  const audience = [aa?.idealViewer, aa?.problem].filter(Boolean).join('. ') || '';
+
+  switch (promptId) {
+    case 'find-angle': // 3A
+      return {
+        topic: idea,
+        obvious_take: '', // Hard to auto-derive the "obvious" take — leave for user
+        audience,
+        channel_lens: fw?.oneSentence || '',
+      };
+
+    case 'cross-disciplinary': // 3B
+      return {
+        topic: idea,
+      };
+
+    case 'counter-arguments': // 3C
+      return {
+        thesis: fw?.oneSentence || '',
+      };
+
+    case 'outline-from-research': { // 3D — dump the full brief
+      const brief = compileBrief(bundle);
+      return {
+        topic: idea,
+        research_notes: rk || brief,
+        angle: fw?.contrarianAngle || fw?.oneSentence || '',
+        target_length: '12',
+        video_type: '',
+      };
+    }
+
+    case 'hook-variants': // 3E
+      return {
+        topic: idea,
+        angle: fw?.contrarianAngle || fw?.oneSentence || '',
+        title: '', // User defines title
+        audience_belief: vbm?.currentBelief || '',
+      };
+
+    case 'script-audit': // 3F
+      return {
+        script: '', // User pastes script
+      };
+
+    case 'compression-check': // 3G
+      return {
+        section: '', // User pastes section
+      };
+
+    case 'output-quality-scorecard': // 3H
+      return {
+        ai_output: '', // User pastes AI output
+      };
+
+    default:
+      return {};
+  }
+}
 
 export default function AIPromptsPage() {
   const [activeId, setActiveId] = useState(PROMPTS[0].id);
   const activePrompt = PROMPTS.find((p) => p.id === activeId)!;
+  const { currentProject } = useProject();
+  const [bundle, setBundle] = useState<ProjectBundle | null>(null);
+
+  useEffect(() => {
+    if (!currentProject?.id) {
+      setBundle(null);
+      return;
+    }
+    loadProjectBundle(currentProject.id).then(setBundle).catch(() => {});
+  }, [currentProject?.id]);
+
+  const prefill = bundle ? buildPrefills(activeId, bundle) : {};
 
   return (
     <div>
@@ -49,8 +130,8 @@ export default function AIPromptsPage() {
         <p className="text-text-dim text-[14px]">{activePrompt.description}</p>
       </div>
 
-      {/* PromptRunner keyed to force remount on switch */}
-      <PromptRunner key={activeId} prompt={activePrompt} />
+      {/* PromptRunner keyed to force remount on switch, with prefill from upstream */}
+      <PromptRunner key={`${activeId}-${currentProject?.id ?? 'none'}`} prompt={activePrompt} prefill={prefill} />
 
       <div className="mt-12">
         <RunningBrief />
