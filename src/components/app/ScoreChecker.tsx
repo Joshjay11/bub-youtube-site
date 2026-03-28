@@ -33,6 +33,7 @@ interface ComparisonRow {
   aiScore: number;
   gap: number;
   reason: string;
+  tentative: boolean; // true when gap 2+ AND gap response is non-empty
 }
 
 function getGapStyle(gap: number): { color: string; label: string } {
@@ -118,7 +119,7 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
     setGapResponses((prev) => ({ ...prev, [label]: value }));
   }, []);
 
-  function getComparison(): { rows: ComparisonRow[]; userTotal: number; aiTotal: number } | null {
+  function getComparison(): { rows: ComparisonRow[]; userTotal: number; aiTotal: number; effectiveTotal: number; hasTentative: boolean } | null {
     if (!aiScores) return null;
 
     const rows = CRITERION_ORDER.map((c) => {
@@ -129,14 +130,21 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
       const aiScore = aiEntry?.score ?? 3;
       const reason = aiEntry?.reason ?? '';
       const gap = userScore - aiScore;
-      return { label: c.label, userScore, aiScore, gap, reason };
+      const tentative = Math.abs(gap) >= 2 && (gapResponses[c.label] ?? '').trim().length > 0;
+      return { label: c.label, userScore, aiScore, gap, reason, tentative };
     });
 
-    return {
-      rows,
-      userTotal: rows.reduce((s, r) => s + r.userScore, 0),
-      aiTotal: rows.reduce((s, r) => s + r.aiScore, 0),
-    };
+    const userTotal = rows.reduce((s, r) => s + r.userScore, 0);
+    const aiTotal = rows.reduce((s, r) => s + r.aiScore, 0);
+    // Effective total: use user score for tentative rows, AI score for unaddressed gaps
+    const effectiveTotal = rows.reduce((s, r) => {
+      if (r.tentative) return s + r.userScore;
+      if (Math.abs(r.gap) >= 2) return s + r.aiScore;
+      return s + r.userScore;
+    }, 0);
+    const hasTentative = rows.some((r) => r.tentative);
+
+    return { rows, userTotal, aiTotal, effectiveTotal, hasTentative };
   }
 
   const comparison = getComparison();
@@ -227,10 +235,14 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
                 <div className="grid grid-cols-[1fr_56px_56px_auto] gap-0 px-5 py-2.5 items-center hover:bg-bg-card-hover/30 transition-colors">
                   <div className="text-[13px] text-text-primary">{row.label}</div>
                   <div className="text-center text-[14px] font-mono text-text-bright">{row.userScore}</div>
-                  <div className="text-center text-[14px] font-mono text-text-dim">{row.aiScore}</div>
+                  <div className={`text-center text-[14px] font-mono ${row.tentative ? 'text-blue-400' : 'text-text-dim'}`} title={row.tentative ? 'Tentative — based on your gap response' : undefined}>
+                    {row.tentative ? row.userScore : row.aiScore}
+                  </div>
                   <div className="pl-5">
                     {absGap === 0 ? (
                       <span className="text-green text-[13px]">✓</span>
+                    ) : row.tentative ? (
+                      <span className="text-[11px] text-blue-400">Addressed</span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <span className={`text-[14px] font-mono ${color}`}>
@@ -289,11 +301,21 @@ export default function ScoreChecker({ idea, userScores }: ScoreCheckerProps) {
                 <span className="text-text-muted">AI Total: </span>
                 <span className="font-mono font-bold text-text-dim">{comparison.aiTotal}</span>
               </span>
+              {comparison.hasTentative && comparison.effectiveTotal !== comparison.userTotal && (
+                <span title="Effective total after addressing gaps">
+                  <span className="text-text-muted">Effective: </span>
+                  <span className="font-mono font-bold text-blue-400">{comparison.effectiveTotal}</span>
+                </span>
+              )}
             </div>
             <div className="text-[13px] text-text-muted">
-              Gap: <span className={`font-mono ${Math.abs(comparison.userTotal - comparison.aiTotal) >= 5 ? 'text-amber' : 'text-green'}`}>
-                {comparison.userTotal - comparison.aiTotal > 0 ? '+' : ''}{comparison.userTotal - comparison.aiTotal}
-              </span>
+              {comparison.hasTentative ? (
+                <span className="text-[11px] text-blue-400">Includes tentative scores from gap responses</span>
+              ) : (
+                <>Gap: <span className={`font-mono ${Math.abs(comparison.userTotal - comparison.aiTotal) >= 5 ? 'text-amber' : 'text-green'}`}>
+                  {comparison.userTotal - comparison.aiTotal > 0 ? '+' : ''}{comparison.userTotal - comparison.aiTotal}
+                </span></>
+              )}
             </div>
           </div>
 

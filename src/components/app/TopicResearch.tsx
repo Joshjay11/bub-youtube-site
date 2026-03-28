@@ -174,8 +174,14 @@ export default function TopicResearch({ onKeep }: TopicResearchProps) {
           <div className="space-y-4">
             {data.results.map((r, i) => (
               <div key={i} className="bg-bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-5 py-3 border-b border-border/50">
+                <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
                   <h3 className="text-[15px] font-medium text-text-bright">{r.angle}</h3>
+                  <button
+                    onClick={() => onKeep(`## ${r.angle}\n\n${r.findings}`)}
+                    className="text-[11px] text-amber hover:text-amber-bright transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
+                  >
+                    Keep card
+                  </button>
                 </div>
                 <div className="px-5 py-4">
                   {r.findings.split('\n\n').map((paragraph, pi) => (
