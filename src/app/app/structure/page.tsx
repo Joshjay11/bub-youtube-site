@@ -1,8 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import HookWriter from '@/components/app/HookWriter';
 import HookScorecard from '@/components/app/HookScorecard';
+
+// Criteria keys in order, matching AI criterion numbers 1-10
+const CRITERIA_KEYS = [
+  'opensMidAction', 'specificGap', 'containsDetail', 'keepsPromise',
+  'excludesWrongAudience', 'noIOrSoStart', 'createsStakes',
+  'under90Words', 'matchesTitleThumb', 'wouldStopScrolling',
+];
 import Link from 'next/link';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
@@ -32,6 +39,16 @@ const REFERENCE_PAGES = [
 
 export default function StructurePage() {
   const [hookDraft, setHookDraft] = useState('');
+  const [autoFillChecks, setAutoFillChecks] = useState<Record<string, boolean> | null>(null);
+
+  const handleAiScores = useCallback((scores: Array<{ criterion: number; score: number }>) => {
+    const checks: Record<string, boolean> = {};
+    for (const s of scores) {
+      const key = CRITERIA_KEYS[s.criterion - 1];
+      if (key) checks[key] = s.score === 1;
+    }
+    setAutoFillChecks(checks);
+  }, []);
 
   return (
     <div>
@@ -43,11 +60,11 @@ export default function StructurePage() {
       <UpstreamContext section="structure" />
 
       <div className="space-y-12">
-        <HookWriter onDraftChange={setHookDraft} />
+        <HookWriter onDraftChange={setHookDraft} onAiScores={handleAiScores} />
 
         <hr className="rule" style={{ margin: '0' }} />
 
-        <HookScorecard hookDraft={hookDraft} />
+        <HookScorecard hookDraft={hookDraft} autoFillChecks={autoFillChecks} />
 
         <hr className="rule" style={{ margin: '0' }} />
 

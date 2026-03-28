@@ -18,9 +18,10 @@ const HOOK_LABELS = ['Contradiction', 'Story', 'Question', 'Data', 'Stakes'];
 
 interface HookWriterProps {
   onDraftChange?: (draft: string) => void;
+  onAiScores?: (scores: Array<{ criterion: number; score: number }>) => void;
 }
 
-export default function HookWriter({ onDraftChange }: HookWriterProps) {
+export default function HookWriter({ onDraftChange, onAiScores }: HookWriterProps) {
   const { currentProject } = useProject();
   const { data, setData, saveStatus } = useProjectData<HookDraftData>('hook_draft', DEFAULTS);
 
@@ -150,7 +151,7 @@ export default function HookWriter({ onDraftChange }: HookWriterProps) {
       </div>
 
       {/* AI Hook Scorer */}
-      <HookScorer hookText={data.draft ?? ''} />
+      <HookScorer hookText={data.draft ?? ''} onAiScores={onAiScores} />
     </div>
   );
 }

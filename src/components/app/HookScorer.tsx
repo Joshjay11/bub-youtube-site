@@ -40,9 +40,10 @@ const DEFAULTS: HookScoreData = { evaluation: null };
 
 interface HookScorerProps {
   hookText: string;
+  onAiScores?: (scores: Array<{ criterion: number; score: number }>) => void;
 }
 
-export default function HookScorer({ hookText }: HookScorerProps) {
+export default function HookScorer({ hookText, onAiScores }: HookScorerProps) {
   const { currentProject } = useProject();
   const { data, setData, saveStatus } = useProjectData<HookScoreData>('hook_score', DEFAULTS);
 
@@ -69,6 +70,7 @@ export default function HookScorer({ hookText }: HookScorerProps) {
       if (result.evaluation) {
         setData({ evaluation: result.evaluation });
         notifyCreditChange();
+        onAiScores?.(result.evaluation.scores);
       } else if (result.needsUpgrade) {
         setError('No AI credits remaining. Add your API key in Settings.');
       } else {

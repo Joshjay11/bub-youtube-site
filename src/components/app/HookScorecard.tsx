@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
@@ -31,8 +31,18 @@ function getVerdict(score: number): { label: string; color: string; advice: stri
   return { label: 'Start over.', color: 'text-red', advice: "The concept isn't working, not just the wording." };
 }
 
-export default function HookScorecard({ hookDraft }: { hookDraft?: string }) {
+export default function HookScorecard({ hookDraft, autoFillChecks }: { hookDraft?: string; autoFillChecks?: Record<string, boolean> | null }) {
   const { data, setData, saveStatus } = useProjectData<ScorecardData>('hook_scorecard', { checks: DEFAULT_CHECKS });
+
+  // Auto-fill from AI scores when they arrive
+  const lastAutoFillRef = useRef<string>('');
+  useEffect(() => {
+    if (!autoFillChecks) return;
+    const key = JSON.stringify(autoFillChecks);
+    if (key === lastAutoFillRef.current) return;
+    lastAutoFillRef.current = key;
+    setData({ checks: { ...DEFAULT_CHECKS, ...autoFillChecks } });
+  }, [autoFillChecks, setData]);
 
   const checks = { ...DEFAULT_CHECKS, ...data.checks };
   const score = Object.values(checks).filter(Boolean).length;
@@ -141,6 +151,23 @@ export default function HookScorecard({ hookDraft }: { hookDraft?: string }) {
           />
         </div>
         <p className="text-text-dim text-[14px]">{verdict.advice}</p>
+
+        {/* Soft threshold gate */}
+        {score === 10 && (
+          <div className="mt-4 px-4 py-2.5 rounded-lg bg-green/10 border border-green/20">
+            <p className="text-[13px] text-green">Your hook is locked in.</p>
+          </div>
+        )}
+        {score >= 7 && score < 10 && (
+          <div className="mt-4 px-4 py-2.5 rounded-lg bg-blue-400/10 border border-blue-400/20">
+            <p className="text-[13px] text-blue-400">Solid hook. Review any unchecked criteria, then keep moving.</p>
+          </div>
+        )}
+        {score < 7 && (
+          <div className="mt-4 px-4 py-2.5 rounded-lg bg-amber/10 border border-amber/20">
+            <p className="text-[13px] text-amber">Your hook scores below 7/10. Weak hooks are the #1 cause of early drop-off. Consider revising before moving forward.</p>
+          </div>
+        )}
       </div>
     </div>
   );
