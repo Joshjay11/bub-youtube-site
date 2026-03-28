@@ -49,6 +49,13 @@ export interface ProjectBundle {
   research_keeper?: {
     notes?: string;
   };
+  hook_draft?: {
+    draft?: string;
+    suggestions?: string[];
+  };
+  hook_scorecard?: {
+    checks?: Record<string, boolean>;
+  };
   [key: string]: unknown;
 }
 
@@ -151,9 +158,23 @@ export function compileBrief(bundle: ProjectBundle): string {
     lines.push('');
   }
 
-  // Hook concept
+  // Hook concept (from framing worksheet 30-second pitch)
   if (fw?.thirtySeconds) {
-    lines.push('HOOK CONCEPT', fw.thirtySeconds, '');
+    lines.push('HOOK CONCEPT (30-second pitch)', fw.thirtySeconds, '');
+  }
+
+  // Hook draft
+  const hd = bundle.hook_draft;
+  if (hd?.draft?.trim()) {
+    lines.push('HOOK DRAFT', hd.draft.trim(), '');
+  }
+
+  // Hook score
+  const hs = bundle.hook_scorecard;
+  if (hs?.checks) {
+    const hookScore = Object.values(hs.checks).filter(Boolean).length;
+    const hookVerdict = hookScore >= 8 ? 'Ship it' : hookScore >= 5 ? 'Revise' : 'Start over';
+    lines.push(`HOOK SCORE: ${hookScore}/10 (${hookVerdict})`, '');
   }
 
   return lines.join('\n').trim();

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef } from 'react';
+import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
 const CRITERIA = [
   { key: 'opensMidAction', label: 'Opens mid-action or mid-thought', detail: 'Not "Hey guys" or "In this video"' },
@@ -17,34 +19,52 @@ const CRITERIA = [
 
 type Checks = Record<string, boolean>;
 
+interface ScorecardData {
+  checks: Checks;
+}
+
+const DEFAULT_CHECKS: Checks = Object.fromEntries(CRITERIA.map((c) => [c.key, false]));
+
 function getVerdict(score: number): { label: string; color: string; advice: string } {
   if (score >= 8) return { label: 'Ship it.', color: 'text-green', advice: 'Your hook is strong. Go record.' };
   if (score >= 5) return { label: 'Revise.', color: 'text-amber', advice: 'One or two elements are weak. Tighten those specific points.' };
   return { label: 'Start over.', color: 'text-red', advice: "The concept isn't working, not just the wording." };
 }
 
-export default function HookScorecard() {
-  const [checks, setChecks] = useState<Checks>(
-    Object.fromEntries(CRITERIA.map((c) => [c.key, false]))
-  );
+export default function HookScorecard({ hookDraft }: { hookDraft?: string }) {
+  const { data, setData, saveStatus } = useProjectData<ScorecardData>('hook_scorecard', { checks: DEFAULT_CHECKS });
 
+  const checks = { ...DEFAULT_CHECKS, ...data.checks };
   const score = Object.values(checks).filter(Boolean).length;
   const verdict = getVerdict(score);
 
   function toggle(key: string) {
-    setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
+    setData((prev) => ({ ...prev, checks: { ...prev.checks, [key]: !prev.checks?.[key] } }));
   }
 
   function handleReset() {
-    setChecks(Object.fromEntries(CRITERIA.map((c) => [c.key, false])));
+    setData({ checks: DEFAULT_CHECKS });
   }
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('hook_scorecard', 'Hook Strength Scorecard', () => {
+    const lines = [`Tool: Hook Strength Scorecard`, `Score: ${score}/10`, `Verdict: ${verdict.label}`];
+    if (hookDraft) lines.push(`Hook being scored: "${hookDraft.slice(0, 150)}${hookDraft.length > 150 ? '...' : ''}"`);
+    for (const c of CRITERIA) {
+      lines.push(`  ${checks[c.key] ? '✓' : '✗'} ${c.label}`);
+    }
+    return lines.join('\n');
+  }, wrapperRef);
+
   return (
-    <div className="space-y-6">
+    <div ref={wrapperRef} className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-serif text-[24px] text-text-bright">Hook Strength Scorecard</h2>
-          <p className="text-text-dim text-[13px] mt-1">After writing your hook, score it. 1 point per criterion.</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="font-serif text-[24px] text-text-bright">Hook Strength Scorecard</h2>
+            <p className="text-text-dim text-[13px] mt-1">Score your hook. 1 point per criterion.</p>
+          </div>
+          <SaveIndicator status={saveStatus} />
         </div>
         <button
           onClick={handleReset}
@@ -53,6 +73,14 @@ export default function HookScorecard() {
           Reset
         </button>
       </div>
+
+      {/* Show hook draft for reference while scoring */}
+      {hookDraft && (
+        <div className="bg-bg-elevated border border-border/50 rounded-lg px-5 py-3">
+          <div className="text-[11px] text-text-muted uppercase tracking-wider mb-1">Scoring this hook</div>
+          <p className="text-[14px] text-text-primary leading-relaxed italic">&ldquo;{hookDraft}&rdquo;</p>
+        </div>
+      )}
 
       <div className="bg-bg-card border border-border rounded-xl divide-y divide-border/50">
         {CRITERIA.map((criterion, i) => (
@@ -104,7 +132,6 @@ export default function HookScorecard() {
           </div>
           <div className={`text-[20px] font-bold ${verdict.color}`}>{verdict.label}</div>
         </div>
-        {/* Progress bar */}
         <div className="h-2 bg-bg-elevated rounded-full overflow-hidden mb-3">
           <div
             className={`h-full rounded-full transition-all duration-500 ${

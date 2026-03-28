@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import HookWriter from '@/components/app/HookWriter';
 import HookScorecard from '@/components/app/HookScorecard';
 import Link from 'next/link';
 import UpstreamContext from '@/components/app/UpstreamContext';
@@ -29,17 +31,23 @@ const REFERENCE_PAGES = [
 ];
 
 export default function StructurePage() {
+  const [hookDraft, setHookDraft] = useState('');
+
   return (
     <div>
       <h1 className="font-serif text-[32px] text-text-bright mb-2">Script Structure</h1>
       <p className="text-text-dim text-[15px] mb-8">
-        Score your hooks, pick a structure template, and master the 35% Pivot.
+        Write your hook, score it, pick a structure template, and master the 35% Pivot.
       </p>
 
       <UpstreamContext section="structure" />
 
       <div className="space-y-12">
-        <HookScorecard />
+        <HookWriter onDraftChange={setHookDraft} />
+
+        <hr className="rule" style={{ margin: '0' }} />
+
+        <HookScorecard hookDraft={hookDraft} />
 
         <hr className="rule" style={{ margin: '0' }} />
 
