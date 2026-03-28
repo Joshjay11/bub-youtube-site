@@ -112,14 +112,41 @@ export async function POST(request: Request) {
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    console.log('[suggest-hooks] Raw response:', text.slice(0, 500));
 
-    let hooks: string[];
+    let hooks: string[] = [];
+
+    // Strategy 1: strip markdown fences, parse JSON
+    const stripped = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     try {
-      hooks = JSON.parse(jsonStr);
-      if (!Array.isArray(hooks)) throw new Error('Not an array');
+      const parsed = JSON.parse(stripped);
+      if (Array.isArray(parsed)) hooks = parsed.map(String);
     } catch {
-      return Response.json({ error: 'Failed to parse hooks', raw: text }, { status: 500 });
+      // Strategy 2: find first [ and last ] and parse that substring
+      const firstBracket = text.indexOf('[');
+      const lastBracket = text.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket > firstBracket) {
+        try {
+          const parsed = JSON.parse(text.slice(firstBracket, lastBracket + 1));
+          if (Array.isArray(parsed)) hooks = parsed.map(String);
+        } catch {
+          // Strategy 3: plain text fallback — split by double newlines or numbered lines
+          hooks = text
+            .split(/\n{2,}|\n(?=\d+\.\s)/)
+            .map((line) => line.replace(/^\d+\.\s*/, '').replace(/^["']|["']$/g, '').trim())
+            .filter((line) => line.length > 20 && line.length < 500);
+        }
+      } else {
+        // No brackets found — treat as plain text
+        hooks = text
+          .split(/\n{2,}|\n(?=\d+\.\s)/)
+          .map((line) => line.replace(/^\d+\.\s*/, '').replace(/^["']|["']$/g, '').trim())
+          .filter((line) => line.length > 20 && line.length < 500);
+      }
+    }
+
+    if (hooks.length === 0) {
+      return Response.json({ error: 'Failed to parse hooks from AI response', raw: text.slice(0, 300) }, { status: 500 });
     }
 
     const newRemaining = source === 'byok' ? -1 : source === 'credits' ? creditsRemaining - 1 : 999;
