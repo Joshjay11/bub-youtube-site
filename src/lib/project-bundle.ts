@@ -56,6 +56,13 @@ export interface ProjectBundle {
   hook_scorecard?: {
     checks?: Record<string, boolean>;
   };
+  hook_score?: {
+    evaluation?: {
+      scores?: Array<{ criterion: number; score: number; reasoning: string; fix: string | null }>;
+      total?: number;
+      summary?: string;
+    };
+  };
   [key: string]: unknown;
 }
 
@@ -174,7 +181,16 @@ export function compileBrief(bundle: ProjectBundle): string {
   if (hs?.checks) {
     const hookScore = Object.values(hs.checks).filter(Boolean).length;
     const hookVerdict = hookScore >= 8 ? 'Ship it' : hookScore >= 5 ? 'Revise' : 'Start over';
-    lines.push(`HOOK SCORE: ${hookScore}/10 (${hookVerdict})`, '');
+    lines.push(`HOOK SCORE (manual): ${hookScore}/10 (${hookVerdict})`, '');
+  }
+
+  // AI hook score
+  const aiHs = bundle.hook_score;
+  if (aiHs?.evaluation?.total !== undefined) {
+    const aiVerdict = aiHs.evaluation.total >= 8 ? 'Ship it' : aiHs.evaluation.total >= 5 ? 'Revise' : 'Start over';
+    lines.push(`HOOK SCORE (AI): ${aiHs.evaluation.total}/10 (${aiVerdict})`);
+    if (aiHs.evaluation.summary) lines.push(aiHs.evaluation.summary);
+    lines.push('');
   }
 
   return lines.join('\n').trim();

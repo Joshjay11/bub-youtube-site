@@ -5,6 +5,7 @@ import { useProject } from '@/lib/project-context';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
+import HookScorer from '@/components/app/HookScorer';
 
 interface HookDraftData {
   draft: string;
@@ -147,6 +148,9 @@ export default function HookWriter({ onDraftChange }: HookWriterProps) {
           className="w-full bg-bg-card border border-border rounded-xl px-5 py-4 text-[15px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y leading-relaxed"
         />
       </div>
+
+      {/* AI Hook Scorer */}
+      <HookScorer hookText={data.draft ?? ''} />
     </div>
   );
 }
