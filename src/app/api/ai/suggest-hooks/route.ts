@@ -112,7 +112,27 @@ export async function POST(request: Request) {
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    console.log('[suggest-hooks] Raw response:', text.slice(0, 500));
+    console.log('[suggest-hooks] Raw response:', text);
+
+    function parseAsPlainText(raw: string): string[] {
+      // Try splitting by numbered patterns first: "1.", "1)", "Hook 1:", etc.
+      const numbered = raw.split(/\n(?=\d+[\.\)]\s|(?:Hook|Option)\s*\d)/i);
+      if (numbered.length >= 3) {
+        return numbered
+          .map((chunk) => chunk.replace(/^\d+[\.\)]\s*/, '').replace(/^(?:Hook|Option)\s*\d[:\.\)]\s*/i, '').replace(/^["']|["']$/g, '').trim())
+          .filter((chunk) => chunk.length > 10);
+      }
+      // Fall back to double-newline split
+      const chunks = raw.split(/\n{2,}/);
+      if (chunks.length >= 3) {
+        return chunks
+          .map((chunk) => chunk.replace(/^\d+[\.\)]\s*/, '').replace(/^["']|["']$/g, '').trim())
+          .filter((chunk) => chunk.length > 10);
+      }
+      // Last resort: treat the entire text as one hook
+      const cleaned = raw.replace(/^\d+[\.\)]\s*/gm, '').trim();
+      return cleaned.length > 10 ? [cleaned] : [];
+    }
 
     let hooks: string[] = [];
 
@@ -130,18 +150,10 @@ export async function POST(request: Request) {
           const parsed = JSON.parse(text.slice(firstBracket, lastBracket + 1));
           if (Array.isArray(parsed)) hooks = parsed.map(String);
         } catch {
-          // Strategy 3: plain text fallback — split by double newlines or numbered lines
-          hooks = text
-            .split(/\n{2,}|\n(?=\d+\.\s)/)
-            .map((line) => line.replace(/^\d+\.\s*/, '').replace(/^["']|["']$/g, '').trim())
-            .filter((line) => line.length > 20 && line.length < 500);
+          hooks = parseAsPlainText(text);
         }
       } else {
-        // No brackets found — treat as plain text
-        hooks = text
-          .split(/\n{2,}|\n(?=\d+\.\s)/)
-          .map((line) => line.replace(/^\d+\.\s*/, '').replace(/^["']|["']$/g, '').trim())
-          .filter((line) => line.length > 20 && line.length < 500);
+        hooks = parseAsPlainText(text);
       }
     }
 
