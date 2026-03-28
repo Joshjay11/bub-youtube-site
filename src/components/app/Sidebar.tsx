@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
+import CreditHealthBar from '@/components/app/CreditHealthBar';
 
 const modules = [
   {
@@ -277,6 +278,9 @@ export default function Sidebar() {
             )}
           </div>
         )}
+
+        {/* Credit health bar */}
+        {!collapsed && <CreditHealthBar />}
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-3 px-2">

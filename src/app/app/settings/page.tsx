@@ -86,7 +86,7 @@ export default function SettingsPage() {
               )}
             </div>
             <p className="text-[13px] text-text-dim">
-              Your $79 purchase includes 50 free AI credits. Each prompt run uses 1 credit.
+              Your $79 purchase includes 100 free AI credits. Each prompt run uses 1 credit.
             </p>
             {!credits.subscriptionActive && credits.remaining < 10 && (
               <div className="bg-amber/5 border border-amber/20 rounded-lg p-4">

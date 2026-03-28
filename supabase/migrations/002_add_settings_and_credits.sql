@@ -1,6 +1,6 @@
 -- Add AI credits to purchases table
 ALTER TABLE public.purchases
-  ADD COLUMN IF NOT EXISTS ai_credits_remaining INTEGER DEFAULT 50,
+  ADD COLUMN IF NOT EXISTS ai_credits_remaining INTEGER DEFAULT 100,
   ADD COLUMN IF NOT EXISTS ai_credits_monthly INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS credits_reset_at TIMESTAMPTZ;
 

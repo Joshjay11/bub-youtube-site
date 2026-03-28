@@ -37,10 +37,11 @@ export default function UpstreamContext({ section, onBundleLoaded }: UpstreamCon
   const aa = bundle.audience_avatar;
   const fw = bundle.framing_worksheet;
   const cs = bundle.competitive_scan;
+  const rk = bundle.research_keeper;
 
   // Only show if there's meaningful upstream data
   const hasIdeaData = !!idea;
-  const hasResearchData = !!(aa?.idealViewer || fw?.oneSentence || cs?.uniqueAngle);
+  const hasResearchData = !!(aa?.idealViewer || fw?.oneSentence || cs?.uniqueAngle || rk?.notes?.trim());
 
   // Determine what to show based on current section
   const showIdea = hasIdeaData;
@@ -132,6 +133,12 @@ export default function UpstreamContext({ section, onBundleLoaded }: UpstreamCon
                 <div>
                   <div className="text-[11px] text-text-muted uppercase tracking-wider mb-1">Unique Angle (vs Competition)</div>
                   <div className="text-[12px] text-text-dim">{cs.uniqueAngle}</div>
+                </div>
+              )}
+              {rk?.notes?.trim() && (
+                <div>
+                  <div className="text-[11px] text-text-muted uppercase tracking-wider mb-1">Research Notes</div>
+                  <div className="text-[12px] text-text-dim line-clamp-3">{rk.notes.trim()}</div>
                 </div>
               )}
             </>

@@ -42,6 +42,13 @@ export interface ProjectBundle {
     emotionalHook?: string;
     thirtySeconds?: string;
   };
+  topic_research?: {
+    topic?: string;
+    results?: Array<{ angle: string; findings: string }>;
+  };
+  research_keeper?: {
+    notes?: string;
+  };
   [key: string]: unknown;
 }
 
@@ -125,6 +132,12 @@ export function compileBrief(bundle: ProjectBundle): string {
     if (cs.marketGap) lines.push(`Missing: ${cs.marketGap}`);
     if (cs.entryPoint) lines.push(`Entry point: ${cs.entryPoint}`);
     lines.push('');
+  }
+
+  // Research notes
+  const rk = bundle.research_keeper;
+  if (rk?.notes?.trim()) {
+    lines.push('RESEARCH NOTES', rk.notes.trim(), '');
   }
 
   // Framing

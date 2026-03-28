@@ -1,12 +1,20 @@
 'use client';
 
+import { useRef } from 'react';
 import AudienceAvatar from '@/components/app/AudienceAvatar';
-import CompetitiveScan from '@/components/app/CompetitiveScan';
+import TopicResearch from '@/components/app/TopicResearch';
+import ResearchKeeper from '@/components/app/ResearchKeeper';
 import FramingWorksheet from '@/components/app/FramingWorksheet';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
 
 export default function ResearchPage() {
+  const appendToKeeperRef = useRef<((text: string) => void) | null>(null);
+
+  function handleKeep(text: string) {
+    appendToKeeperRef.current?.(text);
+  }
+
   return (
     <div>
       <h1 className="font-serif text-[32px] text-text-bright mb-2">Research & Pre-Production</h1>
@@ -19,7 +27,8 @@ export default function ResearchPage() {
       <div className="space-y-12">
         <AudienceAvatar />
         <hr className="rule" style={{ margin: '0' }} />
-        <CompetitiveScan />
+        <TopicResearch onKeep={handleKeep} />
+        <ResearchKeeper appendRef={appendToKeeperRef} />
         <hr className="rule" style={{ margin: '0' }} />
         <FramingWorksheet />
         <hr className="rule" style={{ margin: '0' }} />
