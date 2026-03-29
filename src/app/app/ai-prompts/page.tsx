@@ -186,7 +186,7 @@ export default function AIPromptsPage() {
       </div>
 
       {/* Fixed Save Progress button */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:bottom-6 md:right-24 z-40">
+      <div className="fixed bottom-6 left-4 md:left-[260px] z-40">
         <button
           onClick={handleManualSave}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium shadow-lg border transition-all cursor-pointer ${
