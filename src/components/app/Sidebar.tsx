@@ -6,6 +6,40 @@ import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
 import CreditHealthBar from '@/components/app/CreditHealthBar';
 
+function SaveProgressButton() {
+  const [saved, setSaved] = useState(false);
+
+  function handleSave() {
+    window.dispatchEvent(new Event('save-progress'));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <button
+      onClick={handleSave}
+      className={`mx-2 mb-2 flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all w-[calc(100%-16px)] ${
+        saved
+          ? 'text-green bg-green/5'
+          : 'text-text-dim hover:text-text-primary hover:bg-[rgba(255,255,255,0.03)]'
+      }`}
+    >
+      <span className="shrink-0">
+        {saved ? (
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+          </svg>
+        )}
+      </span>
+      {saved ? 'Saved' : 'Save Progress'}
+    </button>
+  );
+}
+
 const modules = [
   {
     label: 'Dashboard',
@@ -311,6 +345,11 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* Save Progress */}
+        {!collapsed && (
+          <SaveProgressButton />
+        )}
 
         {/* Collapse toggle — desktop only */}
         <button

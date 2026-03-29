@@ -88,14 +88,14 @@ export default function AIPromptsPage() {
 
   const keptOutput = data.kept?.[activePrompt.code.toLowerCase()] || null;
 
-  // Manual save for peace of mind
-  const [saveConfirm, setSaveConfirm] = useState(false);
-  function handleManualSave() {
-    // Trigger a state change to flush debounced save immediately
-    setData((prev) => ({ ...prev }));
-    setSaveConfirm(true);
-    setTimeout(() => setSaveConfirm(false), 2000);
-  }
+  // Listen for sidebar Save Progress button
+  useEffect(() => {
+    function handleSaveEvent() {
+      setData((prev) => ({ ...prev }));
+    }
+    window.addEventListener('save-progress', handleSaveEvent);
+    return () => window.removeEventListener('save-progress', handleSaveEvent);
+  }, [setData]);
 
   if (!bundleLoaded) {
     return (
@@ -185,23 +185,6 @@ export default function AIPromptsPage() {
         <RunningBrief />
       </div>
 
-      {/* Fixed Save Progress button */}
-      <div className="fixed bottom-6 left-4 md:left-[260px] z-40">
-        <button
-          onClick={handleManualSave}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium shadow-lg border transition-all cursor-pointer ${
-            saveConfirm
-              ? 'bg-green/10 border-green/30 text-green'
-              : 'bg-bg-card border-border text-text-dim hover:border-border-light hover:text-text-primary'
-          }`}
-        >
-          {saveConfirm ? (
-            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Saved</>
-          ) : (
-            'Save Progress'
-          )}
-        </button>
-      </div>
     </div>
   );
 }
