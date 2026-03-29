@@ -5,6 +5,7 @@ import PromptRunner from '@/components/app/PromptRunner';
 import { PROMPTS } from '@/lib/prompts';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
+import AIPromptsGuide from '@/components/app/AIPromptsGuide';
 import { useProject } from '@/lib/project-context';
 import { type ProjectBundle, loadProjectBundle, compileBrief } from '@/lib/project-bundle';
 
@@ -102,6 +103,8 @@ export default function AIPromptsPage() {
       </p>
 
       <UpstreamContext section="ai-prompts" />
+
+      <AIPromptsGuide onSelectPrompt={(id) => setActiveId(id)} />
 
       {/* Prompt selector tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
