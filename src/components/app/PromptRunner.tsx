@@ -3,15 +3,30 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { type PromptTemplate, injectVariables } from '@/lib/prompts';
 
+interface SavedPromptState {
+  values: Record<string, string>;
+  output: string;
+}
+
 interface PromptRunnerProps {
   prompt: PromptTemplate;
   prefill?: Record<string, string>;
+  savedState?: SavedPromptState;
+  onStateChange?: (state: SavedPromptState) => void;
+  onKeepOutput?: (output: string) => void;
+  keptOutput?: string | null;
 }
 
-export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
+export default function PromptRunner({ prompt, prefill, savedState, onStateChange, onKeepOutput, keptOutput }: PromptRunnerProps) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const empty = Object.fromEntries(prompt.variables.map((v) => [v.key, '']));
-    // Apply prefill to empty fields only
+    // Priority: saved state → prefill → empty
+    if (savedState?.values) {
+      for (const [k, v] of Object.entries(savedState.values)) {
+        if (v && k in empty) empty[k] = v;
+      }
+    }
+    // Only apply prefill to still-empty fields
     if (prefill) {
       for (const [k, v] of Object.entries(prefill)) {
         if (v && k in empty && !empty[k]) empty[k] = v;
@@ -19,15 +34,17 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
     }
     return empty;
   });
-  const [output, setOutput] = useState('');
+  const [output, setOutput] = useState(savedState?.output || '');
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [source, setSource] = useState<string>('');
   const [needsUpgrade, setNeedsUpgrade] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [kept, setKept] = useState(!!keptOutput);
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch remaining runs on mount
   useEffect(() => {
@@ -41,6 +58,16 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
       .catch(() => {});
   }, []);
 
+  // Debounced save on values or output change
+  useEffect(() => {
+    if (!onStateChange) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      onStateChange({ values, output });
+    }, 1000);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [values, output, onStateChange]);
+
   const allFilled = prompt.variables.every((v) => values[v.key].trim().length > 0);
 
   const handleRun = useCallback(async () => {
@@ -50,9 +77,9 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
     setOutput('');
     setError('');
     setCopied(false);
+    setKept(false);
 
     const injected = injectVariables(prompt.template, values);
-
     abortRef.current = new AbortController();
 
     try {
@@ -135,6 +162,13 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
     setError('');
   }, []);
 
+  const handleKeep = useCallback(() => {
+    if (output && onKeepOutput) {
+      onKeepOutput(output);
+      setKept(true);
+    }
+  }, [output, onKeepOutput]);
+
   // Render the template with highlighted variables
   function renderTemplate() {
     const parts = prompt.template.split(/(\{\{\w+\}\})/g);
@@ -148,9 +182,7 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
           <span
             key={i}
             className={`inline px-1 rounded font-sans text-[13px] ${
-              filled
-                ? 'bg-amber/20 text-amber'
-                : 'bg-amber/10 text-amber-dim'
+              filled ? 'bg-amber/20 text-amber' : 'bg-amber/10 text-amber-dim'
             }`}
           >
             {filled || variable?.label || key}
@@ -271,21 +303,28 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] text-text-dim border border-border hover:border-border-light hover:text-text-primary transition-colors"
             >
               {copied ? (
-                <>
-                  <svg className="w-3.5 h-3.5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Copied
-                </>
+                <><svg className="w-3.5 h-3.5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Copied</>
               ) : (
-                <>
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy Output
-                </>
+                <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copy Output</>
               )}
             </button>
+            {onKeepOutput && (
+              <button
+                onClick={handleKeep}
+                disabled={kept}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] transition-colors ${
+                  kept
+                    ? 'text-green border border-green/20'
+                    : 'text-amber border border-amber/20 hover:bg-amber/10'
+                }`}
+              >
+                {kept ? (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Kept</>
+                ) : (
+                  'Keep This Output'
+                )}
+              </button>
+            )}
             <button
               onClick={handleClear}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] text-text-muted hover:text-text-dim transition-colors"
@@ -298,9 +337,7 @@ export default function PromptRunner({ prompt, prefill }: PromptRunnerProps) {
 
       {/* Error */}
       {error && (
-        <div className="bg-red/5 border border-red/20 rounded-xl px-5 py-3 text-[14px] text-red">
-          {error}
-        </div>
+        <div className="bg-red/5 border border-red/20 rounded-xl px-5 py-3 text-[14px] text-red">{error}</div>
       )}
 
       {/* Output */}
