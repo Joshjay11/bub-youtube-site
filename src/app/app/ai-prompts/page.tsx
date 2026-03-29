@@ -88,6 +88,15 @@ export default function AIPromptsPage() {
 
   const keptOutput = data.kept?.[activePrompt.code.toLowerCase()] || null;
 
+  // Manual save for peace of mind
+  const [saveConfirm, setSaveConfirm] = useState(false);
+  function handleManualSave() {
+    // Trigger a state change to flush debounced save immediately
+    setData((prev) => ({ ...prev }));
+    setSaveConfirm(true);
+    setTimeout(() => setSaveConfirm(false), 2000);
+  }
+
   if (!bundleLoaded) {
     return (
       <div>
@@ -174,6 +183,24 @@ export default function AIPromptsPage() {
 
       <div className="mt-12">
         <RunningBrief />
+      </div>
+
+      {/* Fixed Save Progress button */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:bottom-6 md:right-24 z-40">
+        <button
+          onClick={handleManualSave}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium shadow-lg border transition-all cursor-pointer ${
+            saveConfirm
+              ? 'bg-green/10 border-green/30 text-green'
+              : 'bg-bg-card border-border text-text-dim hover:border-border-light hover:text-text-primary'
+          }`}
+        >
+          {saveConfirm ? (
+            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Saved</>
+          ) : (
+            'Save Progress'
+          )}
+        </button>
       </div>
     </div>
   );
