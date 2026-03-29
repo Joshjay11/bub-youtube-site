@@ -22,7 +22,7 @@ function buildPrefills(promptId: string, bundle: ProjectBundle): Record<string, 
     case 'find-angle': // 3A
       return {
         topic: idea,
-        obvious_take: '', // Hard to auto-derive the "obvious" take — leave for user
+        obvious_take: vbm?.currentBelief || '',
         audience,
         channel_lens: fw?.oneSentence || '',
       };
