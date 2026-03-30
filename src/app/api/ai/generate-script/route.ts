@@ -55,6 +55,7 @@ export async function POST(request: Request) {
     const parts: string[] = [];
     const ie = bundle.idea_entry as { currentIdea?: string } | undefined;
     if (ie?.currentIdea) parts.push(`TOPIC: ${ie.currentIdea}`);
+    parts.push(`TITLE: ${ie?.currentIdea || 'Untitled'}`);
 
     const fw = bundle.framing_worksheet as Record<string, string> | undefined;
     if (fw?.oneSentence) parts.push(`THESIS: ${fw.oneSentence}`);

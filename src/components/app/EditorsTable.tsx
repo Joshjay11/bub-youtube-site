@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle } from '@/lib/project-bundle';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
@@ -63,6 +64,7 @@ export default function EditorsTable() {
   const [error, setError] = useState('');
   const [view, setView] = useState<'summary' | 'issues' | 'edited'>('summary');
   const [copied, setCopied] = useState(false);
+  const [editedViewMode, setEditedViewMode] = useState<'preview' | 'raw'>('preview');
 
   // Load script from Write page
   useEffect(() => {
@@ -260,8 +262,19 @@ export default function EditorsTable() {
                         <span className="text-[12px] text-green px-3 py-1.5">Edits accepted ✓</span>
                       )}
                     </div>
+                    {/* Preview / Raw toggle */}
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditedViewMode('preview')} className={`px-3 py-1 rounded text-[12px] font-medium transition-all ${editedViewMode === 'preview' ? 'bg-amber text-bg' : 'bg-bg-card text-text-dim border border-border'}`}>Preview</button>
+                      <button onClick={() => setEditedViewMode('raw')} className={`px-3 py-1 rounded text-[12px] font-medium transition-all ${editedViewMode === 'raw' ? 'bg-amber text-bg' : 'bg-bg-card text-text-dim border border-border'}`}>Raw Markdown</button>
+                    </div>
                     <div className="bg-bg-card border border-border rounded-xl p-5">
-                      <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap font-mono">{r.edited_text}</div>
+                      {editedViewMode === 'preview' ? (
+                        <div className="text-[14px] text-text-primary leading-relaxed prose prose-invert max-w-none">
+                          <ReactMarkdown>{editedText}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <pre className="text-[13px] text-text-primary leading-relaxed whitespace-pre-wrap font-mono">{editedText}</pre>
+                      )}
                     </div>
                   </div>
                 );

@@ -1,7 +1,24 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import ScriptAudit from '@/components/app/ScriptAudit';
 import Link from 'next/link';
+import UpstreamContext from '@/components/app/UpstreamContext';
+import { useProject } from '@/lib/project-context';
+import { loadProjectBundle } from '@/lib/project-bundle';
 
 export default function OptimizePage() {
+  const { currentProject } = useProject();
+  const [scriptPreview, setScriptPreview] = useState('');
+
+  useEffect(() => {
+    if (!currentProject?.id) return;
+    loadProjectBundle(currentProject.id).then((bundle) => {
+      const ws = bundle.write as { script_draft?: string } | undefined;
+      if (ws?.script_draft) setScriptPreview(ws.script_draft.slice(0, 300));
+    }).catch(() => {});
+  }, [currentProject?.id]);
+
   return (
     <div>
       <h1 className="font-serif text-[32px] text-text-bright mb-2">Optimize</h1>
@@ -9,12 +26,20 @@ export default function OptimizePage() {
         Audit your script before recording. Fix every problem before it costs you retention.
       </p>
 
+      <UpstreamContext section="optimize" />
+
+      {scriptPreview && (
+        <div className="bg-bg-elevated border border-border/50 rounded-lg px-5 py-3 mb-8">
+          <div className="text-[11px] text-text-muted uppercase tracking-wider mb-1">Your script (from Write page)</div>
+          <div className="text-[13px] text-text-dim whitespace-pre-wrap">{scriptPreview}...</div>
+        </div>
+      )}
+
       <div className="space-y-12">
         <ScriptAudit />
 
         <hr className="rule" style={{ margin: '0' }} />
 
-        {/* Reference */}
         <div>
           <h2 className="font-serif text-[22px] text-text-bright mb-4">Reference</h2>
           <Link
