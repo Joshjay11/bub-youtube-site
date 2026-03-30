@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { type PromptTemplate, injectVariables } from '@/lib/prompts';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 
 interface SavedPromptState {
   values: Record<string, string>;
@@ -45,6 +46,22 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
   const abortRef = useRef<AbortController | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Register page context for Thinking Partner
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('prompt_runner', `AI Prompt: ${prompt.code} ${prompt.title}`, () => {
+    const lines = [`Tool: AI Prompt Runner`, `Active Prompt: ${prompt.code} — ${prompt.title}`];
+    for (const v of prompt.variables) {
+      const val = values[v.key]?.trim();
+      lines.push(`  ${v.label}: ${val || '(empty)'}`);
+    }
+    if (output) {
+      lines.push(`\nAI Output (preview): ${output.slice(0, 200)}${output.length > 200 ? '...' : ''}`);
+    } else {
+      lines.push('\nAI Output: (not run yet)');
+    }
+    return lines.join('\n');
+  }, wrapperRef);
 
   // Fetch remaining runs on mount
   useEffect(() => {
@@ -194,7 +211,7 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
   }
 
   return (
-    <div className="space-y-5">
+    <div ref={wrapperRef} className="space-y-5">
       {/* Prompt preview */}
       <div className="bg-bg-elevated border border-border rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
