@@ -37,8 +37,14 @@ export function PageContextProvider({ children }: { children: ReactNode }) {
     const visibleParts: string[] = [];
     const otherParts: string[] = [];
 
-    for (const [, reg] of tools.current) {
-      const ctx = reg.buildContext();
+    for (const [id, reg] of tools.current) {
+      let ctx: string | null = null;
+      try {
+        ctx = reg.buildContext();
+      } catch (err) {
+        console.warn(`[PageContext] Error in ${id}:`, err);
+        continue;
+      }
       if (!ctx) continue;
 
       if (reg.isVisible()) {

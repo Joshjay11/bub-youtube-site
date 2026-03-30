@@ -126,7 +126,8 @@ export default function ThinkingPartner() {
     }
 
     // Always send text context to the AI (the model is text-only)
-    const ctx = getPageContext();
+    let ctx: string | null = null;
+    try { ctx = getPageContext(); } catch { /* ignore */ }
     const msg = ctx
       ? 'I just captured my screen. Here\'s the tool data from this page — what should I focus on next?'
       : 'Here\'s what I\'m looking at. What should I focus on next?';
@@ -153,8 +154,13 @@ export default function ThinkingPartner() {
     setStreaming(true);
     setError('');
 
-    // Inject FRESH page context
-    const pageContext = getPageContext();
+    // Inject FRESH page context (never crash on context failure)
+    let pageContext: string | null = null;
+    try {
+      pageContext = getPageContext();
+    } catch {
+      // Context capture failed — send without context
+    }
     const enrichedMessage = pageContext
       ? `[CURRENT PAGE DATA]\n${pageContext}\n[END PAGE DATA]\n\n${text}`
       : text;
