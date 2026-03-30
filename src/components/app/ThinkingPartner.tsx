@@ -98,14 +98,43 @@ export default function ThinkingPartner() {
     return () => window.removeEventListener('thinking-partner:ask', handleAskEvent);
   }, []);
 
-  function handleCapturePage() {
+  const [captureUrl, setCaptureUrl] = useState<string | null>(null);
+
+  async function handleCapturePage() {
+    // Capture visible viewport screenshot + send text context
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Capture the main content area at current scroll position
+      const mainEl = document.querySelector('main') as HTMLElement;
+      if (!mainEl) return;
+
+      const scrollY = mainEl.scrollTop || window.scrollY;
+      const canvas = await html2canvas(mainEl, {
+        y: scrollY,
+        height: window.innerHeight,
+        windowHeight: window.innerHeight,
+        useCORS: true,
+        scale: 1,
+        logging: false,
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      setCaptureUrl(dataUrl);
+    } catch {
+      // Fallback: just send text context
+    }
+
+    // Always send text context to the AI (the model is text-only)
     const ctx = getPageContext();
-    if (!ctx) return;
-    setInput('Here\'s what I have so far on this page. What should I focus on next?');
+    const msg = ctx
+      ? 'I just captured my screen. Here\'s the tool data from this page — what should I focus on next?'
+      : 'Here\'s what I\'m looking at. What should I focus on next?';
+    setInput(msg);
     setTimeout(() => {
       const sendBtn = document.querySelector('[data-tp-send]') as HTMLButtonElement;
       sendBtn?.click();
-    }, 50);
+    }, 100);
   }
 
   function formatConversation(): string {
@@ -221,6 +250,7 @@ export default function ThinkingPartner() {
     setMessages([]);
     setError('');
     setStreaming(false);
+    setCaptureUrl(null);
   }
 
   // Panel size classes
@@ -314,6 +344,31 @@ export default function ThinkingPartner() {
                 </button>
               </div>
             </div>
+
+            {/* Screen capture thumbnail */}
+            {captureUrl && (
+              <div className="px-4 pt-3 pb-0 border-b border-border/30 shrink-0">
+                <div className="flex items-start gap-2 mb-2">
+                  <img
+                    src={captureUrl}
+                    alt="Screen capture"
+                    className="w-full max-h-[120px] object-cover object-top rounded-lg border border-border/50 cursor-pointer"
+                    onClick={() => window.open(captureUrl, '_blank')}
+                    title="Click to view full size"
+                  />
+                  <button
+                    onClick={() => setCaptureUrl(null)}
+                    className="shrink-0 p-1 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer"
+                    title="Dismiss"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-[10px] text-text-muted mb-2">Screen captured at current scroll position</p>
+              </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
