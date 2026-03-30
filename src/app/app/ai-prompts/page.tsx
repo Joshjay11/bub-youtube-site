@@ -14,9 +14,10 @@ interface AllPromptsData {
   fields: Record<string, Record<string, string>>;
   outputs: Record<string, string>;
   kept: Record<string, string>;
+  picks: Record<string, string>;
 }
 
-const DEFAULTS: AllPromptsData = { fields: {}, outputs: {}, kept: {} };
+const DEFAULTS: AllPromptsData = { fields: {}, outputs: {}, kept: {}, picks: {} };
 
 function buildPrefills(promptId: string, bundle: ProjectBundle): Record<string, string> {
   const idea = bundle.idea_entry?.currentIdea || '';
@@ -88,6 +89,15 @@ export default function AIPromptsPage() {
 
   const keptOutput = data.kept?.[activePrompt.code.toLowerCase()] || null;
 
+  const handlePickChange = useCallback((text: string) => {
+    setData((prev) => ({
+      ...prev,
+      picks: { ...prev.picks, [activePrompt.code.toLowerCase()]: text },
+    }));
+  }, [activePrompt.code, setData]);
+
+  const currentPick = data.picks?.[activePrompt.code.toLowerCase()] || '';
+
   // Listen for sidebar Save Progress button
   useEffect(() => {
     function handleSaveEvent() {
@@ -125,7 +135,8 @@ export default function AIPromptsPage() {
       {/* Tabs — green dot on tabs with kept output */}
       <div className="flex flex-wrap gap-2 mb-8">
         {PROMPTS.map((prompt) => {
-          const hasKept = !!data.kept?.[prompt.code.toLowerCase()];
+          const code = prompt.code.toLowerCase();
+          const hasKept = !!(data.picks?.[code]?.trim() || data.kept?.[code]);
           return (
             <button
               key={prompt.id}
@@ -160,20 +171,22 @@ export default function AIPromptsPage() {
         onStateChange={handleStateChange}
         onKeepOutput={handleKeepOutput}
         keptOutput={keptOutput}
+        pick={currentPick}
+        onPickChange={handlePickChange}
       />
 
-      {/* Kept outputs summary */}
-      {Object.values(data.kept || {}).some((v) => v) && (
+      {/* Your Picks summary */}
+      {Object.values(data.picks || {}).some((v) => v?.trim()) && (
         <div className="mt-8 bg-bg-card border border-border rounded-xl p-5">
-          <h3 className="text-[14px] text-text-bright font-medium mb-3">Kept Outputs</h3>
+          <h3 className="text-[14px] text-text-bright font-medium mb-3">Your Picks</h3>
           <div className="space-y-3">
-            {Object.entries(data.kept || {}).map(([code, text]) => {
-              if (!text) return null;
+            {Object.entries(data.picks || {}).map(([code, text]) => {
+              if (!text?.trim()) return null;
               const p = PROMPTS.find((pr) => pr.code.toLowerCase() === code);
               return (
                 <div key={code} className="text-[13px]">
-                  <span className="text-amber font-mono mr-2">{p?.code || code}</span>
-                  <span className="text-text-dim">{text.slice(0, 150)}{text.length > 150 ? '...' : ''}</span>
+                  <span className="text-amber font-mono mr-2">{p?.code || code.toUpperCase()}</span>
+                  <span className="text-text-dim">{text.slice(0, 200)}{text.length > 200 ? '...' : ''}</span>
                 </div>
               );
             })}

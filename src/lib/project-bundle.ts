@@ -65,6 +65,7 @@ export interface ProjectBundle {
   };
   ai_prompts_state?: {
     kept?: Record<string, string>;
+    picks?: Record<string, string>;
   };
   [key: string]: unknown;
 }
@@ -196,13 +197,15 @@ export function compileBrief(bundle: ProjectBundle): string {
     lines.push('');
   }
 
-  // AI Prompt kept outputs
+  // AI Prompt picks (preferred) or kept outputs (fallback)
+  const picks = bundle.ai_prompts_state?.picks;
   const kept = bundle.ai_prompts_state?.kept;
-  if (kept && Object.values(kept).some((v) => v)) {
+  const merged = { ...kept, ...picks }; // picks override kept
+  if (Object.values(merged).some((v) => v?.trim())) {
     lines.push('AI PROMPT RESULTS');
     const codeMap: Record<string, string> = { '3a': 'Find the Angle', '3b': 'Cross-Disciplinary', '3c': 'Counter-Arguments', '3d': 'Outline', '3e': 'Hook Variants', '3f': 'Script Audit', '3g': 'Compression', '3h': 'Quality Score' };
-    for (const [code, text] of Object.entries(kept)) {
-      if (text) lines.push(`${code.toUpperCase()} (${codeMap[code] || code}): ${text.slice(0, 300)}${text.length > 300 ? '...' : ''}`);
+    for (const [code, text] of Object.entries(merged)) {
+      if (text?.trim()) lines.push(`${code.toUpperCase()} (${codeMap[code] || code}): ${text.slice(0, 300)}${text.length > 300 ? '...' : ''}`);
     }
     lines.push('');
   }

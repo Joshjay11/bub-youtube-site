@@ -16,9 +16,26 @@ interface PromptRunnerProps {
   onStateChange?: (state: SavedPromptState) => void;
   onKeepOutput?: (output: string) => void;
   keptOutput?: string | null;
+  pick?: string;
+  onPickChange?: (text: string) => void;
 }
 
-export default function PromptRunner({ prompt, prefill, savedState, onStateChange, onKeepOutput, keptOutput }: PromptRunnerProps) {
+const MULTI_OPTION_PROMPTS = new Set(['find-angle', 'cross-disciplinary', 'counter-arguments', 'hook-variants']);
+
+function parseOutputItems(text: string): string[] {
+  // Split by numbered patterns: "1.", "1)", "**1.", etc.
+  const chunks = text.split(/\n(?=\d+[\.\)]\s|\*\*\d+)/);
+  if (chunks.length >= 3) {
+    return chunks
+      .map((c) => c.replace(/^\d+[\.\)]\s*/, '').replace(/^\*\*\d+[\.\)]\s*\*?\*?\s*/, '').trim())
+      .filter((c) => c.length > 15);
+  }
+  // Fallback: split by double newlines
+  const paragraphs = text.split(/\n{2,}/).filter((p) => p.trim().length > 15);
+  return paragraphs.length >= 2 ? paragraphs : [];
+}
+
+export default function PromptRunner({ prompt, prefill, savedState, onStateChange, onKeepOutput, keptOutput, pick, onPickChange }: PromptRunnerProps) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const empty = Object.fromEntries(prompt.variables.map((v) => [v.key, '']));
     // Priority: saved state → prefill → empty
@@ -358,20 +375,56 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
       )}
 
       {/* Output */}
-      {(output || isRunning) && (
-        <div ref={outputRef} className="bg-bg-card border border-border rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[12px] text-text-muted uppercase tracking-wider">AI Output</span>
-            {isRunning && (
-              <span className="flex items-center gap-2 text-[12px] text-amber">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-                Generating...
-              </span>
+      {(output || isRunning) && (() => {
+        const isMulti = MULTI_OPTION_PROMPTS.has(prompt.id);
+        const items = isMulti && output && !isRunning ? parseOutputItems(output) : [];
+        const showPerItem = items.length >= 2;
+
+        return (
+          <div ref={outputRef} className="bg-bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[12px] text-text-muted uppercase tracking-wider">AI Output</span>
+              {isRunning && (
+                <span className="flex items-center gap-2 text-[12px] text-amber">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
+                  Generating...
+                </span>
+              )}
+            </div>
+            {showPerItem ? (
+              <div className="space-y-3">
+                {items.map((item, idx) => (
+                  <div key={idx} className="group relative bg-bg-elevated border border-border/50 rounded-lg p-4">
+                    <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap pr-16">{item}</div>
+                    <button
+                      onClick={() => onPickChange?.(item)}
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-[11px] text-amber hover:text-amber-bright transition-all bg-transparent border border-amber/20 rounded px-2 py-1 cursor-pointer hover:bg-amber/10"
+                    >
+                      Keep this
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap">
+                {output || <span className="text-text-muted">Waiting for response...</span>}
+              </div>
             )}
           </div>
-          <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap">
-            {output || <span className="text-text-muted">Waiting for response...</span>}
-          </div>
+        );
+      })()}
+
+      {/* Your Pick field */}
+      {output && !isRunning && onPickChange && (
+        <div>
+          <label className="block text-[13px] text-text-bright mb-1.5">Your Pick</label>
+          <textarea
+            value={pick ?? ''}
+            onChange={(e) => onPickChange(e.target.value)}
+            placeholder="Paste or type the angle/insight you're going with. This carries forward into your Running Brief."
+            rows={3}
+            className="w-full bg-bg-card border border-border rounded-lg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20 transition-colors resize-y"
+          />
         </div>
       )}
 
