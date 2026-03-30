@@ -11,15 +11,13 @@ const PHASE_1 = [
 ];
 
 const PHASE_2 = [
-  { code: '3F', id: 'script-audit', title: 'Script Audit', desc: 'Find retention problems in your draft with specific fixes' },
-  { code: '3G', id: 'compression-check', title: 'Compression Check', desc: 'Tighten wordy sections into conversational delivery' },
-  { code: '3H', id: 'output-quality-scorecard', title: 'AI Output Quality Scorecard', desc: 'Score AI-generated output before using it' },
+  { code: '3F', id: 'outline-audit', title: 'Outline Audit', desc: 'Check your outline for structural problems before writing' },
 ];
 
 const FLOWS = [
-  { label: 'Quick Path', desc: 'most videos', steps: '3A → 3D → Write → 3F → 3G' },
-  { label: 'Deep Path', desc: 'important videos', steps: '3A → 3B → 3C → 3D → Write → 3F → 3G → 3H' },
-  { label: 'Polish Only', desc: 'second draft', steps: '3F → 3G' },
+  { label: 'Quick Path', desc: 'most videos', steps: '3A → 3D → 3F → Write' },
+  { label: 'Deep Path', desc: 'important videos', steps: '3A → 3B → 3C → 3D → 3F → Write' },
+  { label: 'Polish Only', desc: 'after writing', steps: 'Refine page (Editor\'s Table + Compression)' },
 ];
 
 interface AIPromptsGuideProps {

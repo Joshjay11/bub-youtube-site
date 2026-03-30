@@ -40,6 +40,14 @@ function buildPrefills(promptId: string, bundle: ProjectBundle): Record<string, 
     }
     case 'hook-variants':
       return { topic: idea, angle: fw?.contrarianAngle || fw?.oneSentence || '', title: '', audience_belief: vbm?.currentBelief || '' };
+    case 'outline-audit': {
+      // Pull outline from 3D kept/pick, hook from structure or 3E
+      const picks = bundle.ai_prompts_state?.picks;
+      const kept = bundle.ai_prompts_state?.kept;
+      const outline = picks?.['3d'] || kept?.['3d'] || '';
+      const hook = bundle.hook_draft?.draft || picks?.['3e'] || kept?.['3e'] || '';
+      return { outline, hook, thesis: fw?.oneSentence || '' };
+    }
     default:
       return {};
   }

@@ -1,0 +1,252 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useProject } from '@/lib/project-context';
+import { loadProjectBundle } from '@/lib/project-bundle';
+import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import { useRegisterPageContext } from '@/contexts/PageContextProvider';
+import { notifyCreditChange } from '@/components/app/CreditHealthBar';
+
+interface Issue {
+  type: 'hemingway' | 'asimov' | 'bukowski' | 'ai-tell';
+  original: string;
+  suggestion: string;
+  reason: string;
+}
+
+interface EditorResult {
+  summary: string;
+  issues: Issue[];
+  edited_text: string;
+  stats: {
+    words_original: number;
+    words_edited: number;
+    words_cut: number;
+    cut_percentage: number;
+    ai_tells_found: number;
+    readability_grade: string;
+  };
+}
+
+interface EditorsData {
+  result: EditorResult | null;
+  acceptedEdits: boolean;
+}
+
+const DEFAULTS: EditorsData = { result: null, acceptedEdits: false };
+
+const TYPE_COLORS: Record<string, string> = {
+  hemingway: 'bg-[#D4A574]/10 text-[#D4A574] border-[#D4A574]/20',
+  asimov: 'bg-[#6AAF8D]/10 text-[#6AAF8D] border-[#6AAF8D]/20',
+  bukowski: 'bg-[#A89080]/10 text-[#A89080] border-[#A89080]/20',
+  'ai-tell': 'bg-red/10 text-red border-red/20',
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  hemingway: 'Hemingway',
+  asimov: 'Asimov',
+  bukowski: 'Bukowski',
+  'ai-tell': 'AI Tell',
+};
+
+export default function EditorsTable() {
+  const { currentProject } = useProject();
+  const { data, setData, saveStatus } = useProjectData<EditorsData>('editors_table', DEFAULTS);
+
+  const [scriptText, setScriptText] = useState('');
+  const [editor, setEditor] = useState<'all' | 'hemingway' | 'asimov' | 'bukowski'>('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [view, setView] = useState<'summary' | 'issues' | 'edited'>('summary');
+  const [copied, setCopied] = useState(false);
+
+  // Load script from Write page
+  useEffect(() => {
+    if (!currentProject?.id) return;
+    loadProjectBundle(currentProject.id).then((bundle) => {
+      const ws = bundle.write_script as { scriptDraft?: string } | undefined;
+      if (ws?.scriptDraft) setScriptText(ws.scriptDraft);
+    }).catch(() => {});
+  }, [currentProject?.id]);
+
+  async function handleRun() {
+    if (!scriptText.trim() || loading) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/ai/editors-table', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: scriptText.trim(), editor }),
+      });
+
+      const result = await res.json();
+      if (result.result) {
+        setData({ result: result.result, acceptedEdits: false });
+        setView('summary');
+        notifyCreditChange();
+      } else {
+        setError(result.error || 'Analysis failed.');
+      }
+    } catch {
+      setError('Connection error.');
+    }
+    setLoading(false);
+  }
+
+  function handleAcceptEdits() {
+    if (!data.result?.edited_text || !currentProject?.id) return;
+    // Write edited text back to the write_script project data
+    fetch('/api/projects/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: currentProject.id,
+        toolKey: 'write_script',
+        data: { scriptDraft: data.result.edited_text, selectedModel: 'edited', wordCount: data.result.stats.words_edited, draftA: '', draftB: '' },
+      }),
+    });
+    setScriptText(data.result.edited_text);
+    setData((prev) => ({ ...prev, acceptedEdits: true }));
+  }
+
+  function handleCopyEdited() {
+    if (!data.result?.edited_text) return;
+    navigator.clipboard.writeText(data.result.edited_text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const r = data.result;
+  const emDashCount = (scriptText.match(/—/g) || []).length;
+
+  function nukeEmDashes() {
+    setScriptText(scriptText.replace(/—/g, ','));
+  }
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useRegisterPageContext('editors_table', "Editor's Table", () => {
+    if (!r) return "Tool: Editor's Table\nStatus: Not run yet";
+    return `Tool: Editor's Table\nWords cut: ${r.stats.words_cut}\nAI tells found: ${r.stats.ai_tells_found}\nReadability: ${r.stats.readability_grade}\nAccepted edits: ${data.acceptedEdits}`;
+  }, wrapperRef);
+
+  return (
+    <div ref={wrapperRef} className="space-y-5">
+      <div className="flex items-center gap-3">
+        <div>
+          <h2 className="font-serif text-[24px] text-text-bright">The Editor&apos;s Table</h2>
+          <p className="text-text-dim text-[13px] mt-1">Three legendary editors analyze your script for bloat, structural issues, and AI slop.</p>
+        </div>
+        <SaveIndicator status={saveStatus} />
+      </div>
+
+      {!scriptText && (
+        <div className="bg-bg-card border border-border rounded-xl p-6 text-center">
+          <p className="text-text-muted text-[14px]">No script draft found. <a href="/app/write" className="text-amber hover:text-amber-bright">Generate your script on the Write page first.</a></p>
+        </div>
+      )}
+
+      {scriptText && (
+        <>
+          {/* Em Dash Scanner */}
+          {emDashCount > 0 && (
+            <div className="bg-amber/5 border border-amber/20 rounded-xl px-5 py-3 flex items-center justify-between">
+              <span className="text-[13px] text-amber">{emDashCount} em dash{emDashCount !== 1 ? 'es' : ''} detected</span>
+              <button onClick={nukeEmDashes} className="text-[12px] text-amber hover:text-amber-bright bg-transparent border border-amber/20 rounded px-3 py-1 cursor-pointer hover:bg-amber/10">
+                Nuke All Em Dashes
+              </button>
+            </div>
+          )}
+
+          {/* Editor selector + run */}
+          <div className="flex flex-wrap items-center gap-3">
+            {(['all', 'hemingway', 'asimov', 'bukowski'] as const).map((e) => (
+              <button key={e} onClick={() => setEditor(e)} className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${editor === e ? 'bg-amber text-bg' : 'bg-bg-card text-text-dim border border-border hover:border-border-light'}`}>
+                {e === 'all' ? 'All Three' : e.charAt(0).toUpperCase() + e.slice(1)}
+              </button>
+            ))}
+            <button
+              onClick={handleRun}
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2 bg-amber text-bg text-[14px] font-medium rounded-xl border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Analyzing...' : 'Run Analysis'} <span className="text-[12px] opacity-70">(1 credit)</span>
+            </button>
+          </div>
+
+          {error && <div className="text-[13px] text-red bg-red/5 border border-red/20 rounded-lg px-4 py-3">{error}</div>}
+
+          {/* Results */}
+          {r && (
+            <div className="space-y-4">
+              {/* Stats bar */}
+              <div className="bg-bg-card border border-border rounded-xl p-4 flex flex-wrap gap-6">
+                <div><div className="text-[18px] font-mono font-bold text-amber">{r.stats.words_cut}</div><div className="text-[11px] text-text-muted">words cut</div></div>
+                <div><div className="text-[18px] font-mono font-bold text-red">{r.stats.ai_tells_found}</div><div className="text-[11px] text-text-muted">AI tells</div></div>
+                <div><div className="text-[18px] font-mono font-bold text-text-bright">{r.stats.cut_percentage}%</div><div className="text-[11px] text-text-muted">cut</div></div>
+                <div><div className="text-[18px] font-mono font-bold text-green">{r.stats.readability_grade}</div><div className="text-[11px] text-text-muted">readability</div></div>
+              </div>
+
+              {/* View tabs */}
+              <div className="flex gap-2">
+                {(['summary', 'issues', 'edited'] as const).map((v) => (
+                  <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${view === v ? 'bg-amber text-bg' : 'bg-bg-card text-text-dim border border-border'}`}>
+                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Summary */}
+              {view === 'summary' && (
+                <div className="bg-bg-card border border-border rounded-xl p-5">
+                  <p className="text-[14px] text-text-primary leading-relaxed">{r.summary}</p>
+                </div>
+              )}
+
+              {/* Issues */}
+              {view === 'issues' && (
+                <div className="space-y-2">
+                  {r.issues.map((issue, i) => (
+                    <div key={i} className="bg-bg-card border border-border rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${TYPE_COLORS[issue.type] || 'bg-bg-elevated text-text-muted'}`}>
+                          {TYPE_LABELS[issue.type] || issue.type}
+                        </span>
+                      </div>
+                      <div className="text-[13px] text-red/80 line-through mb-1">{issue.original}</div>
+                      <div className="text-[13px] text-green mb-1">{issue.suggestion}</div>
+                      <div className="text-[12px] text-text-muted">{issue.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Edited */}
+              {view === 'edited' && (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <button onClick={handleCopyEdited} className="text-[12px] text-text-muted hover:text-text-dim bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
+                      {copied ? 'Copied ✓' : 'Copy Edited Text'}
+                    </button>
+                    {!data.acceptedEdits && (
+                      <button onClick={handleAcceptEdits} className="text-[12px] text-amber hover:text-amber-bright bg-transparent border border-amber/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber/10">
+                        Accept Edits → Update Script
+                      </button>
+                    )}
+                    {data.acceptedEdits && (
+                      <span className="text-[12px] text-green px-3 py-1.5">Edits accepted ✓</span>
+                    )}
+                  </div>
+                  <div className="bg-bg-card border border-border rounded-xl p-5">
+                    <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap">{r.edited_text}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

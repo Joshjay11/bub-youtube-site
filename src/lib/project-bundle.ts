@@ -63,6 +63,11 @@ export interface ProjectBundle {
       summary?: string;
     };
   };
+  write_script?: {
+    scriptDraft?: string;
+    selectedModel?: string;
+    wordCount?: number;
+  };
   ai_prompts_state?: {
     kept?: Record<string, string>;
     picks?: Record<string, string>;

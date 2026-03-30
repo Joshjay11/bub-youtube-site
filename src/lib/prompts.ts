@@ -140,82 +140,37 @@ Each hook: 2-3 sentences max, written for spoken delivery (short sentences, conv
     redFlags: 'All hooks sound the same. They start with "I" or "So." They\'re longer than 3 sentences.',
   },
   {
-    id: 'script-audit',
+    id: 'outline-audit',
     code: '3F',
-    title: 'Script Audit',
-    description: 'Get an AI audit of your script draft for retention problems with specific fixes.',
-    template: `Here is my script draft:
-{{script}}
+    title: 'Outline Audit',
+    description: 'Audit your outline for structural problems before writing the script.',
+    template: `Here is my outline:
+{{outline}}
 
-Audit this script for retention problems:
+Here is my hook:
+{{hook}}
 
-1. Does the hook deliver on the title promise within 30 seconds?
-2. Where are the potential drop-off points?
-3. Are there pattern interrupts every 20-30 seconds?
-4. Is there a clear pivot or surprise at the 35% mark?
-5. Are open loops planted early and paid off later?
-6. Does the ending resolve everything AND point to the next video?
-7. Would a viewer who left at 50% feel they got value?
+Here is my thesis:
+{{thesis}}
 
-For each problem found, suggest a specific fix.`,
+Audit this outline for structural problems:
+
+1. Does the outline deliver on the hook's promise within the first micro-act?
+2. Are there enough micro-acts (3-4 for a 10-12 min video)?
+3. Is there a clear pivot or twist at the ~35% mark?
+4. Are open loops planted in the first section that pay off later?
+5. Does each micro-act have its own Setup → Tension → Payoff cycle?
+6. Is there a session hook at the end pointing to a specific next video?
+7. Would a viewer who leaves at 50% still feel they got value?
+
+For each problem found, suggest a specific structural fix with an example of what to add or move.`,
     variables: [
-      { key: 'script', label: 'Your Script Draft', placeholder: 'Paste your full script here...', multiline: true },
+      { key: 'outline', label: 'Your Outline (from 3D)', placeholder: 'Paste your outline here...', multiline: true },
+      { key: 'hook', label: 'Your Hook', placeholder: 'Paste your selected hook...', multiline: true },
+      { key: 'thesis', label: 'Your Thesis', placeholder: 'One-sentence thesis from Framing Worksheet...', multiline: false },
     ],
-    goodOutput: 'Specific, actionable feedback pointing to exact moments in your script. Each problem comes with a concrete fix, not just "make it better."',
-    redFlags: 'Vague feedback like "the middle could be stronger." No specific timestamps or sections referenced.',
-  },
-  {
-    id: 'compression-check',
-    code: '3G',
-    title: 'Compression Check',
-    description: 'Tighten wordy script sections into conversational, fast-paced delivery.',
-    template: `Here is a section of my script that feels too long or academic:
-
-{{section}}
-
-Rewrite using conversational compression:
-- Target: 8th grade reading level
-- Average sentence length: 8-12 words
-- Use analogies instead of jargon
-- Must pass the barstool test (say it to a friend at a bar)
-- Keep ALL key information, just deliver it faster
-
-Give me 2 versions: one tight, one ultra-tight.`,
-    variables: [
-      { key: 'section', label: 'Script Section', placeholder: 'Paste the section that feels too long or academic...', multiline: true },
-    ],
-    goodOutput: 'Two versions that preserve all key information but sound like someone talking, not writing. The ultra-tight version should feel almost aggressive in its brevity.',
-    redFlags: 'The rewrite loses key information. It sounds like a textbook summary instead of speech. Sentences are all the same length.',
-  },
-  {
-    id: 'output-quality-scorecard',
-    code: '3H',
-    title: 'AI Output Quality Scorecard',
-    description: 'Score any AI-generated structural output (outline, hook set, beat map) before using it.',
-    template: `I asked an AI to generate the following structural output for my YouTube video:
-
-{{ai_output}}
-
-Score this output on each criterion (1-5):
-
-1. Clear open loop in first 15 seconds?
-2. Each section has a mini-payoff before the next?
-3. At least 2 pattern interrupts planned?
-4. Tension/stakes escalate as it progresses?
-5. Specific proof or credential moment included?
-6. Ending ties back to the opening?
-7. Skeptical viewer would stay through the middle?
-8. Deliverable in MY voice without major rewrites?
-
-Give each criterion a score and a one-sentence explanation. Then give a total score out of 40 with a verdict:
-- 30+: Use it. Edit for voice, but the structure is sound.
-- 20-29: Heavy editing needed. The bones are there but it needs surgery.
-- Below 20: Reject. Re-prompt with more context.`,
-    variables: [
-      { key: 'ai_output', label: 'AI Output to Score', placeholder: 'Paste the AI-generated outline, hook set, or beat map...', multiline: true },
-    ],
-    goodOutput: 'Honest scoring with specific explanations. At least 2 criteria should score below 3 — if everything scores 4-5, the AI is being too generous.',
-    redFlags: 'All scores are 4-5 with vague justifications. No specific critique of weak sections.',
+    goodOutput: 'Specific structural fixes referencing exact outline sections. Identifies the 35% pivot point and suggests what goes there.',
+    redFlags: 'Vague feedback like "add more detail." No reference to specific outline sections or timestamps.',
   },
 ];
 
