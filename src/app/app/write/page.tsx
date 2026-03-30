@@ -21,9 +21,9 @@ export default function WritePage() {
         <hr className="rule" style={{ margin: '0' }} />
         <PacingCalculator />
         <hr className="rule" style={{ margin: '0' }} />
-        <DualModelWriter />
-        <hr className="rule" style={{ margin: '0' }} />
         <ScriptCanvas />
+        <hr className="rule" style={{ margin: '0' }} />
+        <DualModelWriter />
       </div>
     </div>
   );

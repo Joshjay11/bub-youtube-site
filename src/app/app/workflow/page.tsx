@@ -103,7 +103,7 @@ export default function WorkflowPage() {
                 day: 'Day 3', title: 'Refine + Polish', time: '1–2 hours',
                 items: [
                   'Full Script Ready Audit (all items, not just MUST PASS)',
-                  'AI Script Audit prompt (3F)',
+                  'AI Outline Audit prompt (3F)',
                   'Read-aloud pass with stopwatch',
                   'Compression check on any heavy sections',
                   'Satisfaction Engineering Checklist',

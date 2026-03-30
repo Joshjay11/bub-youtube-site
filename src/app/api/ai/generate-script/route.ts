@@ -27,6 +27,10 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing projectId or model' }, { status: 400 });
     }
 
+    if (!['sonnet', 'mistral-creative'].includes(model)) {
+      return Response.json({ error: 'Invalid model. Must be "sonnet" or "mistral-creative".' }, { status: 400 });
+    }
+
     const email = await getUserEmail();
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 

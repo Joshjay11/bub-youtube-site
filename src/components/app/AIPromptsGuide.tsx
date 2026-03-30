@@ -70,7 +70,7 @@ export default function AIPromptsGuide({ onSelectPrompt }: AIPromptsGuideProps) 
           </svg>
           <span className="text-[14px] text-text-bright font-medium">How to Use This Page</span>
           {!expanded && (
-            <span className="text-[12px] text-text-muted ml-2">8 prompts, 2 phases — click to see the recommended flow</span>
+            <span className="text-[12px] text-text-muted ml-2">6 prompts, 2 phases — click to see the recommended flow</span>
           )}
         </div>
       </button>
@@ -115,6 +115,10 @@ export default function AIPromptsGuide({ onSelectPrompt }: AIPromptsGuideProps) 
               ))}
             </div>
           </div>
+
+          <p className="text-[12px] text-text-muted">
+            After writing your script on the Write page, use the <a href="/app/refine" className="text-amber hover:text-amber-bright">Refine page</a> for compression checks, AI quality scoring, and editorial cleanup.
+          </p>
 
           {/* Download */}
           <button

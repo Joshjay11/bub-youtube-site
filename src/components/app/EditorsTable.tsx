@@ -35,18 +35,22 @@ interface EditorsData {
 
 const DEFAULTS: EditorsData = { result: null, acceptedEdits: false };
 
-const TYPE_COLORS: Record<string, string> = {
-  hemingway: 'bg-[#D4A574]/10 text-[#D4A574] border-[#D4A574]/20',
-  asimov: 'bg-[#6AAF8D]/10 text-[#6AAF8D] border-[#6AAF8D]/20',
-  bukowski: 'bg-[#A89080]/10 text-[#A89080] border-[#A89080]/20',
-  'ai-tell': 'bg-red/10 text-red border-red/20',
+const ISSUE_BORDER_COLORS: Record<string, string> = {
+  adverb: '#D4A574', passive: '#D4726A', bloat: '#A89080', ai_tell: '#E86A5E',
+  pretentious: '#A882C4', redundant: '#D4A574', weak_verb: '#D4726A',
+  filler: '#A89080', jargon: '#D4A574', long_sentence: '#6AAF8D',
+  hemingway: '#D4A574', asimov: '#6AAF8D', bukowski: '#A89080', 'ai-tell': '#E86A5E',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  hemingway: 'Hemingway',
-  asimov: 'Asimov',
-  bukowski: 'Bukowski',
-  'ai-tell': 'AI Tell',
+const EDITOR_EMOJI: Record<string, string> = {
+  hemingway: '🧊', asimov: '🔬', bukowski: '🔪',
+};
+
+const EDITOR_ACTIVE_COLORS: Record<string, string> = {
+  all: 'bg-[#D4726A] text-white',
+  hemingway: 'bg-[#D4A574] text-bg',
+  asimov: 'bg-[#6AAF8D] text-bg',
+  bukowski: 'bg-[#A89080] text-bg',
 };
 
 export default function EditorsTable() {
@@ -64,8 +68,8 @@ export default function EditorsTable() {
   useEffect(() => {
     if (!currentProject?.id) return;
     loadProjectBundle(currentProject.id).then((bundle) => {
-      const ws = bundle.write_script as { scriptDraft?: string } | undefined;
-      if (ws?.scriptDraft) setScriptText(ws.scriptDraft);
+      const ws = bundle.write as { script_draft?: string } | undefined;
+      if (ws?.script_draft) setScriptText(ws.script_draft);
     }).catch(() => {});
   }, [currentProject?.id]);
 
@@ -97,14 +101,14 @@ export default function EditorsTable() {
 
   function handleAcceptEdits() {
     if (!data.result?.edited_text || !currentProject?.id) return;
-    // Write edited text back to the write_script project data
+    // Write edited text back to the write project data
     fetch('/api/projects/data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         projectId: currentProject.id,
-        toolKey: 'write_script',
-        data: { scriptDraft: data.result.edited_text, selectedModel: 'edited', wordCount: data.result.stats.words_edited, draftA: '', draftB: '' },
+        toolKey: 'write',
+        data: { script_draft: data.result.edited_text, selected_model: 'edited', word_count: data.result.stats.words_edited, draft_a_output: '', draft_b_output: '' },
       }),
     });
     setScriptText(data.result.edited_text);
@@ -122,7 +126,7 @@ export default function EditorsTable() {
   const emDashCount = (scriptText.match(/—/g) || []).length;
 
   function nukeEmDashes() {
-    setScriptText(scriptText.replace(/—/g, ','));
+    setScriptText(scriptText.replace(/ — /g, ', ').replace(/—/g, ', '));
   }
 
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -162,8 +166,8 @@ export default function EditorsTable() {
           {/* Editor selector + run */}
           <div className="flex flex-wrap items-center gap-3">
             {(['all', 'hemingway', 'asimov', 'bukowski'] as const).map((e) => (
-              <button key={e} onClick={() => setEditor(e)} className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${editor === e ? 'bg-amber text-bg' : 'bg-bg-card text-text-dim border border-border hover:border-border-light'}`}>
-                {e === 'all' ? 'All Three' : e.charAt(0).toUpperCase() + e.slice(1)}
+              <button key={e} onClick={() => setEditor(e)} className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${editor === e ? EDITOR_ACTIVE_COLORS[e] : 'bg-bg-card text-text-dim border border-border hover:border-border-light'}`}>
+                {e === 'all' ? 'All Three' : `${EDITOR_EMOJI[e] || ''} ${e.charAt(0).toUpperCase() + e.slice(1)}`}
               </button>
             ))}
             <button
@@ -207,42 +211,61 @@ export default function EditorsTable() {
               {/* Issues */}
               {view === 'issues' && (
                 <div className="space-y-2">
-                  {r.issues.map((issue, i) => (
-                    <div key={i} className="bg-bg-card border border-border rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded border ${TYPE_COLORS[issue.type] || 'bg-bg-elevated text-text-muted'}`}>
-                          {TYPE_LABELS[issue.type] || issue.type}
-                        </span>
+                  {r.issues.map((issue, i) => {
+                    const borderColor = ISSUE_BORDER_COLORS[issue.type] || '#4a5168';
+                    return (
+                      <div key={i} className="bg-bg-card border border-border rounded-xl p-4" style={{ borderLeftWidth: 3, borderLeftColor: borderColor }}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-bg-elevated text-text-dim">
+                            {EDITOR_EMOJI[issue.type] || ''} {issue.type.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <div className="text-[13px] text-red/80 line-through mb-1">{issue.original}</div>
+                        <div className="text-[13px] text-green mb-1">{issue.suggestion}</div>
+                        <div className="text-[12px] text-text-muted">{issue.reason}</div>
                       </div>
-                      <div className="text-[13px] text-red/80 line-through mb-1">{issue.original}</div>
-                      <div className="text-[13px] text-green mb-1">{issue.suggestion}</div>
-                      <div className="text-[12px] text-text-muted">{issue.reason}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
               {/* Edited */}
-              {view === 'edited' && (
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <button onClick={handleCopyEdited} className="text-[12px] text-text-muted hover:text-text-dim bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
-                      {copied ? 'Copied ✓' : 'Copy Edited Text'}
-                    </button>
-                    {!data.acceptedEdits && (
-                      <button onClick={handleAcceptEdits} className="text-[12px] text-amber hover:text-amber-bright bg-transparent border border-amber/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber/10">
-                        Accept Edits → Update Script
+              {view === 'edited' && r && (() => {
+                const editedText = r.edited_text;
+                function downloadMd() {
+                  const blob = new Blob([editedText], { type: 'text/markdown' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'edited-script.md';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }
+
+                return (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={handleCopyEdited} className="text-[12px] text-text-muted hover:text-text-dim bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
+                        {copied ? 'Copied ✓' : 'Copy Markdown'}
                       </button>
-                    )}
-                    {data.acceptedEdits && (
-                      <span className="text-[12px] text-green px-3 py-1.5">Edits accepted ✓</span>
-                    )}
+                      <button onClick={downloadMd} className="text-[12px] text-text-muted hover:text-text-dim bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
+                        Download .md
+                      </button>
+                      {!data.acceptedEdits && (
+                        <button onClick={handleAcceptEdits} className="text-[12px] text-amber hover:text-amber-bright bg-transparent border border-amber/20 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-amber/10">
+                          Accept Edits → Update Script
+                        </button>
+                      )}
+                      {data.acceptedEdits && (
+                        <span className="text-[12px] text-green px-3 py-1.5">Edits accepted ✓</span>
+                      )}
+                    </div>
+                    <div className="bg-bg-card border border-border rounded-xl p-5">
+                      <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap font-mono">{r.edited_text}</div>
+                    </div>
                   </div>
-                  <div className="bg-bg-card border border-border rounded-xl p-5">
-                    <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap">{r.edited_text}</div>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </>

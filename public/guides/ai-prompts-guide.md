@@ -1,6 +1,6 @@
 # BUB AI Prompts — Complete Reference Guide
 
-These 8 prompts help you THINK through your video, not write it for you. Phase 1 is for before you draft. Phase 2 is for after you have script text.
+These 6 prompts help you THINK through your video, not write it for you. Phase 1 (3A-3E) is for before you draft. Phase 2 (3F) audits your outline before writing. After writing, use the Refine page for compression, quality scoring, and editorial cleanup.
 
 ---
 
