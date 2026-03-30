@@ -23,16 +23,27 @@ interface PromptRunnerProps {
 const MULTI_OPTION_PROMPTS = new Set(['find-angle', 'cross-disciplinary', 'counter-arguments', 'hook-variants']);
 
 function parseOutputItems(text: string): string[] {
-  // Split by numbered patterns: "1.", "1)", "**1.", etc.
-  const chunks = text.split(/\n(?=\d+[\.\)]\s|\*\*\d+)/);
-  if (chunks.length >= 3) {
-    return chunks
-      .map((c) => c.replace(/^\d+[\.\)]\s*/, '').replace(/^\*\*\d+[\.\)]\s*\*?\*?\s*/, '').trim())
-      .filter((c) => c.length > 15);
+  // Strategy 1: Split by markdown headers (## 1, ### 1, **1., etc.)
+  const headerChunks = text.split(/\n(?=#{1,3}\s*\d+|#{1,3}\s*\*?\*?(?:Objection|Argument|Counter|Connection|Angle|Hook)\b|\*\*\d+[\.\)])/i);
+  if (headerChunks.length >= 3) {
+    return headerChunks.map((c) => c.trim()).filter((c) => c.length > 20);
   }
-  // Fallback: split by double newlines
-  const paragraphs = text.split(/\n{2,}/).filter((p) => p.trim().length > 15);
-  return paragraphs.length >= 2 ? paragraphs : [];
+
+  // Strategy 2: Split by numbered patterns at line start, keeping everything until next number
+  const numbered = text.split(/\n(?=\d+[\.\)]\s)/);
+  if (numbered.length >= 3) {
+    return numbered.map((c) => c.trim()).filter((c) => c.length > 20);
+  }
+
+  // Strategy 3: Split by bold numbered patterns
+  const boldNumbered = text.split(/\n(?=\*\*\d+)/);
+  if (boldNumbered.length >= 3) {
+    return boldNumbered.map((c) => c.trim()).filter((c) => c.length > 20);
+  }
+
+  // Fallback: double newline paragraphs (but only if we get reasonable count)
+  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter((p) => p.length > 20);
+  return paragraphs.length >= 2 && paragraphs.length <= 8 ? paragraphs : [];
 }
 
 export default function PromptRunner({ prompt, prefill, savedState, onStateChange, onKeepOutput, keptOutput, pick, onPickChange }: PromptRunnerProps) {
@@ -380,16 +391,34 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
         const items = isMulti && output && !isRunning ? parseOutputItems(output) : [];
         const showPerItem = items.length >= 2;
 
+        // Append to pick instead of replacing
+        function appendToPick(text: string) {
+          if (!onPickChange) return;
+          const current = (pick ?? '').trim();
+          onPickChange(current ? `${current}\n\n${text}` : text);
+        }
+
         return (
           <div ref={outputRef} className="bg-bg-card border border-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[12px] text-text-muted uppercase tracking-wider">AI Output</span>
-              {isRunning && (
-                <span className="flex items-center gap-2 text-[12px] text-amber">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
-                  Generating...
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {/* Single "Keep This" for non-multi or single-output prompts */}
+                {!isRunning && output && !showPerItem && onPickChange && (
+                  <button
+                    onClick={() => appendToPick(output)}
+                    className="text-[11px] text-amber hover:text-amber-bright transition-colors bg-transparent border border-amber/20 rounded px-2 py-1 cursor-pointer hover:bg-amber/10"
+                  >
+                    Keep this
+                  </button>
+                )}
+                {isRunning && (
+                  <span className="flex items-center gap-2 text-[12px] text-amber">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
+                    Generating...
+                  </span>
+                )}
+              </div>
             </div>
             {showPerItem ? (
               <div className="space-y-3">
@@ -397,7 +426,7 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
                   <div key={idx} className="group relative bg-bg-elevated border border-border/50 rounded-lg p-4">
                     <div className="text-[14px] text-text-primary leading-relaxed whitespace-pre-wrap pr-16">{item}</div>
                     <button
-                      onClick={() => onPickChange?.(item)}
+                      onClick={() => appendToPick(item)}
                       className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-[11px] text-amber hover:text-amber-bright transition-all bg-transparent border border-amber/20 rounded px-2 py-1 cursor-pointer hover:bg-amber/10"
                     >
                       Keep this
@@ -414,7 +443,7 @@ export default function PromptRunner({ prompt, prefill, savedState, onStateChang
         );
       })()}
 
-      {/* Your Pick field */}
+      {/* Your Pick field — always shown after output for all tabs */}
       {output && !isRunning && onPickChange && (
         <div>
           <label className="block text-[13px] text-text-bright mb-1.5">Your Pick</label>
