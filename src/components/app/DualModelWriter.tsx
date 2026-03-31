@@ -12,10 +12,10 @@ interface WriterData {
   word_count: number;
   draft_a_output: string;
   draft_b_output: string;
-  draft_c_output: string;
+  draft_c_output: string | null;
 }
 
-const DEFAULTS: WriterData = { script_draft: '', selected_model: '', word_count: 0, draft_a_output: '', draft_b_output: '', draft_c_output: '' };
+const DEFAULTS: WriterData = { script_draft: '', selected_model: '', word_count: 0, draft_a_output: '', draft_b_output: '', draft_c_output: null };
 
 const MODEL_KEYS = ['sonnet', 'minimax', 'grok'] as const;
 const WRITER_LABELS = ['Writer A', 'Writer B', 'Writer C'];
@@ -41,15 +41,16 @@ interface DualModelWriterProps {
   targetMinutes?: number;
   paceLabel?: string;
   wpm?: number;
+  videoStyle?: string;
 }
 
-export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conversational', wpm = 140 }: DualModelWriterProps) {
+export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conversational', wpm = 140, videoStyle = 'commentary' }: DualModelWriterProps) {
   const { currentProject } = useProject();
   const { data, setData, saveStatus } = useProjectData<WriterData>('write', DEFAULTS);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [drafts, setDrafts] = useState<string[]>([data.draft_a_output || '', data.draft_b_output || '', data.draft_c_output || '']);
+  const [drafts, setDrafts] = useState<string[]>([data.draft_a_output || '', data.draft_b_output || '', data.draft_c_output ?? '']);
   const [wordCounts, setWordCounts] = useState<number[]>([0, 0, 0]);
   const [copied, setCopied] = useState(false);
 
@@ -74,7 +75,7 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
           fetch('/api/ai/generate-script', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectId: currentProject.id, model: m, targetWords }),
+            body: JSON.stringify({ projectId: currentProject.id, model: m, targetWords, style: videoStyle, targetMinutes, wpm }),
           }).then((r) => r.json())
         )
       );
@@ -109,7 +110,7 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
       word_count: wc,
       draft_a_output: drafts[0],
       draft_b_output: drafts[1],
-      draft_c_output: drafts[2],
+      draft_c_output: showWriterC ? drafts[2] : null,
     });
 
     // Log model preference (fire-and-forget)

@@ -2,22 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { createAdminSupabase } from '@/lib/supabase';
-
-const BASE_SYSTEM_PROMPT = `You are a YouTube scriptwriter. Write a complete spoken-word script based on the outline and research provided below.
-
-RULES:
-- Write in conversational, spoken English. This will be read aloud, not published as text.
-- Target 8th-grade reading level. Short sentences averaging 8-12 words.
-- Use the Barstool Test: every line should sound natural if explaining to a smart friend at a bar.
-- Include tone markers in parentheses: (conversational), (building tension), (excited reveal), (pause for emphasis), (skeptical), (matter-of-fact).
-- Include retention annotations at the 25%, 50%, and 75% marks as comments: <!-- 25% RETENTION CHECK --> etc.
-- Plant pattern interrupts every 20-30 seconds — rhetorical questions, surprising data, perspective shifts.
-- The hook (first 30 seconds) must deliver on the title promise immediately.
-- Place the strongest or most controversial content at the 50% mark.
-- End with a clear session hook pointing to a related video topic.
-- Do NOT use em dashes. Do NOT use "Let's dive in," "Let's unpack," "In today's," "It's worth noting," "Interestingly," or any AI-tell phrases.
-- Do NOT pad for length. Every sentence must earn its place.
-- Write ONLY the spoken dialogue. No stage directions, no visual cues — just what the person says into the camera.`;
+import { buildSystemPrompt, VALID_STYLES } from '@/lib/script-prompts';
 
 const VALID_MODELS = ['sonnet', 'minimax', 'grok'] as const;
 
@@ -28,7 +13,8 @@ const OPENROUTER_MODELS: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
-    const { projectId, model, targetWords } = await request.json();
+    const body = await request.json();
+    const { projectId, model, targetWords: tw, style: rawStyle, targetMinutes: tm, wpm: rawWpm } = body;
 
     if (!projectId || !model) {
       return Response.json({ error: 'Missing projectId or model' }, { status: 400 });
@@ -37,6 +23,13 @@ export async function POST(request: Request) {
     if (!(VALID_MODELS as readonly string[]).includes(model)) {
       return Response.json({ error: 'Invalid model.' }, { status: 400 });
     }
+
+    const style = (VALID_STYLES as readonly string[]).includes(rawStyle) ? rawStyle : 'commentary';
+    const targetWords = tw || 1800;
+    const targetMinutes = tm || 12;
+    const wpm = rawWpm || 140;
+    const minWords = targetWords - 100;
+    const maxWords = targetWords + 100;
 
     const email = await getUserEmail();
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
@@ -47,6 +40,10 @@ export async function POST(request: Request) {
       }
     }
 
+    // Build modular system prompt
+    const systemPrompt = buildSystemPrompt(style, model, { minWords, maxWords, targetWords, targetMinutes, wpm });
+
+    // Load project bundle for user prompt context
     const admin = createAdminSupabase();
     const { data: rows } = await admin
       .from('project_data')
@@ -83,13 +80,9 @@ export async function POST(request: Request) {
     if (counterArgs) parts.push(`COUNTER-ARGUMENTS TO ADDRESS:\n${counterArgs}`);
     if (crossDisc) parts.push(`CROSS-DISCIPLINARY CONNECTION:\n${crossDisc}`);
 
-    const tw = targetWords || 1800;
-    const minWords = tw - 100;
-    const maxWords = tw + 100;
-    parts.push(`\nTARGET LENGTH: approximately ${tw} words.`);
-    parts.push(`Write the complete script now.`);
-
-    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\nYour script MUST be between ${minWords} and ${maxWords} words. Scripts under ${minWords} words are incomplete and unacceptable. Scripts over ${maxWords} words are padded and need cutting. Hit the target range.`;
+    parts.push(`\nTARGET LENGTH: approximately ${targetWords} words (${targetMinutes} minutes at ${wpm} WPM).`);
+    parts.push(`VIDEO STYLE: ${style.toUpperCase()}`);
+    parts.push(`\nWrite the complete script now.`);
 
     const userMessage = parts.join('\n\n');
 
