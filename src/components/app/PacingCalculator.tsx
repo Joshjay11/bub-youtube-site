@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const LENGTHS = [5, 8, 10, 12, 13, 15] as const;
 const PACES = [
@@ -27,12 +27,17 @@ export interface PacingResult {
   sections: { key: string; label: string; words: number; job: string }[];
 }
 
-export default function PacingCalculator({ onCalculate }: { onCalculate?: (result: PacingResult) => void }) {
+export default function PacingCalculator({ onCalculate, onSettingsChange }: { onCalculate?: (result: PacingResult) => void; onSettingsChange?: (settings: { targetMinutes: number; paceLabel: string; wpm: number }) => void }) {
   const [targetMinutes, setTargetMinutes] = useState(12);
   const [paceIndex, setPaceIndex] = useState(1); // default: Conversational
 
   const wpm = PACES[paceIndex].wpm;
+  const paceLabel = PACES[paceIndex].label.toLowerCase();
   const totalWords = targetMinutes * wpm;
+
+  useEffect(() => {
+    onSettingsChange?.({ targetMinutes, paceLabel, wpm });
+  }, [targetMinutes, paceLabel, wpm, onSettingsChange]);
   const sections = SECTIONS.map((s) => ({
     key: s.key,
     label: s.label,

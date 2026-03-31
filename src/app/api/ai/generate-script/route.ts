@@ -3,7 +3,7 @@ import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { createAdminSupabase } from '@/lib/supabase';
 
-const SYSTEM_PROMPT = `You are a YouTube scriptwriter. Write a complete spoken-word script based on the outline and research provided below.
+const BASE_SYSTEM_PROMPT = `You are a YouTube scriptwriter. Write a complete spoken-word script based on the outline and research provided below.
 
 RULES:
 - Write in conversational, spoken English. This will be read aloud, not published as text.
@@ -19,29 +19,34 @@ RULES:
 - Do NOT pad for length. Every sentence must earn its place.
 - Write ONLY the spoken dialogue. No stage directions, no visual cues — just what the person says into the camera.`;
 
+const VALID_MODELS = ['sonnet', 'minimax', 'grok'] as const;
+
+const OPENROUTER_MODELS: Record<string, string> = {
+  minimax: 'minimax/minimax-m2.5',
+  grok: 'x-ai/grok-4.1-fast',
+};
+
 export async function POST(request: Request) {
   try {
-    const { projectId, model } = await request.json();
+    const { projectId, model, targetWords } = await request.json();
 
     if (!projectId || !model) {
       return Response.json({ error: 'Missing projectId or model' }, { status: 400 });
     }
 
-    if (!['sonnet', 'mistral-creative'].includes(model)) {
-      return Response.json({ error: 'Invalid model. Must be "sonnet" or "mistral-creative".' }, { status: 400 });
+    if (!(VALID_MODELS as readonly string[]).includes(model)) {
+      return Response.json({ error: 'Invalid model.' }, { status: 400 });
     }
 
     const email = await getUserEmail();
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
-    // Only deduct 1 credit per model call (2 total deducted by the frontend calling twice)
     if (!apiKey && source !== 'byok') {
       if (creditsRemaining <= 0) {
         return Response.json({ error: 'No AI credits remaining.', needsUpgrade: true }, { status: 402 });
       }
     }
 
-    // Load project bundle for context
     const admin = createAdminSupabase();
     const { data: rows } = await admin
       .from('project_data')
@@ -51,7 +56,6 @@ export async function POST(request: Request) {
     const bundle: Record<string, Record<string, unknown>> = {};
     for (const row of rows || []) bundle[row.tool_key] = row.data as Record<string, unknown>;
 
-    // Build context
     const parts: string[] = [];
     const ie = bundle.idea_entry as { currentIdea?: string } | undefined;
     if (ie?.currentIdea) parts.push(`TOPIC: ${ie.currentIdea}`);
@@ -68,7 +72,6 @@ export async function POST(request: Request) {
     const rk = bundle.research_keeper as { notes?: string } | undefined;
     if (rk?.notes?.trim()) parts.push(`RESEARCH FINDINGS:\n${rk.notes.trim().slice(0, 1500)}`);
 
-    // Get outline and hook from AI prompts picks/kept
     const aps = bundle.ai_prompts_state as { picks?: Record<string, string>; kept?: Record<string, string> } | undefined;
     const outline = aps?.picks?.['3d'] || aps?.kept?.['3d'] || '';
     const hook = (bundle.hook_draft as { draft?: string } | undefined)?.draft || aps?.picks?.['3e'] || aps?.kept?.['3e'] || '';
@@ -80,8 +83,13 @@ export async function POST(request: Request) {
     if (counterArgs) parts.push(`COUNTER-ARGUMENTS TO ADDRESS:\n${counterArgs}`);
     if (crossDisc) parts.push(`CROSS-DISCIPLINARY CONNECTION:\n${crossDisc}`);
 
-    parts.push(`\nTARGET LENGTH: approximately 1800 words (12 minutes at 150 WPM)`);
-    parts.push(`\nWrite the complete script now.`);
+    const tw = targetWords || 1800;
+    const minWords = tw - 100;
+    const maxWords = tw + 100;
+    parts.push(`\nTARGET LENGTH: approximately ${tw} words.`);
+    parts.push(`Write the complete script now.`);
+
+    const systemPrompt = `${BASE_SYSTEM_PROMPT}\n\nYour script MUST be between ${minWords} and ${maxWords} words. Scripts under ${minWords} words are incomplete and unacceptable. Scripts over ${maxWords} words are padded and need cutting. Hit the target range.`;
 
     const userMessage = parts.join('\n\n');
 
@@ -100,18 +108,18 @@ export async function POST(request: Request) {
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
       });
       scriptText = response.content[0].type === 'text' ? response.content[0].text : '';
     } else {
-      // Mistral Small Creative via OpenRouter with fallback
+      const orModel = OPENROUTER_MODELS[model as string];
       const result = await callWithFallback({
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage },
         ],
-        primaryModel: 'mistralai/mistral-small-3.1-24b-instruct',
+        primaryModel: orModel,
         maxTokens: 4000,
         temperature: 0.8,
       });
@@ -120,11 +128,7 @@ export async function POST(request: Request) {
 
     const wordCount = scriptText.trim().split(/\s+/).length;
 
-    return Response.json({
-      script: scriptText,
-      model,
-      wordCount,
-    });
+    return Response.json({ script: scriptText, model, wordCount });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });

@@ -12,86 +12,123 @@ interface WriterData {
   word_count: number;
   draft_a_output: string;
   draft_b_output: string;
+  draft_c_output: string;
 }
 
-const DEFAULTS: WriterData = { script_draft: '', selected_model: '', word_count: 0, draft_a_output: '', draft_b_output: '' };
+const DEFAULTS: WriterData = { script_draft: '', selected_model: '', word_count: 0, draft_a_output: '', draft_b_output: '', draft_c_output: '' };
 
-export default function DualModelWriter() {
+const MODEL_KEYS = ['sonnet', 'minimax', 'grok'] as const;
+const WRITER_LABELS = ['Writer A', 'Writer B', 'Writer C'];
+
+function CopyBtn({ text }: { text: string }) {
+  const [c, setC] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(text); setC(true); setTimeout(() => setC(false), 2000); }}
+      className="p-1.5 text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer"
+      title="Copy to clipboard"
+    >
+      {c ? (
+        <svg className="w-4 h-4 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+      )}
+    </button>
+  );
+}
+
+interface DualModelWriterProps {
+  targetMinutes?: number;
+  paceLabel?: string;
+  wpm?: number;
+}
+
+export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conversational', wpm = 140 }: DualModelWriterProps) {
   const { currentProject } = useProject();
   const { data, setData, saveStatus } = useProjectData<WriterData>('write', DEFAULTS);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [draftA, setDraftA] = useState(data.draft_a_output || '');
-  const [draftB, setDraftB] = useState(data.draft_b_output || '');
-  const [wcA, setWcA] = useState(0);
-  const [wcB, setWcB] = useState(0);
+  const [drafts, setDrafts] = useState<string[]>([data.draft_a_output || '', data.draft_b_output || '', data.draft_c_output || '']);
+  const [wordCounts, setWordCounts] = useState<number[]>([0, 0, 0]);
   const [copied, setCopied] = useState(false);
+
+  // Conditional Writer C
+  const showWriterC = targetMinutes === 5 || (targetMinutes <= 10 && paceLabel === 'energetic');
+  const writerCount = showWriterC ? 3 : 2;
+  const creditCost = writerCount;
+  const targetWords = targetMinutes * wpm;
 
   async function handleGenerate() {
     if (!currentProject?.id || loading) return;
     setLoading(true);
     setError('');
-    setDraftA('');
-    setDraftB('');
+    setDrafts(['', '', '']);
+    setWordCounts([0, 0, 0]);
+
+    const models = showWriterC ? MODEL_KEYS : MODEL_KEYS.slice(0, 2);
 
     try {
-      const [resA, resB] = await Promise.allSettled([
-        fetch('/api/ai/generate-script', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId: currentProject.id, model: 'sonnet' }),
-        }).then((r) => r.json()),
-        fetch('/api/ai/generate-script', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId: currentProject.id, model: 'mistral-creative' }),
-        }).then((r) => r.json()),
-      ]);
+      const results = await Promise.allSettled(
+        models.map((m) =>
+          fetch('/api/ai/generate-script', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: currentProject.id, model: m, targetWords }),
+          }).then((r) => r.json())
+        )
+      );
 
-      if (resA.status === 'fulfilled' && resA.value.script) {
-        setDraftA(resA.value.script);
-        setWcA(resA.value.wordCount || 0);
-      } else {
-        setDraftA('Generation failed. ' + (resA.status === 'fulfilled' ? resA.value.error : resA.reason));
-      }
+      const newDrafts = ['', '', ''];
+      const newWc = [0, 0, 0];
+      results.forEach((res, i) => {
+        if (res.status === 'fulfilled' && res.value.script) {
+          newDrafts[i] = res.value.script;
+          newWc[i] = res.value.wordCount || 0;
+        } else {
+          newDrafts[i] = 'Generation failed. ' + (res.status === 'fulfilled' ? res.value.error : res.reason);
+        }
+      });
 
-      if (resB.status === 'fulfilled' && resB.value.script) {
-        setDraftB(resB.value.script);
-        setWcB(resB.value.wordCount || 0);
-      } else {
-        setDraftB('Generation failed. ' + (resB.status === 'fulfilled' ? resB.value.error : resB.reason));
-      }
-
+      setDrafts(newDrafts);
+      setWordCounts(newWc);
       notifyCreditChange();
     } catch {
       setError('Connection error. Please try again.');
     }
-
     setLoading(false);
   }
 
-  function chooseDraft(which: 'a' | 'b') {
-    const script = which === 'a' ? draftA : draftB;
-    const model = which === 'a' ? 'sonnet' : 'mistral-creative';
+  function keepDraft(index: number) {
+    const script = drafts[index];
+    const model = MODEL_KEYS[index];
     const wc = script.trim().split(/\s+/).length;
-    setData({ script_draft: script, selected_model: model, word_count: wc, draft_a_output: draftA, draft_b_output: draftB });
+    setData({
+      script_draft: script,
+      selected_model: model,
+      word_count: wc,
+      draft_a_output: drafts[0],
+      draft_b_output: drafts[1],
+      draft_c_output: drafts[2],
+    });
 
     // Log model preference (fire-and-forget)
     if (currentProject?.id) {
+      const allModels = showWriterC ? MODEL_KEYS : MODEL_KEYS.slice(0, 2);
+      const rejected = allModels.filter((m) => m !== model).join(',');
       fetch('/api/projects/model-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: currentProject.id,
           chosenModel: model,
-          rejectedModel: model === 'sonnet' ? 'mistral-creative' : 'sonnet',
+          rejectedModel: rejected,
         }),
       }).catch(() => {});
     }
   }
 
-  function handleCopy() {
+  function handleCopyDraft() {
     navigator.clipboard.writeText(data.script_draft);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -100,10 +137,10 @@ export default function DualModelWriter() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   useRegisterPageContext('dual_model_writer', 'Script Generator', () => {
     if (!data.script_draft) return 'Tool: Script Generator\nStatus: No script generated yet';
-    return `Tool: Script Generator\nSelected model: ${data.selected_model}\nWord count: ${data.word_count}\nFirst 200 words: ${data.script_draft.slice(0, 800)}`;
+    return `Tool: Script Generator\nWord count: ${data.word_count}\nFirst 200 words: ${data.script_draft.slice(0, 800)}`;
   }, wrapperRef);
 
-  const hasDrafts = draftA.length > 0 || draftB.length > 0;
+  const hasDrafts = drafts.some((d) => d.length > 0);
 
   return (
     <div ref={wrapperRef} className="space-y-6">
@@ -111,7 +148,7 @@ export default function DualModelWriter() {
         <div>
           <h2 className="font-serif text-[24px] text-text-bright">Generate Full Script</h2>
           <p className="text-text-dim text-[13px] mt-1">
-            Your outline and research generate a full spoken-word script. You&apos;ll get drafts from two AI writers — pick the one that sounds more like you.
+            Your outline and research generate a full spoken-word script. You&apos;ll get drafts from {writerCount} AI writers — pick the one that sounds more like you.
           </p>
         </div>
         <SaveIndicator status={saveStatus} />
@@ -128,41 +165,42 @@ export default function DualModelWriter() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         )}
-        {loading ? 'Generating from two models...' : 'Generate Script'} <span className="text-[12px] opacity-70">(2 credits)</span>
+        {loading ? `Generating from ${writerCount} models...` : 'Generate Script'} <span className="text-[12px] opacity-70">({creditCost} credits)</span>
       </button>
 
       {error && <div className="text-[13px] text-red bg-red/5 border border-red/20 rounded-lg px-4 py-3">{error}</div>}
 
       {hasDrafts && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-              <div><div className="text-[14px] text-text-bright font-medium">Writer A</div><div className="text-[11px] text-text-muted">Claude Sonnet</div></div>
-              {wcA > 0 && <span className="text-[12px] text-text-muted font-mono">{wcA} words</span>}
-            </div>
-            <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
-              <div className="text-[13px] text-text-primary leading-relaxed whitespace-pre-wrap">{draftA}</div>
-            </div>
-            <div className="px-5 py-3 border-t border-border">
-              <button onClick={() => chooseDraft('a')} className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${data.selected_model === 'sonnet' ? 'bg-green/10 text-green border border-green/20' : 'bg-amber/10 text-amber border border-amber/20 hover:bg-amber/20'}`}>
-                {data.selected_model === 'sonnet' ? 'Chosen ✓' : 'Choose This Draft'}
-              </button>
-            </div>
-          </div>
-          <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-              <div><div className="text-[14px] text-text-bright font-medium">Writer B</div><div className="text-[11px] text-text-muted">Mistral Creative</div></div>
-              {wcB > 0 && <span className="text-[12px] text-text-muted font-mono">{wcB} words</span>}
-            </div>
-            <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
-              <div className="text-[13px] text-text-primary leading-relaxed whitespace-pre-wrap">{draftB}</div>
-            </div>
-            <div className="px-5 py-3 border-t border-border">
-              <button onClick={() => chooseDraft('b')} className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${data.selected_model === 'mistral-creative' ? 'bg-green/10 text-green border border-green/20' : 'bg-amber/10 text-amber border border-amber/20 hover:bg-amber/20'}`}>
-                {data.selected_model === 'mistral-creative' ? 'Chosen ✓' : 'Choose This Draft'}
-              </button>
-            </div>
-          </div>
+        <div className={`grid grid-cols-1 ${showWriterC ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
+          {drafts.slice(0, writerCount).map((draft, i) => {
+            const isKept = data.selected_model === MODEL_KEYS[i];
+            return (
+              <div key={i} className={`bg-bg-card border rounded-xl overflow-hidden ${isKept ? 'border-amber/40' : 'border-border'}`}>
+                <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                  <div className="text-[14px] text-text-bright font-medium">{WRITER_LABELS[i]}</div>
+                  <div className="flex items-center gap-2">
+                    {wordCounts[i] > 0 && <span className="text-[12px] text-text-muted font-mono">{wordCounts[i]} words</span>}
+                    <button
+                      onClick={() => keepDraft(i)}
+                      className={`text-[12px] font-medium px-2.5 py-1 rounded transition-all ${
+                        isKept
+                          ? 'bg-amber/20 text-amber border border-amber/30'
+                          : 'text-text-muted hover:text-amber border border-border hover:border-amber/30'
+                      }`}
+                    >
+                      {isKept ? 'Kept ✓' : 'Keep This'}
+                    </button>
+                  </div>
+                </div>
+                <div className="px-5 py-4 max-h-[400px] overflow-y-auto">
+                  <div className="text-[13px] text-text-primary leading-relaxed whitespace-pre-wrap">{draft}</div>
+                </div>
+                <div className="px-5 py-2 border-t border-border/50 flex justify-end">
+                  <CopyBtn text={draft} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -171,9 +209,9 @@ export default function DualModelWriter() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-[16px] text-text-bright font-medium">Your Script</h3>
-              <span className="text-[12px] text-text-muted">Selected: {data.selected_model === 'sonnet' ? 'Claude Sonnet' : 'Mistral Creative'} — {data.word_count} words (~{Math.round(data.word_count / 150)} min)</span>
+              <span className="text-[12px] text-text-muted">{data.word_count} words (~{Math.round(data.word_count / wpm)} min at {wpm} WPM)</span>
             </div>
-            <button onClick={handleCopy} className="flex items-center gap-1.5 text-[12px] text-text-muted hover:text-text-dim transition-colors bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
+            <button onClick={handleCopyDraft} className="flex items-center gap-1.5 text-[12px] text-text-muted hover:text-text-dim transition-colors bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
               {copied ? 'Copied ✓' : 'Copy Script'}
             </button>
           </div>
