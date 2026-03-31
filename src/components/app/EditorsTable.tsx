@@ -47,6 +47,12 @@ const EDITOR_EMOJI: Record<string, string> = {
   hemingway: '🧊', asimov: '🔬', bukowski: '🔪',
 };
 
+const EDITOR_BUTTON_LABELS: Record<'hemingway' | 'asimov' | 'bukowski', string> = {
+  hemingway: 'Cut the Fat',
+  asimov: 'Make It Clear',
+  bukowski: 'Call the BS',
+};
+
 const EDITOR_ACTIVE_COLORS: Record<string, string> = {
   all: 'bg-[#D4726A] text-white',
   hemingway: 'bg-[#D4A574] text-bg',
@@ -169,7 +175,7 @@ export default function EditorsTable() {
           <div className="flex flex-wrap items-center gap-3">
             {(['all', 'hemingway', 'asimov', 'bukowski'] as const).map((e) => (
               <button key={e} onClick={() => setEditor(e)} className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${editor === e ? EDITOR_ACTIVE_COLORS[e] : 'bg-bg-card text-text-dim border border-border hover:border-border-light'}`}>
-                {e === 'all' ? 'All Three' : `${EDITOR_EMOJI[e] || ''} ${e.charAt(0).toUpperCase() + e.slice(1)}`}
+                {e === 'all' ? 'All Three' : `${EDITOR_EMOJI[e] || ''} ${EDITOR_BUTTON_LABELS[e]}`}
               </button>
             ))}
             <button

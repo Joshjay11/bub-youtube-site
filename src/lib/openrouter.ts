@@ -1,6 +1,6 @@
 export async function callOpenRouter(
   prompt: string,
-  model: string = 'mistralai/mistral-small-latest',
+  model: string = 'minimax/minimax-m2.5',
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {

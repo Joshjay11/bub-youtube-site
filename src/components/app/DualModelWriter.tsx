@@ -19,6 +19,11 @@ const DEFAULTS: WriterData = { script_draft: '', selected_model: '', word_count:
 
 const MODEL_KEYS = ['sonnet', 'minimax', 'grok'] as const;
 const WRITER_LABELS = ['Writer A', 'Writer B', 'Writer C'];
+const WRITER_SUBTITLES = [
+  'More expansive - detailed, thorough drafts',
+  'Tighter and punchier - leaner drafts',
+  'Compressed and fast - high-energy delivery',
+];
 
 function CopyBtn({ text }: { text: string }) {
   const [c, setC] = useState(false);
@@ -178,7 +183,10 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
             return (
               <div key={i} className={`bg-bg-card border rounded-xl overflow-hidden ${isKept ? 'border-amber/40' : 'border-border'}`}>
                 <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                  <div className="text-[14px] text-text-bright font-medium">{WRITER_LABELS[i]}</div>
+                  <div>
+                    <div className="text-[14px] text-text-bright font-medium">{WRITER_LABELS[i]}</div>
+                    <div className="text-[11px] text-text-muted mt-0.5">{WRITER_SUBTITLES[i]}</div>
+                  </div>
                   <div className="flex items-center gap-2">
                     {wordCounts[i] > 0 && <span className="text-[12px] text-text-muted font-mono">{wordCounts[i]} words</span>}
                     <button

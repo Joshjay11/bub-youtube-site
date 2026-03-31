@@ -11,6 +11,12 @@ const OPENROUTER_MODELS: Record<string, string> = {
   grok: 'x-ai/grok-4.1-fast',
 };
 
+const TARGET_MULTIPLIERS: Record<string, number> = {
+  sonnet: 1.35,
+  minimax: 1.8,
+  grok: 1.0,
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -28,8 +34,9 @@ export async function POST(request: Request) {
     const targetWords = tw || 1800;
     const targetMinutes = tm || 12;
     const wpm = rawWpm || 140;
-    const minWords = targetWords - 100;
-    const maxWords = targetWords + 100;
+    const adjustedTarget = Math.round(targetWords * (TARGET_MULTIPLIERS[model] || 1.0));
+    const adjustedMin = adjustedTarget - 100;
+    const adjustedMax = adjustedTarget + 100;
 
     const email = await getUserEmail();
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
@@ -41,7 +48,13 @@ export async function POST(request: Request) {
     }
 
     // Build modular system prompt
-    const systemPrompt = buildSystemPrompt(style, model, { minWords, maxWords, targetWords, targetMinutes, wpm });
+    const systemPrompt = buildSystemPrompt(style, model, {
+      minWords: adjustedMin,
+      maxWords: adjustedMax,
+      targetWords: adjustedTarget,
+      targetMinutes,
+      wpm,
+    });
 
     // Load project bundle for user prompt context
     const admin = createAdminSupabase();
