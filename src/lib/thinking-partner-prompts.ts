@@ -123,6 +123,7 @@ export const STAGE_MAP: Record<string, string> = {
   '/app/ai-prompts': 'ai_prompts',
   '/app/write': 'write',
   '/app/refine': 'write',
+  '/app/post-production': 'write',
   '/app/optimize': 'optimize',
   '/app/optimize/failure-modes': 'optimize',
   '/app/reference/hooks': 'reference',
