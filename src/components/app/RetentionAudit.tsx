@@ -7,11 +7,18 @@ import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
 
+interface AuditFix {
+  original: string;
+  problem: string;
+  options: string[];
+}
+
 interface AuditResult {
   criterion: string;
   status: 'pass' | 'fail';
   explanation: string;
-  suggestion: string | null;
+  suggestion?: string | null;
+  fixes?: AuditFix[] | null;
 }
 
 interface AuditData {
@@ -30,6 +37,8 @@ export default function RetentionAudit() {
   const [scriptText, setScriptText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [selectedFixes, setSelectedFixes] = useState<Record<string, number>>({});
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     if (!currentProject?.id) return;
@@ -43,6 +52,8 @@ export default function RetentionAudit() {
     if (!scriptText.trim() || loading) return;
     setLoading(true);
     setError('');
+    setSelectedFixes({});
+    setApplied(false);
 
     try {
       const res = await fetch('/api/ai/retention-audit', {
@@ -75,14 +86,63 @@ export default function RetentionAudit() {
     setLoading(false);
   }
 
+  function selectFix(key: string, optionIndex: number) {
+    setSelectedFixes((prev) => {
+      if (prev[key] === optionIndex) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: optionIndex };
+    });
+  }
+
+  async function applyFixes() {
+    if (!currentProject?.id) return;
+
+    let updatedScript = scriptText;
+    const results = data.audit_results || [];
+
+    for (const [key, optionIdx] of Object.entries(selectedFixes)) {
+      const [critIdx, fixIdx] = key.split('-').map(Number);
+      const result = results[critIdx];
+      const fix = result?.fixes?.[fixIdx];
+      if (fix && updatedScript.includes(fix.original)) {
+        updatedScript = updatedScript.replace(fix.original, fix.options[optionIdx]);
+      }
+    }
+
+    try {
+      const getRes = await fetch(`/api/projects/data?projectId=${currentProject.id}&toolKey=write`);
+      const getJson = await getRes.json();
+      const currentWriteData = (getJson?.data && typeof getJson.data === 'object') ? getJson.data : {};
+
+      await fetch('/api/projects/data', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: currentProject.id,
+          toolKey: 'write',
+          data: { ...currentWriteData, script_draft: updatedScript, word_count: updatedScript.trim().split(/\s+/).length },
+        }),
+      });
+
+      setScriptText(updatedScript);
+      setApplied(true);
+    } catch {
+      setError('Failed to update script.');
+    }
+  }
+
   const results = data.audit_results || [];
   const hasResults = results.length > 0;
-  // Sort: failed first, then passed
-  const sorted = [...results].sort((a, b) => {
+  const sorted = [...results].map((r, i) => ({ ...r, _idx: i })).sort((a, b) => {
     if (a.status === 'fail' && b.status === 'pass') return -1;
     if (a.status === 'pass' && b.status === 'fail') return 1;
     return 0;
   });
+
+  const fixCount = Object.keys(selectedFixes).length;
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   useRegisterPageContext('retention_audit', 'Retention Audit', () => {
@@ -146,12 +206,13 @@ export default function RetentionAudit() {
             </div>
           </div>
 
-          {/* Results cards — failed first */}
+          {/* Results cards */}
           <div className="space-y-3">
-            {sorted.map((result, i) => {
+            {sorted.map((result) => {
               const pass = result.status === 'pass';
+              const critIdx = result._idx;
               return (
-                <div key={i} className={`bg-bg-card border rounded-xl p-5 ${pass ? 'border-green/20' : 'border-red/20'}`} style={{ borderLeftWidth: 3, borderLeftColor: pass ? '#22c55e' : '#ef4444' }}>
+                <div key={critIdx} className={`bg-bg-card border rounded-xl p-5 ${pass ? 'border-green/20' : 'border-red/20'}`} style={{ borderLeftWidth: 3, borderLeftColor: pass ? '#22c55e' : '#ef4444' }}>
                   <div className="flex items-start gap-3">
                     <span className={`shrink-0 mt-0.5 text-[16px] ${pass ? 'text-green' : 'text-red'}`}>
                       {pass ? '✅' : '❌'}
@@ -161,7 +222,41 @@ export default function RetentionAudit() {
                         {result.criterion}
                       </div>
                       <p className="text-[13px] text-text-dim mt-1.5 leading-relaxed">{result.explanation}</p>
-                      {!pass && result.suggestion && (
+
+                      {/* Fix options for failed items */}
+                      {!pass && result.fixes && result.fixes.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          {result.fixes.map((fix, fixIdx) => {
+                            const fixKey = `${critIdx}-${fixIdx}`;
+                            const selected = selectedFixes[fixKey];
+                            return (
+                              <div key={fixIdx} className="bg-bg-elevated border border-border/50 rounded-lg p-3 space-y-2">
+                                <div className="text-[13px] text-red/70 line-through">&ldquo;{fix.original}&rdquo;</div>
+                                <div className="text-[12px] text-text-muted">{fix.problem}</div>
+                                <div className="space-y-1.5">
+                                  {fix.options.map((option, optIdx) => (
+                                    <button
+                                      key={optIdx}
+                                      onClick={() => selectFix(fixKey, optIdx)}
+                                      className={`w-full text-left px-3 py-2 rounded-lg text-[13px] transition-all ${
+                                        selected === optIdx
+                                          ? 'bg-green/10 text-green border border-green/20'
+                                          : 'bg-bg-card text-text-primary border border-border hover:border-amber/30'
+                                      }`}
+                                    >
+                                      <span className="text-[11px] text-text-muted mr-1.5">Option {String.fromCharCode(65 + optIdx)}:</span>
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Fallback for old-style suggestion */}
+                      {!pass && !result.fixes?.length && result.suggestion && (
                         <div className="mt-2 pl-3 border-l-2 border-amber/30">
                           <span className="text-[12px] text-amber font-medium">Suggestion: </span>
                           <span className="text-[12px] text-text-dim">{result.suggestion}</span>
@@ -173,6 +268,22 @@ export default function RetentionAudit() {
               );
             })}
           </div>
+
+          {/* Update Script button */}
+          {fixCount > 0 && !applied && (
+            <button
+              onClick={applyFixes}
+              className="w-full py-3 bg-green/10 text-green border border-green/20 rounded-xl text-[14px] font-medium cursor-pointer hover:bg-green/20 transition-all"
+            >
+              Update Script ({fixCount} fix{fixCount !== 1 ? 'es' : ''})
+            </button>
+          )}
+
+          {applied && (
+            <div className="bg-green/5 border border-green/20 rounded-xl px-5 py-3 text-center text-[13px] text-green">
+              Script updated with {fixCount} fix{fixCount !== 1 ? 'es' : ''} applied.
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -8,6 +8,7 @@ import { loadProjectBundle } from '@/lib/project-bundle';
 import RetentionAudit from '@/components/app/RetentionAudit';
 import RunningBrief from '@/components/app/RunningBrief';
 import ResetSectionButton from '@/components/app/ResetSectionButton';
+import ScriptExportBar from '@/components/app/ScriptExportBar';
 
 export default function OptimizePage() {
   const { currentProject } = useProject();
@@ -32,6 +33,7 @@ export default function OptimizePage() {
       </p>
 
       <UpstreamContext section="optimize" />
+      <ScriptExportBar />
 
       {scriptPreview && (
         <div className="bg-bg-elevated border border-border/50 rounded-lg px-5 py-3 mb-8">

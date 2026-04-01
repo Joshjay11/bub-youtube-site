@@ -19,10 +19,16 @@ THE 10 MUST PASS CRITERIA:
 
 For EACH criterion, provide:
 1. "pass" or "fail"
-2. A specific explanation (2-3 sentences) referencing actual lines, sections, or approximate timestamps from the script. Do NOT give vague assessments. Point to the exact evidence.
-3. For failed items: a concrete, actionable suggestion for how to fix it.
+2. A specific explanation (2-3 sentences) referencing actual lines from the script.
 
-Be honest. If something barely passes, say it passes but note the weakness. If something clearly fails, say so directly.
+For FAILED criteria:
+- You MUST quote the exact offending sentence(s) from the script in the "fixes" array. Do not paraphrase or summarize.
+- For each offending sentence, provide 1-2 specific rewrite options the user can choose from.
+- Each option should fix the identified problem while maintaining the script's voice and flow.
+- If a criterion fails for structural reasons (e.g., missing a section entirely), provide a suggested addition with specific wording that fits the script's tone.
+
+For PASSED criteria:
+- Set "fixes" to null.
 
 Respond ONLY with valid JSON:
 {
@@ -31,7 +37,19 @@ Respond ONLY with valid JSON:
       "criterion": "Hook delivers on title/thumbnail promise within 30 seconds",
       "status": "pass",
       "explanation": "The opening line directly addresses...",
-      "suggestion": null
+      "fixes": null
+    },
+    {
+      "criterion": "Read the entire script aloud without stumbling",
+      "status": "fail",
+      "explanation": "Two sentences have awkward phrasing.",
+      "fixes": [
+        {
+          "original": "Exact problematic sentence from the script",
+          "problem": "Brief description of what's wrong",
+          "options": ["Fix option A", "Fix option B"]
+        }
+      ]
     }
   ]
 }`;
@@ -59,7 +77,7 @@ export async function POST(request: Request) {
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: `Audit this script:\n\n${scriptText.trim()}` }],
     });
@@ -67,7 +85,6 @@ export async function POST(request: Request) {
     const raw = response.content[0].type === 'text' ? response.content[0].text : '';
     console.log('[retention-audit] Response length:', raw.length);
 
-    // Defensive JSON parsing
     const stripped = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     let parsed;
     try {

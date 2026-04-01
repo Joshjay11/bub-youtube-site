@@ -9,6 +9,7 @@ import QualityScore from '@/components/app/QualityScore';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
 import ResetSectionButton from '@/components/app/ResetSectionButton';
+import ScriptExportBar from '@/components/app/ScriptExportBar';
 
 export default function RefinePage() {
   const { currentProject } = useProject();
@@ -37,6 +38,7 @@ export default function RefinePage() {
       </p>
 
       <UpstreamContext section="write" />
+      <ScriptExportBar />
 
       {!hasScript ? (
         <div className="bg-bg-card border border-border rounded-xl p-10 text-center">
