@@ -1,14 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProject } from '@/lib/project-context';
 import { useRouter } from 'next/navigation';
+import { loadProjectBundle } from '@/lib/project-bundle';
 
 export default function DashboardPage() {
   const { projects, currentProject, createProject, loading } = useProject();
   const [newTitle, setNewTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const router = useRouter();
+
+  // Load last session state (must be before any early returns)
+  const [session, setSession] = useState<{ current_page?: string; script_word_count?: number; next_step?: string; saved_at?: string } | null>(null);
+  useEffect(() => {
+    if (!currentProject?.id) return;
+    loadProjectBundle(currentProject.id).then((bundle) => {
+      const ss = bundle.session_state as typeof session;
+      if (ss?.next_step) setSession(ss);
+    }).catch(() => {});
+  }, [currentProject?.id]);
 
   async function handleCreate() {
     if (!newTitle.trim() || creating) return;
@@ -70,6 +81,23 @@ export default function DashboardPage() {
   return (
     <div>
       {noProjectBanner}
+
+      {/* Last Session card */}
+      {session && currentProject && (
+        <div className="bg-bg-card border border-amber/20 rounded-xl p-5 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[12px] text-text-muted uppercase tracking-wider mb-1">Last Session</div>
+              <div className="text-[14px] text-text-bright">You were on: <span className="text-amber capitalize">{session.current_page?.replace(/-/g, ' ') || 'Dashboard'}</span></div>
+              {session.script_word_count ? <div className="text-[13px] text-text-dim mt-0.5">Script: {session.script_word_count} words</div> : null}
+              <div className="text-[13px] text-text-dim mt-0.5">Next: {session.next_step}</div>
+            </div>
+            <a href={`/app/${session.current_page || ''}`} className="px-4 py-2 bg-amber/10 text-amber text-[13px] font-medium rounded-lg border border-amber/20 hover:bg-amber/20 transition-colors no-underline">
+              Resume →
+            </a>
+          </div>
+        </div>
+      )}
 
       <h1 className="font-serif text-[32px] text-text-bright mb-2">
         {currentProject ? currentProject.title : 'Welcome to the Script System'}

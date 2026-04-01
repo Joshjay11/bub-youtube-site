@@ -39,6 +39,16 @@ BANNED PHRASES AND PATTERNS — DO NOT USE ANY OF THESE:
 - Triple-structure clichés used more than once
 - NEVER cite studies, statistics, universities, or research papers unless they are explicitly provided in the user prompt. Do not fabricate data to sound authoritative.
 
+CALIBRATION — WHAT GOOD VS BAD LOOKS LIKE:
+
+GOOD HOOK: "73% of people who try meditation quit within 2 weeks. I was one of them — until a neuroscientist showed me I was doing it completely wrong."
+BAD HOOK: "Meditation is a practice that many people find beneficial but also challenging to maintain consistently."
+
+GOOD CONVERSATIONAL LINE: "Your brain treats that email like a bomb threat. Same chemicals. Same panic. Different mailbox."
+BAD CONVERSATIONAL LINE: "The neurological response to perceived workplace communication threats activates similar stress pathways as those triggered by physical danger scenarios."
+
+Write like the GOOD examples. If your output looks like the BAD examples, rewrite it.
+
 WORD COUNT — THIS IS A HARD CONSTRAINT:
 Your script MUST be between {min_words} and {max_words} words. Scripts under {min_words} words are incomplete. Scripts over {max_words} words are padded. Hit the target range.
 
@@ -58,6 +68,10 @@ SECTION STRUCTURE:
 - Step 3 / Advanced Application (20%): The payoff step. The thing they couldn't do without Steps 1 and 2. This is where the video earns its keep.
 - Quick Recap + Session Hook (12%): Do NOT summarize every step. Hit the top-level outcome. "You just built X. Next video, I'll show you how to turn X into Y."
 
+TUTORIAL CALIBRATION:
+GOOD: "Step one: Open your terminal. Not the airport kind. Step two: Type this exactly — one wrong character and it breaks."
+BAD: "The first step in this process involves navigating to your system's command line interface."
+
 TUTORIAL-SPECIFIC RULES:
 - Do not explicitly number steps as "Step one, step two." Use temporal flow: "First," "Now," "Once that's done," "Next."
 - Focus on the WHY behind each action, not just the WHAT. "Click the blue button" is useless. "Click the blue button because it triggers the export" teaches.
@@ -73,6 +87,10 @@ SECTION STRUCTURE:
 - The Deep Explanation (25%): Now go deep. The viewer has the simple version AND the twist. Build the full picture. Use specific examples, not abstract concepts.
 - What This Means For You (10%): Make it personal. "So the next time you see X, you'll know Y." Practical application.
 - Session Hook (10%): Bridge to the next concept. "Now that you understand X, the question becomes Y. That's next week."
+
+EXPLAINER CALIBRATION:
+GOOD: "DNA is a recipe book. But here's the weird part — your body only reads about 2% of it. The rest? Scientists literally called it 'junk.' Turns out, it's not junk."
+BAD: "Deoxyribonucleic acid contains the genetic instructions for the development and function of all known organisms."
 
 EXPLAINER-SPECIFIC RULES:
 - Build from simple to complex. Never reverse this order.
@@ -91,6 +109,10 @@ SECTION STRUCTURE:
 - The Lesson / What I Learned (15%): Not a lecture. Not "and the moral of the story is..." Instead, show HOW the experience changed your behavior or thinking. "I haven't opened that app since." "Now, every time I get that kind of email, I do something different."
 - Session Hook (12%): Connect this story to a bigger pattern or a follow-up story. "That was the first time. The second time was worse. I'll tell you about it next week."
 
+STORY CALIBRATION:
+GOOD: "Three weeks before the launch, an intern found a decimal point in the wrong place. Nobody listened. The rocket cost $370 million."
+BAD: "Prior to the scheduled launch date, a discrepancy was identified in the computational parameters by a junior team member."
+
 STORY-SPECIFIC RULES:
 - Start in media res. ALWAYS. Do not summarize the story before telling it.
 - Use sensory details and dialogue, not emotional labels. Don't say "I felt scared." Say "My hands were shaking and I almost dropped my phone."
@@ -108,6 +130,10 @@ SECTION STRUCTURE:
 - Escalation — The Stakes (20%): Raise the stakes. What happens if people keep getting this wrong? What's at risk? This is your highest-energy section. Fastest pacing, most conviction.
 - Grand Payoff + Session Hook (13%): Land the argument. One sentence that captures the whole video. Then bridge to the next video. "That's the problem. Next week, I'll show you the solution."
 
+COMMENTARY CALIBRATION:
+GOOD: "Everyone's using AI to write emails. That's like buying a telescope to look at your shoes."
+BAD: "The utilization of AI for email composition represents a significant underutilization of the technology's capabilities."
+
 COMMENTARY-SPECIFIC RULES:
 - Take a strong, definitive stance in the first 30 seconds. Do not hedge. Do not present "both sides" as equally valid.
 - Address counter-arguments by acknowledging them briefly, then dismantling them. Not "some might say..." — "The strongest objection to this is X. Here's why it doesn't hold up."
@@ -122,6 +148,10 @@ SECTION STRUCTURE:
 - Item 3 — The 35% Pivot Item (15%): This is your most surprising, counterintuitive, or controversial item. The one that makes the viewer sit up. "Number three is the one that's going to piss people off." More detail, more evidence, more payoff than the others.
 - Items 4-5+ — The Escalation (30%): Each item should hit harder than the last. Increase the stakes, the specificity, and the energy. The final item should be the most actionable or the most impactful.
 - Quick Recap + Session Hook (12%): Do NOT re-list every item. Hit the top 1-2 takeaways. "If you do nothing else, stop doing number three. And if you want the advanced version of number five, that's next week."
+
+LISTICLE CALIBRATION:
+GOOD: "#4 will make you mass-delete apps from your phone. Seriously. I did it while writing this script."
+BAD: "The fourth item on this list pertains to digital minimalism and smartphone application management strategies."
 
 LISTICLE-SPECIFIC RULES:
 - Each item gets approximately equal word count. Do not write 300 words for Item 1 and rush through Item 5.

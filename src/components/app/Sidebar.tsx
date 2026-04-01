@@ -8,11 +8,59 @@ import CreditHealthBar from '@/components/app/CreditHealthBar';
 
 function SaveProgressButton() {
   const [saved, setSaved] = useState(false);
+  const { currentProject } = useProject();
+  const savePath = usePathname();
 
-  function handleSave() {
+  async function handleSave() {
     window.dispatchEvent(new Event('save-progress'));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+
+    // Save structured state for "Last Session" on Dashboard
+    if (currentProject?.id) {
+      const pageName = savePath.replace('/app/', '').replace('/app', 'dashboard') || 'dashboard';
+      try {
+        const bundleRes = await fetch(`/api/projects/data/bundle?projectId=${currentProject.id}`);
+        const bundle = await bundleRes.json();
+
+        const pagesWithData = Object.keys(bundle).filter((k) => {
+          const val = bundle[k];
+          return val && typeof val === 'object' && Object.keys(val).length > 0;
+        });
+
+        const ws = bundle.write as { script_draft?: string; word_count?: number; video_style?: string; selected_model?: string } | undefined;
+        const et = bundle.editors_table as { result?: unknown } | undefined;
+        const qs = bundle.quality_score as { result?: unknown } | undefined;
+        const opt = bundle.optimize as { audit_results?: unknown[] } | undefined;
+
+        let nextStep = 'Start with the Idea Validator';
+        if (!pagesWithData.includes('idea_entry') && !pagesWithData.includes('idea_scorecard')) nextStep = 'Score your idea on the Idea Validator';
+        else if (!pagesWithData.includes('audience_avatar') && !pagesWithData.includes('framing_worksheet')) nextStep = 'Fill in Research & Pre-Production';
+        else if (!pagesWithData.includes('hook_draft')) nextStep = 'Write and score your hook on the Structure page';
+        else if (!ws?.script_draft) nextStep = 'Generate your script on the Write page';
+        else if (!et?.result) nextStep = "Run the Editor's Table on the Refine page";
+        else if (!qs?.result) nextStep = 'Run the Quality Score on the Refine page';
+        else if (!opt?.audit_results?.length) nextStep = 'Run the Retention Audit on the Optimize page';
+        else nextStep = 'Script is ready — head to Post-Production';
+
+        await fetch('/api/projects/data', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: currentProject.id,
+            toolKey: 'session_state',
+            data: {
+              saved_at: new Date().toISOString(),
+              current_page: pageName,
+              pages_with_data: pagesWithData,
+              script_word_count: ws?.word_count || 0,
+              video_style: ws?.video_style || '',
+              next_step: nextStep,
+            },
+          }),
+        });
+      } catch { /* non-blocking */ }
+    }
   }
 
   return (

@@ -10,6 +10,7 @@ import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
 import ResetSectionButton from '@/components/app/ResetSectionButton';
 import ScriptExportBar from '@/components/app/ScriptExportBar';
+import SlopScanner from '@/components/app/SlopScanner';
 
 export default function RefinePage() {
   const { currentProject } = useProject();
@@ -49,6 +50,7 @@ export default function RefinePage() {
         </div>
       ) : (
         <div className="space-y-12">
+          <SlopScanner />
           <EditorsTable />
           <hr className="rule" style={{ margin: '0' }} />
           <QualityScore />
