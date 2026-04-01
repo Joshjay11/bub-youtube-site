@@ -62,8 +62,52 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
   // Conditional Writer C
   const showWriterC = targetMinutes === 5 || (targetMinutes <= 10 && paceLabel === 'energetic');
   const writerCount = showWriterC ? 3 : 2;
-  const creditCost = writerCount;
+  const creditCost = writerCount * 2; // 2 passes per writer
   const targetWords = targetMinutes * wpm;
+  const [progress, setProgress] = useState<string[]>(['', '', '']);
+
+  async function consumeSSE(index: number, model: string): Promise<{ script: string; wordCount: number }> {
+    const res = await fetch('/api/ai/generate-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: currentProject!.id, model, targetWords, style: videoStyle, targetMinutes, wpm }),
+    });
+
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No response stream');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result = { script: '', wordCount: 0 };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === 'progress') {
+            setProgress((prev) => { const n = [...prev]; n[index] = event.message; return n; });
+          } else if (event.type === 'complete') {
+            result = { script: event.script, wordCount: event.wordCount };
+            setProgress((prev) => { const n = [...prev]; n[index] = `Complete ✓ (${event.wordCount} words)`; return n; });
+          } else if (event.type === 'error') {
+            throw new Error(event.error);
+          }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue; // skip malformed JSON
+          throw e;
+        }
+      }
+    }
+
+    return result;
+  }
 
   async function handleGenerate() {
     if (!currentProject?.id || loading) return;
@@ -71,28 +115,23 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
     setError('');
     setDrafts(['', '', '']);
     setWordCounts([0, 0, 0]);
+    setProgress(['Starting...', 'Starting...', showWriterC ? 'Starting...' : '']);
 
     const models = showWriterC ? MODEL_KEYS : MODEL_KEYS.slice(0, 2);
 
     try {
       const results = await Promise.allSettled(
-        models.map((m) =>
-          fetch('/api/ai/generate-script', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectId: currentProject.id, model: m, targetWords, style: videoStyle, targetMinutes, wpm }),
-          }).then((r) => r.json())
-        )
+        models.map((m, i) => consumeSSE(i, m))
       );
 
       const newDrafts = ['', '', ''];
       const newWc = [0, 0, 0];
       results.forEach((res, i) => {
-        if (res.status === 'fulfilled' && res.value.script) {
+        if (res.status === 'fulfilled') {
           newDrafts[i] = res.value.script;
-          newWc[i] = res.value.wordCount || 0;
+          newWc[i] = res.value.wordCount;
         } else {
-          newDrafts[i] = 'Generation failed. ' + (res.status === 'fulfilled' ? res.value.error : res.reason);
+          newDrafts[i] = 'Generation failed. ' + (res.reason?.message || res.reason);
         }
       });
 
@@ -173,6 +212,25 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
         )}
         {loading ? `Generating from ${writerCount} models...` : 'Generate Script'} <span className="text-[12px] opacity-70">({creditCost} credits)</span>
       </button>
+
+      {/* Progress indicators */}
+      {loading && (
+        <div className="bg-bg-card border border-border rounded-xl p-4 space-y-2">
+          {WRITER_LABELS.slice(0, writerCount).map((label, i) => (
+            <div key={i} className="flex items-center gap-3 text-[13px]">
+              <span className="text-text-bright font-medium w-16 shrink-0">{label}</span>
+              <span className={`${progress[i]?.includes('Complete') ? 'text-green' : 'text-amber'}`}>
+                {progress[i] ? (
+                  <>
+                    {!progress[i].includes('Complete') && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber animate-pulse mr-1.5" />}
+                    {progress[i]}
+                  </>
+                ) : 'Waiting...'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && <div className="text-[13px] text-red bg-red/5 border border-red/20 rounded-lg px-4 py-3">{error}</div>}
 

@@ -78,6 +78,13 @@ RULES:
 - The edited_text should feel like the same person wrote it — just on their best day.
 - For YouTube scripts: spoken rhythm matters. Read it out loud mentally. Cut what trips the tongue.
 - Find EVERY issue. Do not stop at 5-6. Go through line by line.
+CRITICAL EDITING CONSTRAINT:
+- You are an EDITOR, not a rewriter. Tighten individual lines, not entire sections.
+- NEVER remove entire paragraphs or sections. Every section in the original must appear in the edited version.
+- Target a maximum 15-20% word reduction. If the original is 900 words, your edit should be 720-765 words minimum.
+- If a paragraph can't be meaningfully tightened, leave it as-is. Not every line needs a change.
+- Your job is to make each sentence sharper, not to make the script shorter.
+
 - RESPOND ONLY WITH THE JSON. No markdown fences. No preamble. No explanation outside the JSON.`;
 
 export async function POST(request: Request) {
@@ -132,6 +139,15 @@ export async function POST(request: Request) {
         }
       } else {
         return Response.json({ error: 'Failed to parse editor response', raw: raw.slice(0, 300) }, { status: 500 });
+      }
+    }
+
+    // Warn if edits are too aggressive (over 25% cut)
+    if (parsed?.stats) {
+      const origWords = parsed.stats.word_count_original || parsed.stats.words_original || 0;
+      const editedWords = parsed.stats.word_count_edited || parsed.stats.words_edited || 0;
+      if (origWords > 0 && editedWords < origWords * 0.75) {
+        console.warn(`[editors-table] Aggressive cut: ${origWords} → ${editedWords} (${Math.round((1 - editedWords / origWords) * 100)}% cut)`);
       }
     }
 
