@@ -8,6 +8,7 @@ import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle } from '@/lib/project-bundle';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
 
 const STYLES = [
   { value: 'tutorial', label: 'Tutorial', desc: 'Step-by-step how-to' },
@@ -81,7 +82,10 @@ export default function WritePage() {
 
   return (
     <div>
-      <h1 className="font-serif text-[32px] text-text-bright mb-2">Write</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-[32px] text-text-bright">Write</h1>
+        <ResetSectionButton toolKeys={['write']} />
+      </div>
       <p className="text-text-dim text-[15px] mb-8">
         Set your constraints, pick your video style, generate your script from AI writers, then edit.
       </p>

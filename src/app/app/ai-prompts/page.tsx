@@ -9,6 +9,7 @@ import AIPromptsGuide from '@/components/app/AIPromptsGuide';
 import { useProject } from '@/lib/project-context';
 import { type ProjectBundle, loadProjectBundle, compileBrief } from '@/lib/project-bundle';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
 
 interface AllPromptsData {
   fields: Record<string, Record<string, string>>;
@@ -126,9 +127,12 @@ export default function AIPromptsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-2">
-        <h1 className="font-serif text-[32px] text-text-bright">AI Prompts</h1>
-        <SaveIndicator status={saveStatus} />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <h1 className="font-serif text-[32px] text-text-bright">AI Prompts</h1>
+          <SaveIndicator status={saveStatus} />
+        </div>
+        <ResetSectionButton toolKeys={['ai_prompts_state']} />
       </div>
       <p className="text-text-dim text-[15px] mb-2">
         Run AI-powered prompts for brainstorming, outlines, and retention analysis.

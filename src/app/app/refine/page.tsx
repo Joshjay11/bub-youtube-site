@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle } from '@/lib/project-bundle';
 import EditorsTable from '@/components/app/EditorsTable';
-import CompressionCheck from '@/components/app/CompressionCheck';
-import QualityScorecard from '@/components/app/QualityScorecard';
+import QualityScore from '@/components/app/QualityScore';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
 
 export default function RefinePage() {
   const { currentProject } = useProject();
@@ -28,9 +28,12 @@ export default function RefinePage() {
 
   return (
     <div>
-      <h1 className="font-serif text-[32px] text-text-bright mb-2">Refine</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-[32px] text-text-bright">Refine</h1>
+        <ResetSectionButton toolKeys={['editors_table', 'quality_score']} />
+      </div>
       <p className="text-text-dim text-[15px] mb-8">
-        Polish your script before recording. Run it through editorial analysis, compression, and quality scoring.
+        Polish your script before recording. Run it through editorial analysis and quality scoring.
       </p>
 
       <UpstreamContext section="write" />
@@ -46,9 +49,7 @@ export default function RefinePage() {
         <div className="space-y-12">
           <EditorsTable />
           <hr className="rule" style={{ margin: '0' }} />
-          <CompressionCheck />
-          <hr className="rule" style={{ margin: '0' }} />
-          <QualityScorecard />
+          <QualityScore />
           <hr className="rule" style={{ margin: '0' }} />
           <RunningBrief />
         </div>

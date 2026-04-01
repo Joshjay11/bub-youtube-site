@@ -7,6 +7,7 @@ import ResearchKeeper from '@/components/app/ResearchKeeper';
 import FramingWorksheet from '@/components/app/FramingWorksheet';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
 
 export default function ResearchPage() {
   const appendToKeeperRef = useRef<((text: string) => void) | null>(null);
@@ -17,7 +18,10 @@ export default function ResearchPage() {
 
   return (
     <div>
-      <h1 className="font-serif text-[32px] text-text-bright mb-2">Research & Pre-Production</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-[32px] text-text-bright">Research & Pre-Production</h1>
+        <ResetSectionButton toolKeys={['audience_avatar', 'competitive_scan', 'framing_worksheet', 'topic_research', 'research_keeper']} />
+      </div>
       <p className="text-text-dim text-[15px] mb-8">
         Structured thinking before you write. Fill these out for THIS video — not your channel in general.
       </p>

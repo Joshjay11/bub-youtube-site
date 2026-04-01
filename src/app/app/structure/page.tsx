@@ -13,6 +13,7 @@ const CRITERIA_KEYS = [
 import Link from 'next/link';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import RunningBrief from '@/components/app/RunningBrief';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
 
 const REFERENCE_PAGES = [
   {
@@ -52,7 +53,10 @@ export default function StructurePage() {
 
   return (
     <div>
-      <h1 className="font-serif text-[32px] text-text-bright mb-2">Script Structure</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-[32px] text-text-bright">Script Structure</h1>
+        <ResetSectionButton toolKeys={['hook_draft', 'hook_scorecard', 'hook_score']} />
+      </div>
       <p className="text-text-dim text-[15px] mb-8">
         Write your hook, score it, pick a structure template, and master the 35% Pivot.
       </p>

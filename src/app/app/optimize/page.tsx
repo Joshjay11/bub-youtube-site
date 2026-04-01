@@ -6,7 +6,6 @@ import Link from 'next/link';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle } from '@/lib/project-bundle';
-
 export default function OptimizePage() {
   const { currentProject } = useProject();
   const [scriptPreview, setScriptPreview] = useState('');
