@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ScriptAudit from '@/components/app/ScriptAudit';
 import Link from 'next/link';
 import UpstreamContext from '@/components/app/UpstreamContext';
 import { useProject } from '@/lib/project-context';
 import { loadProjectBundle } from '@/lib/project-bundle';
+import RetentionAudit from '@/components/app/RetentionAudit';
+import RunningBrief from '@/components/app/RunningBrief';
+import ResetSectionButton from '@/components/app/ResetSectionButton';
+
 export default function OptimizePage() {
   const { currentProject } = useProject();
   const [scriptPreview, setScriptPreview] = useState('');
@@ -20,9 +23,12 @@ export default function OptimizePage() {
 
   return (
     <div>
-      <h1 className="font-serif text-[32px] text-text-bright mb-2">Optimize</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="font-serif text-[32px] text-text-bright">Optimize</h1>
+        <ResetSectionButton toolKeys={['optimize']} />
+      </div>
       <p className="text-text-dim text-[15px] mb-8">
-        Audit your script before recording. Fix every problem before it costs you retention.
+        AI-powered retention audit. Checks your script against 10 MUST PASS criteria and tells you exactly what to fix.
       </p>
 
       <UpstreamContext section="optimize" />
@@ -35,7 +41,7 @@ export default function OptimizePage() {
       )}
 
       <div className="space-y-12">
-        <ScriptAudit />
+        <RetentionAudit />
 
         <hr className="rule" style={{ margin: '0' }} />
 
@@ -53,6 +59,9 @@ export default function OptimizePage() {
             </p>
           </Link>
         </div>
+
+        <hr className="rule" style={{ margin: '0' }} />
+        <RunningBrief />
       </div>
     </div>
   );
