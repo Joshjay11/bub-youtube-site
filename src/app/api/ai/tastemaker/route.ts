@@ -123,14 +123,14 @@ export async function POST() {
     const totalProjects = projects.length;
 
     // If fewer than 5 completed projects, return progress only
-    if (completedCount < 5) {
+    if (completedCount < 7) {
       return Response.json({
         status: 'building',
         user_id: userId,
         completed_projects: completedCount,
         total_projects: totalProjects,
-        required: 5,
-        remaining: 5 - completedCount,
+        required: 7,
+        remaining: 7 - completedCount,
       });
     }
 

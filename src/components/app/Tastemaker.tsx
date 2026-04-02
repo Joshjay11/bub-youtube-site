@@ -211,8 +211,8 @@ export default function Tastemaker() {
 
   if (!data || data.status === 'building') {
     const completed = data?.completed_projects || 0;
-    const required = data?.required || 5;
-    const remaining = data?.remaining || (5 - completed);
+    const required = data?.required || 7;
+    const remaining = data?.remaining || (7 - completed);
     const pct = Math.round((completed / required) * 100);
 
     return (
@@ -330,10 +330,41 @@ export default function Tastemaker() {
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function Header() {
+  const [guideOpen, setGuideOpen] = useState(false);
+
   return (
-    <div>
-      <h2 className="font-serif text-[22px] text-text-bright">Tastemaker</h2>
-      <p className="text-text-dim text-[13px] mt-1">Your creative patterns, distilled from your project data.</p>
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-serif text-[22px] text-text-bright">Tastemaker</h2>
+        <p className="text-text-dim text-[13px] mt-1">Your creative patterns, distilled from your project data.</p>
+      </div>
+      <div>
+        <button
+          onClick={() => setGuideOpen(!guideOpen)}
+          className="flex items-center gap-2 text-text-dim text-[13px] hover:text-text-bright transition-colors bg-transparent border-none cursor-pointer p-0"
+        >
+          <span className={`transform transition-transform ${guideOpen ? 'rotate-90' : ''}`}>&rsaquo;</span>
+          How the Tastemaker Works
+        </button>
+        {guideOpen && (
+          <div className="mt-3 text-text-dim text-[13px] leading-relaxed space-y-3 pl-4 border-l border-border">
+            <p>
+              The Tastemaker reads your creative patterns across completed projects — no
+              questionnaires, no setup. It watches what you actually do: which styles you
+              pick, which hooks you write, how your scripts score, which AI tools you lean on.
+            </p>
+            <p>After 7 completed projects, it generates:</p>
+            <ul className="space-y-1 pl-1">
+              <li><strong className="text-text-bright">Creative Fingerprint</strong> — your default style, pace, hook type, and tool preferences</li>
+              <li><strong className="text-text-bright">Voice Patterns</strong> — what the data reveals about your writing tendencies and blind spots</li>
+              <li><strong className="text-text-bright">Portable Taste Profile</strong> — a one-page creative profile you can copy into ChatGPT, Claude, Gemini, or any AI tool. It&apos;s your YouTube persona, distilled.</li>
+              <li><strong className="text-text-bright">Growth Suggestions</strong> — data-driven observations (not motivation) from your actual project history</li>
+            </ul>
+            <p>The profile gets sharper with every project. You can refresh it anytime after it unlocks.</p>
+            <p className="text-text-muted">A project counts as &ldquo;completed&rdquo; when it has a script with 200+ words on the Write page.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
