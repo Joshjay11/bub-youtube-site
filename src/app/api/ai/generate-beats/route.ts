@@ -91,6 +91,44 @@ Respond ONLY with valid JSON:
   ]
 }`;
 
+const REFINEMENT_PROMPT = `You are a cinematic quality control editor reviewing a video beat sheet. You have the original script AND the draft beat sheet from Pass 1. Your job is to refine every beat for maximum visual quality and rule compliance.
+
+CHECK AND FIX EACH BEAT:
+
+1. CAMERA DISTANCE CYCLING: No two consecutive beats should use the same camera distance. If they do, change one. Use at least 5 different distances across the beat sheet.
+
+2. SUBJECT SPECIFICITY: Replace every instance of "a person," "someone," or generic subjects with specific roles/characters from the script. Read the script — it tells you exactly who is in each scene and what they're doing.
+
+3. NO DUPLICATE PROMPTS: If two or more beats have substantially similar prompts (same subject + same camera + same lighting), rewrite them to be visually distinct. Each beat must produce a unique frame.
+
+4. TIMESTAMP VERIFICATION:
+   - Calculate expected duration from script word count / speaking pace
+   - Total of all beat timestamps must equal this calculated duration (±15 seconds)
+   - Beats should be unequal in length — hooks are short (15-25s), exposition is longer (60-90s)
+   - If total is off, redistribute — do NOT add or remove beats
+
+5. METAPHORICAL RATIO: At least every 3rd-4th beat should use metaphorical/abstract imagery. If the beat sheet is too literal, convert exposition or transition beats to metaphorical visuals.
+
+6. LIGHTING VARIETY: No two beats should have identical lighting descriptions. Diversify with specific directional lighting.
+
+7. COLOR STORY PROGRESSION: Colors should progress through the beat sheet. Flag and fix beats where the color story stalls.
+
+OUTPUT: Return the complete corrected beat sheet in the same JSON format as Pass 1. Every beat must be present — do not drop beats. Only modify the fields that need fixing.`;
+
+const FLASH_MODEL = 'google/gemini-3-flash-preview';
+
+function parseJSON(raw: string): Record<string, unknown> {
+  const stripped = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+  try {
+    return JSON.parse(stripped);
+  } catch {
+    const first = raw.indexOf('{');
+    const last = raw.lastIndexOf('}');
+    if (first !== -1 && last > first) return JSON.parse(raw.slice(first, last + 1));
+    throw new Error('Failed to parse JSON');
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { script, wpm, total_minutes } = await request.json();
@@ -99,35 +137,53 @@ export async function POST(request: Request) {
     const email = await getUserEmail();
     const { source } = await resolveApiKey(email);
 
-    // This uses server OpenRouter key, but still costs 1 credit
     if (source === 'credits' && email) await decrementCredits(email);
 
     const userMsg = `Script to create a beat sheet for (${wpm || 140} WPM, ~${total_minutes || 12} minutes):\n\n${script.trim()}`;
 
-    const result = await callWithFallback({
+    // Pass 1: Generate draft beat sheet
+    const pass1 = await callWithFallback({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMsg },
       ],
-      primaryModel: 'google/gemini-2.5-flash-lite-preview',
+      primaryModel: FLASH_MODEL,
       maxTokens: 4000,
       temperature: 0.7,
       jsonMode: true,
     });
 
-    const raw = result.content;
-    const stripped = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    let parsed;
+    let draftBeats;
     try {
-      parsed = JSON.parse(stripped);
+      draftBeats = parseJSON(pass1.content);
     } catch {
-      const first = raw.indexOf('{');
-      const last = raw.lastIndexOf('}');
-      if (first !== -1 && last > first) parsed = JSON.parse(raw.slice(first, last + 1));
-      else return Response.json({ error: 'Failed to parse beat sheet' }, { status: 500 });
+      return Response.json({ error: 'Failed to parse draft beat sheet' }, { status: 500 });
     }
 
-    return Response.json(parsed);
+    // Pass 2: Refine with script context
+    const pass2Msg = `Here is the original script:\n\n${script.trim()}\n\nHere is the draft beat sheet from Pass 1:\n\n${JSON.stringify(draftBeats, null, 2)}\n\nSpeaking pace: ${wpm || 140} WPM, target duration: ~${total_minutes || 12} minutes.\n\nReview and fix every beat according to your instructions. Return the corrected beat sheet.`;
+
+    const pass2 = await callWithFallback({
+      messages: [
+        { role: 'system', content: REFINEMENT_PROMPT },
+        { role: 'user', content: pass2Msg },
+      ],
+      primaryModel: FLASH_MODEL,
+      maxTokens: 4000,
+      temperature: 0.5,
+      jsonMode: true,
+    });
+
+    let finalBeats;
+    try {
+      finalBeats = parseJSON(pass2.content);
+    } catch {
+      // If Pass 2 fails to parse, fall back to Pass 1 output
+      console.warn('[generate-beats] Pass 2 parse failed, using Pass 1 output');
+      finalBeats = draftBeats;
+    }
+
+    return Response.json(finalBeats);
   } catch (err) {
     return Response.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
   }

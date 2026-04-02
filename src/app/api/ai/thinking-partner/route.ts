@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         'X-Title': 'BUB YouTube Writer',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3.1-flash-lite-preview',
+        model: 'google/gemini-3-flash-preview',
         messages,
         stream: true,
         max_tokens: 1000,
