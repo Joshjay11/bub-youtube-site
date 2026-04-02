@@ -50,12 +50,29 @@ Conclusion: WS or EWS, eye level symmetrical, resolution/calm
 
 PATTERN INTERRUPTS: At beat 5 (8-beat) or beats 5+9 (12+ beats), create visual shock: sudden ECU, Dutch angle, surreal image, or dramatic color shift.
 
+TIMESTAMP RULES (Critical — beats must match the actual script):
+You will receive the full script. Derive timestamps from the SCRIPT'S CONTENT, not by dividing time evenly.
+1. Calculate total video duration: count the script's words, divide by the speaking pace (default 140 WPM). If a pace is provided, use that.
+2. Identify natural section breaks — topic shifts, new arguments, the pivot point, the climax, the conclusion. These become beat boundaries.
+3. Beats should be UNEQUAL in length. Dense exposition = 90 seconds. Quick transition = 15 seconds. Hook = 15-30 seconds.
+4. Total of all beat timestamps must equal the calculated video duration (±15 seconds).
+5. NEVER distribute beats in equal intervals. A beat sheet where every beat is exactly 30 seconds is WRONG.
+
+Example for an 8-minute script at 140 WPM (~1,120 words):
+- Hook: 0:00-0:25, Exposition 1: 0:25-1:45, Transition: 1:45-2:10, Exposition 2: 2:10-3:30, Pivot: 3:30-4:15, Deep Dive: 4:15-5:45, Climax: 5:45-6:30, Example: 6:30-7:20, Conclusion: 7:20-8:00
+Notice: unequal intervals, total = 8:00, heavy sections get more time, transitions are short.
+
 WHAT NOT TO DO:
 - NEVER start a prompt with "A person" — start with camera distance
 - NEVER use "soft dramatic lighting" or "muted warm tones"
 - NEVER use same camera distance for consecutive beats
 - NEVER use "with a [adjective] expression" — describe micro-actions instead
 - NEVER produce more than 2 literal human-subject beats without a metaphorical beat
+- NEVER use "a person" or "someone" as the subject. Extract the specific role, character, or context from the script. Examples:
+  Instead of "a person looking anxious" → "a remote worker staring at a passive-aggressive Slack message"
+  Instead of "a person meditating" → "an exhausted founder in a dark apartment, eyes closed, noise-canceling headphones on"
+  Instead of "a person working with an AI tool" → "a content creator watching AI highlight toxic phrases in a glowing email thread"
+  The script provides all the context needed. Use the specific scenario, job title, object, or situation described in each section.
 
 Respond ONLY with valid JSON:
 {
