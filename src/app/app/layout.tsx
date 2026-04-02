@@ -16,14 +16,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/template');
   }
 
-  // 2. Check users table for this user's id with has_access = true
+  // 2. Check users table for access
   const admin = createAdminSupabase();
   const { data: userRow } = await admin
     .from('users')
-    .select('has_access')
+    .select('has_access, subscription_status')
     .eq('id', user.id)
     .single();
 
+  // Active subscribers and lapsed users (read-only) can access the app
+  const subStatus = userRow?.subscription_status;
+  const hasActiveSubscription = subStatus === 'active' || subStatus === 'past_due' || subStatus === 'canceled';
+  const isLapsed = subStatus === 'lapsed';
+
+  if (hasActiveSubscription || isLapsed) {
+    return <AppShell>{children}</AppShell>;
+  }
+
+  // Legacy access check (pre-subscription users with has_access)
+  if (userRow?.has_access) {
+    return <AppShell>{children}</AppShell>;
+  }
+
+  // Check purchases table as fallback
   if (!userRow?.has_access) {
     const { data: purchaseRow } = await admin
       .from('purchases')
@@ -42,10 +57,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         },
         { onConflict: 'email' },
       );
-    } else {
-      redirect('/template?access=required');
+      return <AppShell>{children}</AppShell>;
     }
   }
 
-  return <AppShell>{children}</AppShell>;
+  redirect('/template?access=required');
 }

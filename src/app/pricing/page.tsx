@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
 import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
@@ -39,13 +40,30 @@ const SUBSCRIPTION_FEATURES = [
   'BYOK option',
 ];
 
-// TODO: Replace with actual Stripe Checkout calls
-// Will use STRIPE_FOUNDING_PRICE_ID, STRIPE_PRO_PRICE_ID, STRIPE_ANNUAL_PRICE_ID
-const handleSubscribe = (tier: 'founding' | 'pro' | 'annual') => {
-  console.log(`Subscribe to ${tier}`);
-};
-
 export default function PricingPage() {
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleSubscribe = async (tier: 'founding' | 'pro' | 'annual') => {
+    setLoadingTier(tier);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.error) {
+        alert(data.error);
+        setLoadingTier(null);
+      }
+    } catch {
+      alert('Connection error. Please try again.');
+      setLoadingTier(null);
+    }
+  };
+
   return (
     <MarketingLayout>
       <section className="max-w-[1120px] mx-auto px-8 pt-40 pb-24">
@@ -83,9 +101,10 @@ export default function PricingPage() {
               </ul>
               <button
                 onClick={() => handleSubscribe('founding')}
-                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+                disabled={loadingTier !== null}
+                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60"
               >
-                Join as Founding Member
+                {loadingTier === 'founding' ? 'Redirecting...' : 'Join as Founding Member'}
               </button>
             </div>
 
@@ -104,9 +123,10 @@ export default function PricingPage() {
               </ul>
               <button
                 onClick={() => handleSubscribe('pro')}
-                className="mt-6 w-full bg-amber text-bg px-6 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+                disabled={loadingTier !== null}
+                className="mt-6 w-full bg-amber text-bg px-6 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60"
               >
-                Start Writing Better Scripts
+                {loadingTier === 'pro' ? 'Redirecting...' : 'Start Writing Better Scripts'}
               </button>
             </div>
 
@@ -126,9 +146,10 @@ export default function PricingPage() {
               </ul>
               <button
                 onClick={() => handleSubscribe('annual')}
-                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+                disabled={loadingTier !== null}
+                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60"
               >
-                Save with Annual
+                {loadingTier === 'annual' ? 'Redirecting...' : 'Save with Annual'}
               </button>
             </div>
           </div>
