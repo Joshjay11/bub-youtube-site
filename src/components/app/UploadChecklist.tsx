@@ -16,28 +16,15 @@ const SECTIONS = [
     items: [
       { key: 'script_exported', label: 'Script exported for voiceover (ElevenLabs or manual recording)' },
       { key: 'beat_sheet_reviewed', label: 'Beat sheet reviewed and visual assets gathered' },
-      { key: 'broll_captured', label: 'B-roll / screen recordings captured' },
     ],
   },
   {
     title: 'Before Upload',
     items: [
+      { key: 'voiceover_finalized', label: 'Voiceover audio finalized' },
       { key: 'thumbnail_designed', label: 'Thumbnail designed and exported (1280x720)' },
       { key: 'title_finalized', label: 'Title finalized (under 60 characters)' },
-      { key: 'description_written', label: 'Description written (with timestamps)' },
-      { key: 'tags_added', label: 'Tags added (5-15 relevant tags)' },
-      { key: 'end_screen', label: 'End screen configured (subscribe + next video)' },
-      { key: 'cards_added', label: 'Cards added at key timestamps' },
-      { key: 'pinned_comment', label: 'Pinned comment drafted' },
-      { key: 'captions', label: 'Captions/subtitles uploaded or auto-generated' },
-    ],
-  },
-  {
-    title: 'Publishing',
-    items: [
-      { key: 'schedule_set', label: 'Scheduled date and time set' },
-      { key: 'community_post', label: 'Community post drafted for launch' },
-      { key: 'first_comment', label: 'First comment ready to post at publish time' },
+      { key: 'description_written', label: 'Description written' },
     ],
   },
 ];
