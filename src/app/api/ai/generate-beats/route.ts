@@ -1,6 +1,19 @@
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 
+// ─── Script Cleaning ────────────────────────────────────────────────────────
+
+function cleanScript(script: string): string {
+  return script
+    // Remove HTML comments (retention markers like <!-- 75% RETENTION CHECK -->)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Remove retention annotation lines (standalone lines like "25% RETENTION CHECK" etc.)
+    .replace(/^\s*\d+%\s*RETENTION\s*CHECK.*$/gim, '')
+    // Remove empty lines left behind (collapse multiple blank lines to one)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // ─── Script Chunking (TypeScript — the script IS the grid) ──────────────────
 
 interface ScriptChunk {
@@ -12,7 +25,7 @@ interface ScriptChunk {
 }
 
 function splitScriptIntoBeats(script: string, wpm: number = 140): ScriptChunk[] {
-  const targetBeatSeconds = 25;
+  const targetBeatSeconds = 20;
   const wordsPerBeat = Math.round((wpm * targetBeatSeconds) / 60);
 
   const words = script.split(/\s+/).filter(Boolean);
@@ -199,12 +212,13 @@ export async function POST(request: Request) {
     }
 
     const wpm = clientWpm || 140;
-    const words = script.split(/\s+/).filter(Boolean);
+    const cleanedScript = cleanScript(script);
+    const words = cleanedScript.split(/\s+/).filter(Boolean);
     const totalWords = words.length;
-    const wordsPerBeat = Math.round((wpm * 25) / 60);
+    const wordsPerBeat = Math.round((wpm * 20) / 60);
 
-    // Step 1: Split script into word-count chunks — the script IS the grid
-    const chunks = splitScriptIntoBeats(script, wpm);
+    // Step 1: Split cleaned script into word-count chunks — the script IS the grid
+    const chunks = splitScriptIntoBeats(cleanedScript, wpm);
     const midpoint = Math.ceil(chunks.length / 2);
     const firstHalf = chunks.slice(0, midpoint);
     const secondHalf = chunks.slice(midpoint);
@@ -219,7 +233,7 @@ Read each chunk and generate a matching cinematic visual.
 ${formatChunks(firstHalf)}
 
 Full script for context:
-${script.trim()}`;
+${cleanedScript}`;
 
     const pass1 = await callWithFallback({
       messages: [
@@ -254,7 +268,7 @@ The last camera distance used was: ${lastCamera}
 ${formatChunks(secondHalf)}
 
 Full script for context:
-${script.trim()}`;
+${cleanedScript}`;
 
     const pass2 = await callWithFallback({
       messages: [
@@ -298,7 +312,7 @@ ${script.trim()}`;
     // Step 5: Pass 3 — QC on merged result
     const pass3Msg = `Here is the original FULL script:
 
-${script.trim()}
+${cleanedScript}
 
 Here is the complete beat sheet (${chunks.length} beats):
 
