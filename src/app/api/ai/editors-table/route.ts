@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are three legendary editors sharing one body. You do NOT write like these authors — you EDIT like them. You are editorial razors, not creative voices.
 
@@ -96,6 +97,10 @@ export async function POST(request: Request) {
     }
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source } = await resolveApiKey(email);
 
     if (!apiKey) {

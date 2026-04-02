@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are a YouTube content strategist evaluating a video idea. Score this idea on exactly 9 criteria, each rated 1-5. Be honest and critical — do not inflate scores.
 
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
     }
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
     if (!apiKey) {

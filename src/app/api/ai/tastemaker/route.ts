@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -242,6 +243,10 @@ export async function POST() {
     // ── Step 3: Send to Flash for prose generation (1 credit) ─────────────
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source } = await resolveApiKey(email);
 
     if (!apiKey) {

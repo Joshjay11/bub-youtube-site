@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 
 const SYSTEM_PROMPT = `You are a YouTube hook evaluator. Score this hook against 10 criteria. Be honest and specific.
@@ -33,6 +34,10 @@ export async function POST(request: Request) {
     }
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
     if (!apiKey) {

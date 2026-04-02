@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { buildSystemPrompt, VALID_STYLES } from '@/lib/script-prompts';
 
@@ -99,6 +100,10 @@ export async function POST(request: Request) {
     const passMax = halfTarget + 100;
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
     if (!apiKey && source !== 'byok') {

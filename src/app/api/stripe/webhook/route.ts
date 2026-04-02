@@ -77,121 +77,138 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const email = session.customer_details?.email || session.customer_email;
-      const customerId = session.customer as string;
-      const tier = session.metadata?.tier;
-      const userId = session.metadata?.user_id;
+      try {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const email = session.customer_details?.email || session.customer_email;
+        const customerId = session.customer as string;
+        const tier = session.metadata?.tier;
+        const userId = session.metadata?.user_id;
 
-      if (email) {
-        // Upsert into purchases table (backwards compat)
-        await supabase.from('purchases').upsert(
-          {
-            email,
-            stripe_customer_id: customerId || null,
+        if (email) {
+          await supabase.from('purchases').upsert(
+            {
+              email,
+              stripe_customer_id: customerId || null,
+              has_access: true,
+            },
+            { onConflict: 'email' },
+          );
+
+          const userUpdates: Record<string, unknown> = {
             has_access: true,
-          },
-          { onConflict: 'email' },
-        );
+            stripe_customer_id: customerId || null,
+          };
 
-        // Update users table — link Stripe customer and grant access
-        const userUpdates: Record<string, unknown> = {
-          has_access: true,
-          stripe_customer_id: customerId || null,
-        };
+          if (tier) {
+            userUpdates.subscription_tier = tier;
+            userUpdates.subscription_status = 'active';
+            if (tier === 'founding') {
+              userUpdates.is_founding_member = true;
+            }
+          }
 
-        if (tier) {
-          userUpdates.subscription_tier = tier;
-          userUpdates.subscription_status = 'active';
-          if (tier === 'founding') {
-            userUpdates.is_founding_member = true;
+          if (userId) {
+            await supabase
+              .from('users')
+              .update({ ...userUpdates, updated_at: new Date().toISOString() })
+              .eq('id', userId);
+          } else {
+            await updateUserByEmail(email, userUpdates);
           }
         }
-
-        if (userId) {
-          await supabase
-            .from('users')
-            .update({ ...userUpdates, updated_at: new Date().toISOString() })
-            .eq('id', userId);
-        } else {
-          await updateUserByEmail(email, userUpdates);
-        }
+      } catch (err) {
+        console.error('[webhook] checkout.completed handler failed:', err);
       }
       break;
     }
 
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-      const tier = subscription.metadata?.tier;
-      const status = mapSubscriptionStatus(subscription.status);
+      try {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        const tier = subscription.metadata?.tier;
+        const status = mapSubscriptionStatus(subscription.status);
 
-      // current_period_end lives on subscription items in this Stripe API version
-      const periodEnd = subscription.items.data[0]?.current_period_end;
+        const periodEnd = subscription.items.data[0]?.current_period_end;
 
-      const updates: Record<string, unknown> = {
-        subscription_status: status,
-        stripe_subscription_id: subscription.id,
-        has_access: status === 'active' || status === 'past_due',
-      };
+        const updates: Record<string, unknown> = {
+          subscription_status: status,
+          stripe_subscription_id: subscription.id,
+          has_access: status === 'active' || status === 'past_due',
+        };
 
-      if (periodEnd) {
-        updates.subscription_current_period_end = new Date(periodEnd * 1000).toISOString();
-      }
-
-      if (tier) {
-        updates.subscription_tier = tier;
-        if (tier === 'founding') {
-          updates.is_founding_member = true;
+        if (periodEnd) {
+          updates.subscription_current_period_end = new Date(periodEnd * 1000).toISOString();
         }
-      }
 
-      // If user canceled, mark as canceled (still has access until period end)
-      if (subscription.cancel_at_period_end && subscription.status === 'active') {
-        updates.subscription_status = 'canceled';
-        updates.has_access = true;
-      }
+        if (tier) {
+          updates.subscription_tier = tier;
+          if (tier === 'founding') {
+            updates.is_founding_member = true;
+          }
+        }
 
-      await updateUserByCustomerId(customerId, updates);
+        if (subscription.cancel_at_period_end && subscription.status === 'active') {
+          updates.subscription_status = 'canceled';
+          updates.has_access = true;
+        }
+
+        await updateUserByCustomerId(customerId, updates);
+      } catch (err) {
+        console.error('[webhook] subscription.created/updated handler failed:', err);
+      }
       break;
     }
 
     case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
+      try {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
 
-      await updateUserByCustomerId(customerId, {
-        subscription_status: 'lapsed',
-        has_access: false,
-      });
+        await updateUserByCustomerId(customerId, {
+          subscription_status: 'lapsed',
+          has_access: false,
+        });
+      } catch (err) {
+        console.error('[webhook] subscription.deleted handler failed:', err);
+      }
       break;
     }
 
     case 'invoice.payment_succeeded': {
-      const invoice = event.data.object as Stripe.Invoice;
-      const customerId = invoice.customer as string;
+      try {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
 
-      if (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription_create') {
-        await updateUserByCustomerId(customerId, {
-          subscription_status: 'active',
-          has_access: true,
-        });
+        if (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription_create') {
+          await updateUserByCustomerId(customerId, {
+            subscription_status: 'active',
+            has_access: true,
+          });
+        }
+      } catch (err) {
+        console.error('[webhook] payment_succeeded handler failed:', err);
       }
       break;
     }
 
     case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice;
-      const customerId = invoice.customer as string;
+      try {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
 
-      await updateUserByCustomerId(customerId, {
-        subscription_status: 'past_due',
-        has_access: true,  // Keep access during retry period
-      });
+        await updateUserByCustomerId(customerId, {
+          subscription_status: 'past_due',
+          has_access: true,
+        });
+      } catch (err) {
+        console.error('[webhook] payment_failed handler failed:', err);
+      }
       break;
     }
   }
 
+  // Always return 200 — even if a handler failed — to prevent Stripe retry floods
   return Response.json({ received: true });
 }

@@ -1,5 +1,6 @@
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 // ─── Script Cleaning ────────────────────────────────────────────────────────
 
@@ -203,6 +204,10 @@ export async function POST(request: Request) {
     }
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { source } = await resolveApiKey(email);
 
     // 2 credits for three-pass beat generation

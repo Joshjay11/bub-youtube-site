@@ -22,16 +22,16 @@ export default function TemplatePage() {
               Script System
             </p>
             <h1 className="font-serif text-text-bright leading-[1.1] mb-5" style={{ fontSize: "clamp(34px, 4.5vw, 52px)" }}>
-              The system behind our <em className="text-amber italic">$500 scripts</em> —<br />for $79
+              The system behind our <em className="text-amber italic">$500 scripts</em> —<br />starting at $19/mo
             </h1>
             <p className="text-[17px] text-text-dim max-w-[560px] mx-auto mb-9 leading-[1.75]">
               An interactive web app with research frameworks, hook formulas, AI-powered prompts, retention tools, a pacing calculator, and the script canvas we use on every client project.
             </p>
             <div className="flex gap-4 justify-center items-center flex-wrap">
-              <CheckoutButton className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60">
-                Get the Script System — $79
-              </CheckoutButton>
-              <span className="text-[13px] text-text-muted">Instant access. Updates forever.</span>
+              <Link href="/pricing" className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px inline-block">
+                Get Started — $19/mo
+              </Link>
+              <span className="text-[13px] text-text-muted">Full access. Cancel anytime.</span>
             </div>
           </div>
         </RevealOnScroll>
@@ -109,7 +109,7 @@ export default function TemplatePage() {
           <div className="bg-amber-glow-strong border border-[rgba(212,163,66,0.2)] rounded-[14px] p-10 text-center">
             <h3 className="font-sans font-bold text-xl text-text-bright mb-3">Ready for the done-for-you version?</h3>
             <p className="text-[15px] text-text-primary max-w-[480px] mx-auto mb-6 leading-relaxed">
-              Template buyers can apply their $79 toward their first Script project. The template shows you what great scripts require — we do the heavy lifting.
+              Subscribers can upgrade to done-for-you scripts anytime. The app shows you what great scripts require — we do the heavy lifting.
             </p>
             <Link
               href="/start"
@@ -122,10 +122,10 @@ export default function TemplatePage() {
 
         <div className="text-center mt-12">
           <RevealOnScroll>
-            <button className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
-              Get the Script System — $79
-            </button>
-            <p className="text-[13px] text-text-muted mt-3">Instant access. No subscription. Updates included forever.</p>
+            <Link href="/pricing" className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px inline-block">
+              Get Started — $19/mo
+            </Link>
+            <p className="text-[13px] text-text-muted mt-3">Full access. Cancel anytime.</p>
           </RevealOnScroll>
         </div>
       </section>

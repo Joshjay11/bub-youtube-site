@@ -1,5 +1,6 @@
 import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are a research assistant for a YouTube video creator. Provide specific, factual, interesting findings. Focus on novel angles and surprising information that would make a video stand out. Be concise and specific — no filler. Cite sources where possible. Respond in plain text paragraphs, not JSON.`;
 
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
 
     // Check credits
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { source, creditsRemaining } = await resolveApiKey(email);
 
     if (!source && creditsRemaining <= 0) {

@@ -1,5 +1,6 @@
 import { callOpenRouter } from '@/lib/openrouter';
 import { decrementCredits, getUserEmail, resolveApiKey } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const PROMPT_TEMPLATE = `You are a YouTube script architect. Given the following video brief, create a section-by-section outline for the script.
 
@@ -46,6 +47,10 @@ export async function POST(request: Request) {
 
     // Check credits (this uses system OpenRouter key, but still costs 1 credit)
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { source, creditsRemaining } = await resolveApiKey(email);
 
     if (!source && creditsRemaining <= 0) {

@@ -1,4 +1,6 @@
 import { buildSystemPrompt } from '@/lib/thinking-partner-prompts';
+import { getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 // In-memory rate limiter (per-process)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -30,6 +32,12 @@ export async function POST(request: Request) {
 
     if (!message || typeof message !== 'string') {
       return Response.json({ error: 'Missing message' }, { status: 400 });
+    }
+
+    const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
     }
 
     const apiKey = process.env.OPENROUTER_API_KEY;

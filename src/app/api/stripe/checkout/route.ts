@@ -67,7 +67,7 @@ export async function POST(request: Request) {
           .eq('id', user.id)
           .single();
 
-        if (userRow?.is_founding_member && userRow?.subscription_status === 'lapsed') {
+        if (userRow?.is_founding_member && ['canceled', 'lapsed'].includes(userRow?.subscription_status)) {
           return Response.json({ error: 'Founding member pricing is only available for continuous subscriptions. Please choose Pro or Annual.' }, { status: 400 });
         }
       }

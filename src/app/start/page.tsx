@@ -59,12 +59,10 @@ export default function StartPage() {
             <label className="block font-sans font-semibold text-[13px] text-text-primary mb-2">What tier interests you?</label>
             <select className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-3.5 text-text-bright text-[15px] outline-none transition-colors focus:border-amber cursor-pointer">
               <option value="">Select a tier...</option>
-              <option>Script System (Web App) - $79</option>
+              <option>BUB Writer Subscription - $19/mo</option>
               <option>Research Pack - $149</option>
               <option>The Script - $500</option>
-              <option>Script + Voiceover - $750</option>
-              <option>Full Creative Package - $1,200</option>
-              <option>Monthly Retainer - $1,600/mo</option>
+              <option>Monthly Retainer - $1,800/mo</option>
               <option>Standalone Voiceover - $150</option>
               <option>Not sure yet</option>
             </select>

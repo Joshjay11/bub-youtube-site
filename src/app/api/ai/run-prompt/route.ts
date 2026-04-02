@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 export async function POST(request: Request) {
   try {
@@ -78,6 +79,10 @@ export async function POST(request: Request) {
 
 export async function GET() {
   const email = await getUserEmail();
+  const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+  if (!subAllowed) {
+    return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+  }
   const { source, creditsRemaining } = await resolveApiKey(email);
 
   return Response.json({

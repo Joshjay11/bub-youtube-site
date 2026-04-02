@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const V2_RULES = `ElevenLabs V2 FORMATTING RULES:
 - The ONLY supported SSML tag is <break time="x.xs" /> (up to 3.0 seconds). No other SSML tags work.
@@ -36,6 +37,10 @@ export async function POST(request: Request) {
     if (!script || !version) return Response.json({ error: 'Missing script or version' }, { status: 400 });
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source } = await resolveApiKey(email);
     if (!apiKey) return Response.json({ error: 'No AI credits remaining.', needsUpgrade: true }, { status: 402 });
     if (source === 'credits' && email) await decrementCredits(email);

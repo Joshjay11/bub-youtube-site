@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/template');
+    redirect('/pricing');
   }
 
   // 2. Check users table for access
@@ -61,5 +61,5 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
-  redirect('/template?access=required');
+  redirect('/pricing?access=required');
 }

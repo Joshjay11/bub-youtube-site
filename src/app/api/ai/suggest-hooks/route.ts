@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 
 const SYSTEM_PROMPT = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script — the part that stops the scroll and makes someone stay.
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
     const { projectId } = await request.json();
 
     const email = await getUserEmail();
+    const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
+    if (!subAllowed) {
+      return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
+    }
     const { apiKey, source, creditsRemaining } = await resolveApiKey(email);
 
     if (!apiKey) {

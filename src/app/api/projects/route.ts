@@ -1,8 +1,9 @@
 import { createAdminSupabase } from '@/lib/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
-async function getAuthUserId(): Promise<string | null> {
+async function getAuthUser(): Promise<{ id: string; email: string } | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -16,12 +17,13 @@ async function getAuthUserId(): Promise<string | null> {
     },
   );
   const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
+  if (!user?.id) return null;
+  return { id: user.id, email: user.email || '' };
 }
 
 export async function GET() {
-  const userId = await getAuthUserId();
-  if (!userId) {
+  const authUser = await getAuthUser();
+  if (!authUser) {
     return Response.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
@@ -29,7 +31,7 @@ export async function GET() {
   const { data, error } = await admin
     .from('projects')
     .select('id, title, status, created_at, updated_at')
-    .eq('user_id', userId)
+    .eq('user_id', authUser.id)
     .order('updated_at', { ascending: false });
 
   if (error) {
@@ -40,9 +42,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await getAuthUserId();
-  if (!userId) {
+  const authUser = await getAuthUser();
+  if (!authUser) {
     return Response.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const { allowed, message } = await checkSubscriptionAccess(authUser.email);
+  if (!allowed) {
+    return Response.json({ error: message, needsSubscription: true }, { status: 403 });
   }
 
   const { title } = await request.json();
@@ -54,7 +61,7 @@ export async function POST(request: Request) {
   const { data, error } = await admin
     .from('projects')
     .insert({
-      user_id: userId,
+      user_id: authUser.id,
       title: title.trim(),
       status: 'idea',
     })
