@@ -3,7 +3,6 @@ import { createServerSupabase } from '@/lib/supabase';
 /**
  * Check if a user has an active subscription that allows AI features.
  * Uses email to look up the user since that's what AI routes have available.
- * Falls back to allowing access when Supabase isn't configured (local dev).
  *
  * Only these statuses grant access: 'active', 'past_due', 'canceled'.
  * Everything else is blocked.
@@ -13,9 +12,9 @@ export async function checkSubscriptionAccess(email: string | null): Promise<{
   status: string;
   message?: string;
 }> {
-  // Skip check when Supabase isn't configured (local dev)
+  // If subscription state can't be verified, block access.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return { allowed: true, status: 'platform' };
+    return { allowed: false, status: 'none', message: 'Authentication required.' };
   }
 
   // If we can't identify the user, block access
