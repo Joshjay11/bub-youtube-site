@@ -73,11 +73,15 @@ export async function POST() {
     const admin = createAdminSupabase();
 
     // Get all user's projects
-    const { data: projects } = await admin
+    const { data: projects, error: projectsError } = await admin
       .from('projects')
       .select('id, title, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
+
+    if (projectsError) {
+      return Response.json({ error: 'Failed to load projects' }, { status: 500 });
+    }
 
     if (!projects || projects.length === 0) {
       return Response.json({ error: 'No projects found' }, { status: 400 });
@@ -86,10 +90,14 @@ export async function POST() {
     const projectIds = projects.map(p => p.id);
 
     // Get all project_data across all projects
-    const { data: allData } = await admin
+    const { data: allData, error: dataError } = await admin
       .from('project_data')
       .select('project_id, tool_key, data')
       .in('project_id', projectIds);
+
+    if (dataError) {
+      return Response.json({ error: 'Failed to load project data' }, { status: 500 });
+    }
 
     if (!allData) {
       return Response.json({ error: 'No project data found' }, { status: 400 });
@@ -108,7 +116,7 @@ export async function POST() {
     // Count "completed" projects (has a script_draft with 200+ words)
     const completedProjects = Object.entries(projectBundles).filter(([, data]) => {
       const script = data.write?.script_draft || data.write?.draft_a_output || '';
-      return script.split(/\s+/).filter(Boolean).length > 200;
+      return script.split(/\s+/).filter(Boolean).length >= 200;
     });
 
     const completedCount = completedProjects.length;
@@ -134,9 +142,6 @@ export async function POST() {
       hook_types: [] as string[],
       writer_choices: [] as string[],
       script_word_counts: [] as number[],
-      target_word_counts: [] as number[],
-      editor_modes: [] as string[],
-      slop_scores: [] as number[],
       quality_issues: [] as string[],
       retention_passed: [] as string[],
       retention_failed: [] as string[],
@@ -146,47 +151,56 @@ export async function POST() {
       prompts_used: 0,
     };
 
+    // Calculate overshoot per project, only when BOTH values exist
+    const overshoots: number[] = [];
+
     for (const [, data] of completedProjects) {
-      if (data.structure?.video_style) patterns.video_styles.push(data.structure.video_style);
-      if (data.structure?.pacing_wpm) patterns.pacing_wpms.push(data.structure.pacing_wpm);
+      // Video style is saved under write, not structure
+      if (data.write?.video_style) patterns.video_styles.push(data.write.video_style);
       if (data.write?.pacing_wpm) patterns.pacing_wpms.push(data.write.pacing_wpm);
-      if (data.structure?.target_minutes) patterns.target_minutes.push(data.structure.target_minutes);
       if (data.write?.target_minutes) patterns.target_minutes.push(data.write.target_minutes);
       if (data.structure?.hook_type) patterns.hook_types.push(data.structure.hook_type);
       if (data.hook_writer?.selected_hook_type) patterns.hook_types.push(data.hook_writer.selected_hook_type);
-      if (data.write?.selected_writer) patterns.writer_choices.push(data.write.selected_writer);
+      // DualModelWriter saves as selected_model with values: 'sonnet', 'minimax', 'grok'
       if (data.write?.selected_model) patterns.writer_choices.push(data.write.selected_model);
 
       const script = data.write?.script_draft || '';
       const wordCount = script.split(/\s+/).filter(Boolean).length;
-      if (wordCount > 200) patterns.script_word_counts.push(wordCount);
+      if (wordCount >= 200) patterns.script_word_counts.push(wordCount);
 
-      if (data.structure?.target_word_count) {
-        patterns.target_word_counts.push(data.structure.target_word_count);
+      // Overshoot: pair script word count with target from same project
+      const target = data.structure?.target_word_count;
+      if (wordCount >= 200 && target && target > 0) {
+        overshoots.push(((wordCount - target) / target) * 100);
       }
 
-      if (data.editors_table?.mode) patterns.editor_modes.push(data.editors_table.mode);
-      if (data.slop_scanner?.score !== undefined) patterns.slop_scores.push(data.slop_scanner.score);
-
-      if (data.quality_score?.issues && Array.isArray(data.quality_score.issues)) {
+      // Quality score issues are at data.quality_score.result.issues
+      const qsIssues = data.quality_score?.result?.issues;
+      if (qsIssues && Array.isArray(qsIssues)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.quality_score.issues.forEach((issue: any) => {
+        qsIssues.forEach((issue: any) => {
           if (issue.problem) patterns.quality_issues.push(issue.problem);
         });
       }
 
-      if (data.retention_audit?.results && Array.isArray(data.retention_audit.results)) {
+      // Retention audit is saved under tool_key 'optimize' with field 'audit_results'
+      const auditResults = data.optimize?.audit_results;
+      if (auditResults && Array.isArray(auditResults)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.retention_audit.results.forEach((result: any) => {
-          if (result.passed) {
-            patterns.retention_passed.push(result.criterion || result.name);
-          } else {
-            patterns.retention_failed.push(result.criterion || result.name);
+        auditResults.forEach((result: any) => {
+          if (result.status === 'pass') {
+            patterns.retention_passed.push(result.criterion);
+          } else if (result.status === 'fail') {
+            patterns.retention_failed.push(result.criterion);
           }
         });
       }
 
-      if (data.elevenlabs?.version) patterns.elevenlabs_versions.push(data.elevenlabs.version);
+      // ElevenLabs version is saved under tool_key 'post_production'
+      if (data.post_production?.elevenlabs_version) {
+        patterns.elevenlabs_versions.push(data.post_production.elevenlabs_version);
+      }
+
       if (data.beat_sheet?.beats && Array.isArray(data.beat_sheet.beats)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data.beat_sheet.beats.forEach((beat: any) => {
@@ -209,17 +223,9 @@ export async function POST() {
       avg_wpm: Math.round(average(patterns.pacing_wpms)) || 140,
       avg_video_length: Math.round(average(patterns.target_minutes)) || 10,
       preferred_writer: mode(patterns.writer_choices),
-      preferred_editor: mode(patterns.editor_modes),
       preferred_hook: mode(patterns.hook_types),
       avg_word_count: Math.round(average(patterns.script_word_counts)),
-      word_count_overshoot: patterns.target_word_counts.length > 0
-        ? Math.round(average(patterns.script_word_counts.map((wc, i) =>
-            patterns.target_word_counts[i]
-              ? ((wc - patterns.target_word_counts[i]) / patterns.target_word_counts[i]) * 100
-              : 0
-          )))
-        : null,
-      avg_slop_score: Math.round(average(patterns.slop_scores)),
+      word_count_overshoot: overshoots.length > 0 ? Math.round(average(overshoots)) : null,
       top_quality_issues: getTopN(patterns.quality_issues, 3),
       top_retention_passes: getTopN(patterns.retention_passed, 3),
       top_retention_fails: getTopN(patterns.retention_failed, 3),
@@ -235,7 +241,14 @@ export async function POST() {
     // ── Step 3: Send to Flash for prose generation (1 credit) ─────────────
 
     const email = await getUserEmail();
-    const { source } = await resolveApiKey(email);
+    const { apiKey, source } = await resolveApiKey(email);
+
+    if (!apiKey) {
+      return Response.json(
+        { error: 'No API key or credits available', needsUpgrade: true },
+        { status: 402 },
+      );
+    }
 
     if (source === 'credits' && email) {
       await decrementCredits(email);
@@ -269,12 +282,10 @@ ${stats.word_count_overshoot !== null ? `- Word count tendency: runs ${stats.wor
 
 TOOL PREFERENCES:
 - Preferred script writer: ${stats.preferred_writer?.value || 'No clear preference'} (${stats.preferred_writer?.count || 0}/${stats.completed_projects})
-- Preferred editor mode: ${stats.preferred_editor?.value || 'No clear preference'} (${stats.preferred_editor?.count || 0}/${stats.completed_projects})
 - Preferred hook type: ${stats.preferred_hook?.value || 'No clear preference'} (${stats.preferred_hook?.count || 0}/${stats.completed_projects})
 - ElevenLabs version preference: ${stats.elevenlabs_version?.value || 'Not used'}
 
 QUALITY PATTERNS:
-- Average slop scanner score: ${stats.avg_slop_score} (0-5 clean, 6-15 minor, 16+ needs work)
 - Most common quality issues: ${stats.top_quality_issues.map(i => i.value).join(', ') || 'None detected'}
 - Retention audit — most passed: ${stats.top_retention_passes.map(i => i.value).join(', ') || 'N/A'}
 - Retention audit — most failed: ${stats.top_retention_fails.map(i => i.value).join(', ') || 'N/A'}

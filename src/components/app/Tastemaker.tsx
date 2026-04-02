@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
+import { createBrowserSupabase } from '@/lib/supabase';
 
 // ─── Friendly Label Maps ────────────────────────────────────────────────────
 
@@ -9,12 +10,12 @@ const WRITER_LABELS: Record<string, string> = {
   writer_a: 'Writer A (Claude)',
   writer_b: 'Writer B (Minimax)',
   writer_c: 'Writer C (Grok)',
-};
-
-const EDITOR_LABELS: Record<string, string> = {
-  hemingway: 'Cut the Fat',
-  asimov: 'Make It Clear',
-  bukowski: 'Call the BS',
+  sonnet: 'Writer A (Claude)',
+  minimax: 'Writer B (Minimax)',
+  grok: 'Writer C (Grok)',
+  draft_a: 'Writer A (Claude)',
+  draft_b: 'Writer B (Minimax)',
+  draft_c: 'Writer C (Grok)',
 };
 
 const STYLE_LABELS: Record<string, string> = {
@@ -42,10 +43,8 @@ interface Stats {
   avg_wpm: number;
   avg_video_length: number;
   preferred_writer: ModeResult | null;
-  preferred_editor: ModeResult | null;
   preferred_hook: ModeResult | null;
   avg_word_count: number;
-  avg_slop_score: number;
   research_usage_rate: number;
 }
 
@@ -66,11 +65,13 @@ interface TastemakerData {
   generated_at?: string;
 }
 
-const CACHE_KEY = 'bub_tastemaker_cache';
+function getCacheKey(userId: string) {
+  return `bub_tastemaker_cache_${userId}`;
+}
 
-function loadCache(): TastemakerData | null {
+function loadCache(userId: string): TastemakerData | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(getCacheKey(userId));
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -78,30 +79,51 @@ function loadCache(): TastemakerData | null {
   }
 }
 
-function saveCache(data: TastemakerData) {
+function saveCache(userId: string, data: TastemakerData) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(getCacheKey(userId), JSON.stringify(data));
   } catch { /* non-blocking */ }
 }
 
-// ─── Markdown Renderer (simple) ─────────────────────────────────────────────
+// ─── Markdown Renderer (safe — no dangerouslySetInnerHTML) ──────────────────
+
+function InlineText({ text }: { text: string }) {
+  // Split on bold markers and render as spans
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
 
 function SimpleMarkdown({ content }: { content: string }) {
-  // Convert markdown to basic HTML
-  const html = content
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code class="text-amber bg-amber/10 px-1 rounded text-[12px]">$1</code>')
-    .replace(/^[-*] (.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
-    .replace(/^→ (.+)$/gm, '<li class="ml-4 mb-1 list-none"><span class="text-amber mr-1">&rarr;</span>$1</li>')
-    .replace(/(<li.*<\/li>\n?)+/g, '<ul class="list-disc space-y-0.5 mb-3">$&</ul>')
-    .replace(/\n\n/g, '<br/><br/>');
+  if (!content) return null;
+  const lines = content.split('\n').filter(l => l.trim());
 
   return (
-    <div
-      className="text-[13px] text-text-dim leading-relaxed prose-compact"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className="text-[13px] text-text-dim leading-relaxed space-y-1.5">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (trimmed.match(/^[-*•]\s/)) {
+          return <p key={i} className="pl-4"><InlineText text={trimmed.replace(/^[-*•]\s/, '')} /></p>;
+        }
+        if (trimmed.startsWith('→ ') || trimmed.startsWith('-> ')) {
+          return (
+            <p key={i} className="pl-4">
+              <span className="text-amber mr-1">&rarr;</span>
+              <InlineText text={trimmed.replace(/^(→|->)\s/, '')} />
+            </p>
+          );
+        }
+        return <p key={i}><InlineText text={trimmed} /></p>;
+      })}
+    </div>
   );
 }
 
@@ -126,8 +148,9 @@ export default function Tastemaker() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const hasFetched = useRef(false);
+  const userIdRef = useRef<string>('default');
 
-  async function fetchProfile() {
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -140,24 +163,32 @@ export default function Tastemaker() {
         setError(result.error);
       } else {
         setData(result);
-        saveCache(result);
+        saveCache(userIdRef.current, result);
         if (result.status === 'ready') notifyCreditChange();
       }
     } catch {
       setError('Connection error.');
     }
     setLoading(false);
-  }
+  }, []);
 
-  // Load cache on mount, then fetch
+  // Get user ID for cache scoping, load cache, then fetch
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    const cached = loadCache();
-    if (cached) setData(cached);
-    fetchProfile();
-  }, []);
+    (async () => {
+      try {
+        const supabase = createBrowserSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) userIdRef.current = user.id;
+      } catch { /* use default key */ }
+
+      const cached = loadCache(userIdRef.current);
+      if (cached) setData(cached);
+      fetchProfile();
+    })();
+  }, [fetchProfile]);
 
   // ── Building State ──────────────────────────────────────────────────────
 
@@ -266,11 +297,9 @@ export default function Tastemaker() {
           <StatCell label="Pace" value={`${stats.avg_wpm} WPM`} />
           <StatCell label="Length" value={`~${stats.avg_video_length} minutes`} />
           <StatCell label="Writer" value={stats.preferred_writer ? `${friendlyLabel(stats.preferred_writer.value, WRITER_LABELS)} (${stats.preferred_writer.count}/${stats.completed_projects})` : 'No clear pref'} />
-          <StatCell label="Editor" value={stats.preferred_editor ? `${friendlyLabel(stats.preferred_editor.value, EDITOR_LABELS)} (${stats.preferred_editor.count}/${stats.completed_projects})` : 'No clear pref'} />
           <StatCell label="Hook" value={stats.preferred_hook ? `${stats.preferred_hook.value} (${stats.preferred_hook.count}/${stats.completed_projects})` : 'No clear pref'} />
           <StatCell label="Research" value={`Used on ${stats.research_usage_rate}% of projects`} />
           <StatCell label="Avg Words" value={`${stats.avg_word_count.toLocaleString()}`} />
-          <StatCell label="Slop Score" value={`${stats.avg_slop_score} avg`} />
         </div>
       </div>
 
@@ -288,7 +317,7 @@ export default function Tastemaker() {
         </div>
         <p className="text-[11px] text-text-muted">Paste this into any AI tool to maintain your creative voice.</p>
         <div className="bg-bg-elevated border border-border/50 rounded-lg px-4 py-3">
-          <pre className="text-[12px] text-text-primary font-mono leading-relaxed whitespace-pre-wrap">{prose.portable_profile}</pre>
+          <SimpleMarkdown content={prose.portable_profile} />
         </div>
       </div>
 
