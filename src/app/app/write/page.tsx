@@ -21,6 +21,7 @@ const STYLES = [
 export default function WritePage() {
   const { currentProject } = useProject();
   const [pacingSettings, setPacingSettings] = useState({ targetMinutes: 12, paceLabel: 'conversational', wpm: 140 });
+  const pacingRef = useRef(pacingSettings);
   const [videoStyle, setVideoStyle] = useState('commentary');
   const [styleLoaded, setStyleLoaded] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,6 +52,8 @@ export default function WritePage() {
   useEffect(() => {
     if (!currentProject?.id || !styleLoaded) return;
 
+    pacingRef.current = pacingSettings;
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       try {
@@ -67,6 +70,8 @@ export default function WritePage() {
             data: {
               ...currentWriteData,
               video_style: videoStyle,
+              pacing_wpm: pacingRef.current.wpm,
+              target_minutes: pacingRef.current.targetMinutes,
             },
           }),
         });
@@ -78,7 +83,7 @@ export default function WritePage() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentProject?.id, styleLoaded, videoStyle]);
+  }, [currentProject?.id, styleLoaded, videoStyle, pacingSettings]);
 
   return (
     <div>
