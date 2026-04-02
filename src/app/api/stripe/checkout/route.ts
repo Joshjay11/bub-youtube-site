@@ -33,7 +33,7 @@ async function getAuthUser() {
 
 export async function POST(request: Request) {
   try {
-    const { tier } = await request.json();
+    let { tier } = await request.json();
 
     const priceMap: Record<string, string | undefined> = {
       founding: process.env.STRIPE_FOUNDING_PRICE_ID,
@@ -41,12 +41,12 @@ export async function POST(request: Request) {
       annual: process.env.STRIPE_ANNUAL_PRICE_ID,
     };
 
-    const priceId = priceMap[tier];
-    if (!priceId) {
+    // Validate tier before any checks
+    if (!priceMap[tier]) {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
-    // Check founding member availability
+    // Check founding member availability — may override tier to 'pro'
     if (tier === 'founding') {
       const admin = createAdminSupabase();
       const { count } = await admin
@@ -55,23 +55,26 @@ export async function POST(request: Request) {
         .eq('is_founding_member', true);
 
       if (count !== null && count >= 50) {
-        return Response.json({ error: 'Founding member spots are full. Please choose Pro or Annual.' }, { status: 400 });
-      }
+        tier = 'pro';  // Founding spots full — fall back to pro
+      } else {
+        // Check if former founding member trying to re-subscribe
+        const user = await getAuthUser();
+        if (user) {
+          const { data: userRow } = await admin
+            .from('users')
+            .select('is_founding_member, subscription_status')
+            .eq('id', user.id)
+            .single();
 
-      // Block lapsed founding members from re-subscribing at founding rate
-      const user = await getAuthUser();
-      if (user) {
-        const { data: userRow } = await admin
-          .from('users')
-          .select('is_founding_member, subscription_status')
-          .eq('id', user.id)
-          .single();
-
-        if (userRow?.is_founding_member && ['canceled', 'lapsed'].includes(userRow?.subscription_status)) {
-          return Response.json({ error: 'Founding member pricing is only available for continuous subscriptions. Please choose Pro or Annual.' }, { status: 400 });
+          if (userRow?.is_founding_member && ['canceled', 'lapsed'].includes(userRow?.subscription_status)) {
+            tier = 'pro';  // Former founding member resubscribes at standard rate
+          }
         }
       }
     }
+
+    // Resolve price ID after any tier overrides
+    const priceId = priceMap[tier]!;
 
     const baseUrl = getBaseUrl(request);
     const stripe = getStripe();
