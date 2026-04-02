@@ -1,12 +1,13 @@
+'use client';
+
 import Link from "next/link";
 import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
-import CheckoutButton from "@/components/marketing/CheckoutButton";
 
 function CheckItem({ children }: { children: React.ReactNode }) {
   return (
     <li className="text-sm text-text-primary leading-[2.2] pl-5 relative">
-      <span className="absolute left-0 text-amber">✓</span>
+      <span className="absolute left-0 text-amber">&#10003;</span>
       {children}
     </li>
   );
@@ -21,10 +22,34 @@ function ExcludeItem({ children }: { children: React.ReactNode }) {
   );
 }
 
+const SUBSCRIPTION_FEATURES = [
+  'Full 6-stage guided workflow',
+  'AI-powered idea scoring with gap analysis',
+  'Automated 5-angle topic research',
+  'Hook generation + 10-criteria AI scorer',
+  '6 specialized AI prompt templates',
+  'Dual-model script generation',
+  'Slop Scanner + Editor\u2019s Table + Quality Score',
+  'AI retention audit with fix suggestions',
+  'ElevenLabs voiceover export',
+  'Cinematic beat sheet generator',
+  'Thinking Partner on every page',
+  'Tastemaker creative profile (unlocks at 7 projects)',
+  'AI credits included',
+  'BYOK option',
+];
+
+// TODO: Replace with actual Stripe Checkout calls
+// Will use STRIPE_FOUNDING_PRICE_ID, STRIPE_PRO_PRICE_ID, STRIPE_ANNUAL_PRICE_ID
+const handleSubscribe = (tier: 'founding' | 'pro' | 'annual') => {
+  console.log(`Subscribe to ${tier}`);
+};
+
 export default function PricingPage() {
   return (
     <MarketingLayout>
       <section className="max-w-[1120px] mx-auto px-8 pt-40 pb-24">
+        {/* Header */}
         <RevealOnScroll>
           <div className="max-w-[720px]">
             <p className="font-sans font-semibold text-xs text-amber tracking-[0.18em] uppercase mb-5">
@@ -39,25 +64,116 @@ export default function PricingPage() {
           </div>
         </RevealOnScroll>
 
-        {/* Script System — DIY */}
+        {/* Subscription Cards */}
         <RevealOnScroll>
-          <div className="bg-bg-card border border-amber/20 rounded-[14px] p-8 md:p-10 mb-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <p className="font-sans font-semibold text-xs text-amber tracking-[0.14em] uppercase mb-2">Do it yourself</p>
-                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1">BUB Script System</h3>
-                <p className="text-sm text-text-dim max-w-[480px] leading-relaxed mb-5">
-                  Start with the system behind our $500 scripts. Interactive scorecards, pacing calculators, AI prompts, and the full retention framework — in a web app you keep forever.
-                </p>
-                <CheckoutButton className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px disabled:opacity-60">
-                  Get the Script System — $79
-                </CheckoutButton>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+            {/* Founding Member */}
+            <div className="bg-bg-card border border-border rounded-[14px] p-8 flex flex-col relative">
+              <span className="absolute -top-3 left-8 bg-amber text-bg font-bold text-[11px] px-4 py-1.5 rounded tracking-[0.08em] uppercase">
+                Founding Member
+              </span>
+              <div className="mb-6">
+                <div className="font-serif font-bold text-4xl text-amber">$19</div>
+                <div className="text-xs text-text-muted mt-1">/month</div>
+                <p className="text-sm text-text-dim mt-3 leading-relaxed">Lock in this rate forever</p>
+                <p className="text-xs text-amber/80 mt-1">Limited to first 50 subscribers</p>
               </div>
-              <div className="shrink-0 text-left md:text-right">
-                <div className="font-serif font-bold text-4xl text-amber">$79</div>
-                <div className="text-xs text-text-muted mt-1">one-time</div>
-              </div>
+              <ul className="list-none p-0 flex-1">
+                {SUBSCRIPTION_FEATURES.map((f) => <CheckItem key={f}>{f}</CheckItem>)}
+              </ul>
+              <button
+                onClick={() => handleSubscribe('founding')}
+                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+              >
+                Join as Founding Member
+              </button>
             </div>
+
+            {/* Pro — Most Popular */}
+            <div className="bg-bg-card border border-amber/30 rounded-[14px] p-8 flex flex-col relative ring-1 ring-amber/10">
+              <span className="absolute -top-3 left-8 bg-amber text-bg font-bold text-[11px] px-4 py-1.5 rounded tracking-[0.08em] uppercase">
+                Most Popular
+              </span>
+              <div className="mb-6">
+                <div className="font-serif font-bold text-4xl text-amber">$29</div>
+                <div className="text-xs text-text-muted mt-1">/month</div>
+                <p className="text-sm text-text-dim mt-3 leading-relaxed">Full access to the complete workflow</p>
+              </div>
+              <ul className="list-none p-0 flex-1">
+                {SUBSCRIPTION_FEATURES.map((f) => <CheckItem key={f}>{f}</CheckItem>)}
+              </ul>
+              <button
+                onClick={() => handleSubscribe('pro')}
+                className="mt-6 w-full bg-amber text-bg px-6 py-4 rounded-md font-bold text-base border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+              >
+                Start Writing Better Scripts
+              </button>
+            </div>
+
+            {/* Annual — Best Value */}
+            <div className="bg-bg-card border border-border rounded-[14px] p-8 flex flex-col relative">
+              <span className="absolute -top-3 left-8 bg-green text-bg font-bold text-[11px] px-4 py-1.5 rounded tracking-[0.08em] uppercase">
+                Best Value
+              </span>
+              <div className="mb-6">
+                <div className="font-serif font-bold text-4xl text-amber">$249</div>
+                <div className="text-xs text-text-muted mt-1">/year</div>
+                <p className="text-sm text-text-dim mt-3 leading-relaxed">Save $99/year</p>
+                <p className="text-xs text-text-muted mt-1">$20.75/month</p>
+              </div>
+              <ul className="list-none p-0 flex-1">
+                {SUBSCRIPTION_FEATURES.map((f) => <CheckItem key={f}>{f}</CheckItem>)}
+              </ul>
+              <button
+                onClick={() => handleSubscribe('annual')}
+                className="mt-6 w-full bg-amber text-bg px-6 py-3.5 rounded-md font-bold text-[15px] border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
+              >
+                Save with Annual
+              </button>
+            </div>
+          </div>
+        </RevealOnScroll>
+
+        {/* Money-back guarantee */}
+        <RevealOnScroll>
+          <p className="text-center text-sm text-text-dim mb-16">
+            <Link href="/refund" className="text-amber hover:text-amber-bright no-underline">30-day money-back guarantee</Link>. No questions asked.
+          </p>
+        </RevealOnScroll>
+
+        {/* Email Capture Placeholder */}
+        <RevealOnScroll>
+          <div className="bg-bg-card border border-border rounded-[14px] p-10 text-center mb-16 max-w-[640px] mx-auto">
+            <h3 className="font-sans font-bold text-[18px] text-text-bright mb-2">Free Download: The YouTube Hook Scorecard</h3>
+            <p className="text-sm text-text-dim mb-6 leading-relaxed">
+              The same 10-point framework BUB uses to evaluate YouTube hooks. Includes 3 graded examples.
+            </p>
+            {/* TODO: Wire email capture to Resend or Loops — see infrastructure doc */}
+            <div className="flex gap-3 max-w-[420px] mx-auto">
+              <input
+                type="email"
+                placeholder="your@email.com"
+                className="flex-1 bg-bg-elevated border border-border rounded-md px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50"
+              />
+              <button className="bg-amber text-bg px-6 py-3 rounded-md font-bold text-sm border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg whitespace-nowrap">
+                Send It &rarr;
+              </button>
+            </div>
+            <p className="text-xs text-text-muted mt-3">No spam. Just the scorecard. Unsubscribe anytime.</p>
+          </div>
+        </RevealOnScroll>
+
+        <hr className="rule" />
+
+        {/* Done-For-You Services */}
+        <RevealOnScroll>
+          <div className="max-w-[720px] mb-12">
+            <p className="font-sans font-semibold text-xs text-amber tracking-[0.18em] uppercase mb-5">
+              Done-For-You Services
+            </p>
+            <h2 className="font-serif text-[32px] text-text-bright leading-[1.15] mb-3">
+              Want us to write it <em className="text-amber italic">for you?</em>
+            </h2>
           </div>
         </RevealOnScroll>
 
@@ -98,7 +214,7 @@ export default function PricingPage() {
             </div>
             <div className="mt-7 pt-6 border-t border-border">
               <Link href="/start" className="inline-flex items-center gap-2 bg-transparent text-amber px-8 py-3.5 rounded-md font-semibold text-[15px] no-underline border border-[rgba(212,163,66,0.3)] transition-all hover:border-amber hover:bg-amber-glow">
-                Start with Research →
+                Start with Research &rarr;
               </Link>
             </div>
           </div>
@@ -144,122 +260,30 @@ export default function PricingPage() {
             </div>
             <div className="mt-7 pt-6 border-t border-[rgba(212,163,66,0.2)]">
               <Link href="/start" className="inline-flex items-center gap-2 bg-amber text-bg px-8 py-3.5 rounded-md font-bold text-[15px] no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px">
-                Start Your Script →
+                Start Your Script &rarr;
               </Link>
             </div>
           </div>
         </RevealOnScroll>
 
-        {/* Script + Voiceover */}
+        {/* Monthly Retainer */}
         <RevealOnScroll delay={2}>
           <div className="bg-bg-card border border-border rounded-[14px] p-10 mb-5">
             <div className="flex justify-between items-baseline flex-wrap gap-4 mb-6">
               <div>
-                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1">Script + Voiceover</h3>
-                <p className="text-sm text-text-dim">Drop the audio straight into your editor. Ready to cut.</p>
-              </div>
-              <div className="text-right">
-                <div className="font-serif font-bold text-4xl text-amber">$750</div>
-                <div className="text-xs text-text-muted mt-1">per project</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-sans font-semibold text-[13px] text-amber tracking-[0.1em] uppercase mb-4">Included</h4>
-                <ul className="list-none p-0">
-                  <CheckItem>Everything in The Script</CheckItem>
-                  <CheckItem>Broadcast-quality AI voiceover (ElevenLabs)</CheckItem>
-                  <CheckItem>Custom voice selection or cloning consult</CheckItem>
-                  <CheckItem>WAV + MP3 delivery</CheckItem>
-                  <CheckItem>Music and SFX cue sheet with specific tracks</CheckItem>
-                  <CheckItem>2 voiceover revision renders</CheckItem>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-sans font-semibold text-[13px] text-text-muted tracking-[0.1em] uppercase mb-4">Not included</h4>
-                <ul className="list-none p-0">
-                  <ExcludeItem>Beat sheet / visual timing</ExcludeItem>
-                  <ExcludeItem>B-roll / image assets</ExcludeItem>
-                  <ExcludeItem>Thumbnail concepts</ExcludeItem>
-                </ul>
-                <p className="text-[13px] text-text-muted mt-4 leading-relaxed">6 business days. Rush at $950 (4 days).</p>
-              </div>
-            </div>
-            <div className="mt-7 pt-6 border-t border-border">
-              <Link href="/start" className="inline-flex items-center gap-2 bg-transparent text-amber px-8 py-3.5 rounded-md font-semibold text-[15px] no-underline border border-[rgba(212,163,66,0.3)] transition-all hover:border-amber hover:bg-amber-glow">
-                Start with Voiceover →
-              </Link>
-            </div>
-          </div>
-        </RevealOnScroll>
-
-        {/* Full Creative Package */}
-        <RevealOnScroll delay={3}>
-          <div className="bg-bg-card border border-border rounded-[14px] p-10 mb-5">
-            <div className="flex justify-between items-baseline flex-wrap gap-4 mb-6">
-              <div>
-                <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1">Full Creative Package</h3>
-                <p className="text-sm text-text-dim">Everything your editor needs. Zero creative guesswork.</p>
-              </div>
-              <div className="text-right">
-                <div className="font-serif font-bold text-4xl text-amber">$1,200</div>
-                <div className="text-xs text-text-muted mt-1">per project</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="font-sans font-semibold text-[13px] text-amber tracking-[0.1em] uppercase mb-4">Included</h4>
-                <ul className="list-none p-0">
-                  <CheckItem>Everything in Script + Voiceover</CheckItem>
-                  <CheckItem>Beat sheet (visual timing synced to voiceover)</CheckItem>
-                  <CheckItem>B-roll shopping list with links and licensing</CheckItem>
-                  <CheckItem>AI image prompts (Leonardo AI, tested and refined)</CheckItem>
-                  <CheckItem>3 thumbnail concepts with visual briefs</CheckItem>
-                  <CheckItem>Short-form extraction notes (3 clips for Shorts/Reels)</CheckItem>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-sans font-semibold text-[13px] text-text-muted tracking-[0.1em] uppercase mb-4">What you handle</h4>
-                <ul className="list-none p-0">
-                  <li className="text-sm text-text-muted leading-[2.2] pl-5 relative">
-                    <span className="absolute left-0">→</span>Video editing and assembly
-                  </li>
-                  <li className="text-sm text-text-muted leading-[2.2] pl-5 relative">
-                    <span className="absolute left-0">→</span>Final thumbnail design
-                  </li>
-                  <li className="text-sm text-text-muted leading-[2.2] pl-5 relative">
-                    <span className="absolute left-0">→</span>Upload and publishing
-                  </li>
-                </ul>
-                <p className="text-[13px] text-text-muted mt-4 leading-relaxed">7 business days. Rush at $1,500 (5 days).</p>
-              </div>
-            </div>
-            <div className="mt-7 pt-6 border-t border-border">
-              <Link href="/start" className="inline-flex items-center gap-2 bg-transparent text-amber px-8 py-3.5 rounded-md font-semibold text-[15px] no-underline border border-[rgba(212,163,66,0.3)] transition-all hover:border-amber hover:bg-amber-glow">
-                Start the Full Package →
-              </Link>
-            </div>
-          </div>
-        </RevealOnScroll>
-
-        {/* Retainer */}
-        <RevealOnScroll delay={4}>
-          <div className="bg-bg-card border border-border rounded-[14px] p-10 mb-5">
-            <div className="flex justify-between items-baseline flex-wrap gap-4 mb-6">
-              <div>
                 <h3 className="font-sans font-bold text-[22px] text-text-bright mb-1">Monthly Retainer</h3>
-                <p className="text-sm text-text-dim">4 scripts + voiceovers per month. Your channel on autopilot.</p>
+                <p className="text-sm text-text-dim">4 scripts/month. Your channel on autopilot.</p>
               </div>
               <div className="text-right">
-                <div className="font-serif font-bold text-4xl text-amber">$1,600</div>
-                <div className="text-xs text-text-muted mt-1">per month</div>
+                <div className="font-serif font-bold text-4xl text-amber">$1,800</div>
+                <div className="text-xs text-text-muted mt-1">per month · 10% discount</div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h4 className="font-sans font-semibold text-[13px] text-amber tracking-[0.1em] uppercase mb-4">Included</h4>
                 <ul className="list-none p-0">
-                  <CheckItem>4x Script + Voiceover packages (47% savings)</CheckItem>
+                  <CheckItem>4x Script packages per month</CheckItem>
                   <CheckItem>Priority 3-day turnaround (no rush fee)</CheckItem>
                   <CheckItem>Channel memory + mythology log</CheckItem>
                   <CheckItem>Monthly content roadmap</CheckItem>
@@ -272,13 +296,13 @@ export default function PricingPage() {
               <div>
                 <h4 className="font-sans font-semibold text-[13px] text-text-muted tracking-[0.1em] uppercase mb-4">Why retainer</h4>
                 <p className="text-sm text-text-dim leading-relaxed">
-                  Scripts get better every month because we track your channel, your audience, and your voice evolution. By month 3, we know your voice better than you do. Switching means starting over.
+                  Scripts get better every month because we track your channel, your audience, and your voice evolution. By month 3, we know your voice better than you do.
                 </p>
               </div>
             </div>
             <div className="mt-7 pt-6 border-t border-border">
               <Link href="/start" className="inline-flex items-center gap-2 bg-transparent text-amber px-8 py-3.5 rounded-md font-semibold text-[15px] no-underline border border-[rgba(212,163,66,0.3)] transition-all hover:border-amber hover:bg-amber-glow">
-                Start a Retainer →
+                Start a Retainer &rarr;
               </Link>
             </div>
           </div>
@@ -332,7 +356,7 @@ export default function PricingPage() {
               "Post-delivery follow-up sequence",
             ].map((item) => (
               <div key={item} className="bg-bg-card border border-border rounded-lg px-5 py-5">
-                <span className="text-amber mr-2">✓</span>
+                <span className="text-amber mr-2">&#10003;</span>
                 <span className="font-sans font-medium text-sm text-text-primary">{item}</span>
               </div>
             ))}
@@ -346,7 +370,7 @@ export default function PricingPage() {
               href="/start"
               className="inline-flex items-center gap-2 bg-amber text-bg px-10 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px"
             >
-              Start a Conversation →
+              Start a Conversation &rarr;
             </Link>
           </RevealOnScroll>
         </div>
