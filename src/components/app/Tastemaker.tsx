@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
-import { createBrowserSupabase } from '@/lib/supabase';
 
 // ─── Friendly Label Maps ────────────────────────────────────────────────────
 
@@ -50,6 +49,7 @@ interface Stats {
 
 interface TastemakerData {
   status: 'building' | 'ready';
+  user_id?: string;
   // Building state
   completed_projects?: number;
   total_projects?: number;
@@ -162,6 +162,7 @@ export default function Tastemaker() {
       if (result.error) {
         setError(result.error);
       } else {
+        if (result.user_id) userIdRef.current = result.user_id;
         setData(result);
         saveCache(userIdRef.current, result);
         if (result.status === 'ready') notifyCreditChange();
@@ -172,22 +173,18 @@ export default function Tastemaker() {
     setLoading(false);
   }, []);
 
-  // Get user ID for cache scoping, load cache, then fetch
+  // Load cache on mount, then fetch fresh
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    (async () => {
-      try {
-        const supabase = createBrowserSupabase();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) userIdRef.current = user.id;
-      } catch { /* use default key */ }
-
-      const cached = loadCache(userIdRef.current);
-      if (cached) setData(cached);
-      fetchProfile();
-    })();
+    // Try loading cache with user_id from a previous response
+    const cached = loadCache(userIdRef.current);
+    if (cached) {
+      if (cached.user_id) userIdRef.current = cached.user_id;
+      setData(cached);
+    }
+    fetchProfile();
   }, [fetchProfile]);
 
   // ── Building State ──────────────────────────────────────────────────────

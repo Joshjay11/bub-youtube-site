@@ -126,6 +126,7 @@ export async function POST() {
     if (completedCount < 5) {
       return Response.json({
         status: 'building',
+        user_id: userId,
         completed_projects: completedCount,
         total_projects: totalProjects,
         required: 5,
@@ -317,6 +318,7 @@ Generate the three sections as described in your instructions.`;
 
     return Response.json({
       status: 'ready',
+      user_id: userId,
       stats,
       prose: {
         voice_patterns: prose.voice_patterns,
