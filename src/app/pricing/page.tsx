@@ -207,7 +207,7 @@ export default function PricingPage() {
                 <p className="text-sm text-text-dim">Strategic intelligence, not raw AI output.</p>
               </div>
               <div className="text-right">
-                <div className="font-serif font-bold text-4xl text-amber">$149</div>
+                <div className="font-serif font-bold text-4xl text-amber">$225</div>
                 <div className="text-xs text-text-muted mt-1">per project</div>
               </div>
             </div>
@@ -215,11 +215,12 @@ export default function PricingPage() {
               <div>
                 <h4 className="font-sans font-semibold text-[13px] text-amber tracking-[0.1em] uppercase mb-4">Included</h4>
                 <ul className="list-none p-0">
-                  <CheckItem>7-model research sweep</CheckItem>
+                  <CheckItem>9-model research sweep</CheckItem>
                   <CheckItem>NotebookLM synthesis</CheckItem>
                   <CheckItem>Fact-check report (Consensus / Contested / Opinion)</CheckItem>
                   <CheckItem>Argument analysis + counter-arguments</CheckItem>
                   <CheckItem>3-5 angle recommendations (ranked)</CheckItem>
+                  <CheckItem>5 title options + 3 thumbnail concepts</CheckItem>
                   <CheckItem>5-minute Loom walkthrough</CheckItem>
                 </ul>
               </div>
@@ -342,10 +343,9 @@ export default function PricingPage() {
           {[
             { title: "Rush Delivery", price: "25-30% premium", desc: "Shave 2 days off any tier. Script rush: $650. Voiceover rush: $950. Full package rush: $1,500." },
             { title: "Standalone Voiceover", price: "$150", desc: "Bring your own script. Get the ElevenLabs voice treatment. Custom voice, natural pacing, emotional variation. WAV + MP3." },
-            { title: "Image Generation Pack", price: "$150", desc: "10-15 Leonardo AI images, tested and refined. Delivered as files, not just prompts. Styled to your channel." },
+            { title: "Production Blueprint", price: "$250", desc: "Cinematic beat sheet + 10-15 curated AI images styled to your channel. Delivered as files with a visual timing document. For creators who have the script and need the production roadmap." },
             { title: "Additional Revisions", price: "$100/round", desc: "Beyond the 2 included rounds. Additional voiceover renders at $50 each for different pacing or tone." },
-            { title: "Beat Sheet Only", price: "$200", desc: "Visual timing document synced to your voiceover. For creators who have the script and voice but need the production blueprint." },
-            { title: "Title + Thumbnail Strategy", price: "$100", desc: "5 title options, 3 thumbnail concepts, alignment analysis. Standalone packaging strategy without a full script." },
+            { title: "Shorts Script Pack", price: "$100", desc: "3-5 short-form scripts extracted from your long-form video. Hooks, cuts, and CTAs optimized for Shorts, TikTok, and Reels." },
           ].map((addon, i) => (
             <RevealOnScroll key={addon.title} delay={(i % 3) as 0 | 1 | 2}>
               <div className="bg-bg-card border border-border rounded-[10px] p-7">
@@ -369,7 +369,7 @@ export default function PricingPage() {
         <RevealOnScroll>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              "7-model research methodology",
+              "9-model research methodology",
               "Fact-check report with source log",
               "Loom walkthrough of key decisions",
               "Branded delivery folder",

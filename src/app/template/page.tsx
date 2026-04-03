@@ -19,7 +19,7 @@ export default function TemplatePage() {
         <RevealOnScroll>
           <div className="text-center mb-16">
             <p className="font-sans font-semibold text-xs text-amber tracking-[0.18em] uppercase mb-5">
-              Script System
+              The Script Studio
             </p>
             <h1 className="font-serif text-text-bright leading-[1.1] mb-5" style={{ fontSize: "clamp(34px, 4.5vw, 52px)" }}>
               The system behind our <em className="text-amber italic">$500 scripts</em> —<br />starting at $19/mo

@@ -2,7 +2,7 @@ import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
 
 const steps = [
-  { num: "01", title: "Multi-Model Research", time: "Day 1–2", desc: "Your topic runs through 7 AI models — Claude, GPT, Gemini, Mistral, Qwen, Perplexity, and Kimi. Each surfaces different angles, data, and cross-disciplinary connections. Everything synthesized into a single research document with consensus claims, contested claims, and original angles." },
+  { num: "01", title: "Multi-Model Research", time: "Day 1–2", desc: "Your topic runs through 9 AI models — Claude, GPT, Gemini, Mistral, Qwen, Perplexity, Kimi, DeepSeek, and Grok. Each surfaces different angles, data, and cross-disciplinary connections. Everything synthesized into a single research document with consensus claims, contested claims, and original angles." },
   { num: "02", title: "Fact-Check & Logic Audit", time: "Day 2–3", desc: "Every claim gets inventoried and categorized: Consensus, Contested, or Opinion. Sources verified against primary research journals, official documents, original data. Arguments checked for logical fallacies. High-risk claims in health, finance, or legal get extra scrutiny." },
   { num: "03", title: "Script Draft", time: "Day 3–4", desc: "A voiceover script written in your voice — matched to your channel's tone, humor, pacing, and audience relationship. Two-column format with visual cues alongside dialogue. Retention annotations at 25%, 50%, and 75% marks. Hooks, pattern interrupts, the 35% pivot — all baked in." },
   { num: "04", title: "Canon & Voice Pass", time: "Day 4", desc: "The script runs through a voice guardian that protects your brand identity. Catches anything generic or AI-sounding. Strips language that doesn't match your ethos. Ensures every word sounds like you, not a freelancer." },
@@ -19,7 +19,7 @@ const faqs = [
   { q: "What's the turnaround?", a: "5 business days standard. Rush delivery at $650–$750 (25-50% premium)." },
   { q: "How many revisions?", a: "2 rounds included. Additional rounds at $75–$100/hour or $100–$150 flat." },
   { q: "What do you need from me?", a: "Your video idea, target length, audience info, and 3-5 past videos for voice matching. We handle everything else." },
-  { q: "Do you use AI to write?", a: "AI powers our research — 7 models cross-referencing every angle. The writing, voice matching, and editorial judgment are human. That's the point." },
+  { q: "Do you use AI to write?", a: "AI powers our research — 9 models cross-referencing every angle. The writing, voice matching, and editorial judgment are human. That's the point." },
   { q: "What if it doesn't sound like me?", a: "Our Voice DNA onboarding studies your videos before we write a word. We deliver a 90-second voice sample for approval before the full script." },
   { q: "Can you do the voiceover?", a: "Yes. Our Script + Voiceover tier ($750) includes a broadcast-quality ElevenLabs voiceover with custom voice selection, WAV + MP3 delivery, and music cue sheets. Or add a standalone voiceover to any project for $150." },
 ];

@@ -7,7 +7,7 @@ import Link from 'next/link';
 const STEPS = [
   {
     title: 'Welcome to the BUB Script System',
-    description: 'This is your complete YouTube scriptwriting toolkit. Every module, scorecard, and calculator from the template — now interactive.',
+    description: 'This is your complete YouTube scriptwriting toolkit. Every module, scorecard, and calculator from The Script Studio — now interactive.',
     icon: '🎬',
   },
   {

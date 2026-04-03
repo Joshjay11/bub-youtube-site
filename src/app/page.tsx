@@ -19,7 +19,7 @@ export default function HomePage() {
               <h1 className="font-serif font-normal text-text-bright leading-[1.08] tracking-[-0.02em]" style={{ fontSize: "clamp(42px, 5.5vw, 68px)" }}>
                 Scripts that sound<br />
                 like <em className="text-amber italic">you</em> — backed by<br />
-                <em className="text-amber italic">seven AI models</em> of research
+                <em className="text-amber italic">nine AI models</em> of research
               </h1>
             </RevealOnScroll>
             <RevealOnScroll delay={2}>
@@ -64,7 +64,7 @@ export default function HomePage() {
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber to-amber-bright to-transparent" />
               <p className="font-sans font-semibold text-[13px] text-amber tracking-[0.12em] uppercase mb-5">What We Do</p>
               <p className="font-sans text-base text-text-primary leading-[1.7]">
-                Seven AI models research your topic from every angle. A human writes the script in your voice. You get a fact-check report, strategic brief, and a retention-engineered script. Add a broadcast-quality voiceover and your editor has everything they need.
+                Nine AI models research your topic from every angle. A human writes the script in your voice. You get a fact-check report, strategic brief, and a retention-engineered script. Add a broadcast-quality voiceover and your editor has everything they need.
               </p>
             </div>
           </RevealOnScroll>
@@ -81,7 +81,7 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border">
           {[
-            { num: "01", title: "7-Model Research", desc: "Claude, GPT, Gemini, Mistral, Qwen, Perplexity, and Kimi. Every claim cross-referenced across seven models. No single-model bias. No hallucination loops." },
+            { num: "01", title: "9-Model Research", desc: "Claude, GPT, Gemini, Mistral, Qwen, Perplexity, Kimi, DeepSeek, and Grok. Every claim cross-referenced across nine models. No single-model bias. No hallucination loops." },
             { num: "02", title: "Fact-Check Report", desc: "Every claim inventoried, categorized as Consensus, Contested, or Opinion, and traced to primary sources. Your insurance against Community Notes." },
             { num: "03", title: "Retention Engineering", desc: "Hook formulas, pattern interrupts every 20-30 seconds, the 35% pivot, open loops, session hooks — structurally engineered for the 2026 algorithm." },
             { num: "04", title: "Voice DNA Matching", desc: "We study your videos, capture your voice patterns, and build an anti-brand document before writing a word. The script sounds like you." },
@@ -119,7 +119,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { price: "$19", sub: "/month", name: "BUB Writer", desc: "Full 6-stage workflow. AI scripting, research, retention tools, beat sheets, voiceover export.", href: "/pricing" },
-            { price: "$149", sub: "per project", name: "Research Pack", desc: "7-model synthesis, fact-check report, argument analysis, angle recommendations.", href: "/pricing" },
+            { price: "$225", sub: "per project", name: "Research Pack", desc: "9-model synthesis, fact-check report, argument analysis, angle recommendations.", href: "/pricing" },
             { price: "$500", sub: "per project", name: "The Script", desc: "Voice-matched, retention-engineered script + research + strategic brief. 2 revisions.", href: "/pricing", featured: true },
             { price: "$750", sub: "per project", name: "Script + Voice", desc: "Everything in The Script plus broadcast-quality ElevenLabs voiceover + music cues.", href: "/pricing" },
             { price: "$1,200", sub: "per project", name: "Creative Package", desc: "Script, voiceover, beat sheet, B-roll list, image prompts, thumbnail concepts.", href: "/pricing" },

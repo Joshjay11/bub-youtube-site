@@ -9,7 +9,7 @@ const links = [
   { href: "/process", label: "Process" },
   { href: "/pricing", label: "Pricing" },
   { href: "/work", label: "Work" },
-  { href: "/template", label: "Template" },
+  { href: "/template", label: "The Script Studio" },
   { href: "/start", label: "Start" },
 ];
 
