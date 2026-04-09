@@ -2,26 +2,27 @@ import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
+import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
 
-const SYSTEM_PROMPT = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script — the part that stops the scroll and makes someone stay.
+const SYSTEM_PROMPT = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script. The part that stops the scroll and makes someone stay.
 
 Rules:
 - Each hook must be UNDER 90 words
 - Never start with "Hey guys", "In this video", "What's up", "So", or "I"
-- Open mid-action or mid-thought — drop the viewer into something already happening
+- Open mid-action or mid-thought. Drop the viewer into something already happening
 - Create a SPECIFIC curiosity gap, not a vague one ("The CEO of a $2B company just admitted..." not "Something interesting happened...")
 - Include a concrete detail: a number, a name, a specific claim
-- Make a promise the video actually keeps — no clickbait disconnect
-- Must sound like a real person talking, not AI copy — conversational, with personality
+- Make a promise the video actually keeps. No clickbait disconnect
+- Must sound like a real person talking, not AI copy. Conversational, with personality
 - Must match the title/thumbnail promise
 - Create stakes: why should the viewer care RIGHT NOW?
 
 Generate 5 distinct hook options. Each should take a different approach:
-1. Contradiction hook — open with something that challenges what the viewer assumes
-2. Story hook — drop into a specific moment or scenario
-3. Question hook — ask something the viewer can't help but want answered
-4. Data hook — lead with a surprising number or statistic
-5. Stakes hook — immediately establish what's at risk
+1. Contradiction hook. Open with something that challenges what the viewer assumes
+2. Story hook. Drop into a specific moment or scenario
+3. Question hook. Ask something the viewer can't help but want answered
+4. Data hook. Lead with a surprising number or statistic
+5. Stakes hook. Immediately establish what's at risk
 
 Respond ONLY with a JSON array of exactly 5 strings, each being the full hook text. No labels, no explanations, no meta-commentary. Just the spoken words in each string.`;
 
@@ -109,10 +110,13 @@ export async function POST(request: Request) {
 
     const client = new Anthropic({ apiKey });
 
+    const voiceTranscript = await getVoiceVideoTranscript(email);
+    const systemPrompt = prependVoiceVideoBlock(SYSTEM_PROMPT, voiceTranscript);
+
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [{ role: 'user', content: `Here's everything I have so far for this video:\n\n${context}\n\nWrite 5 hooks for this video.` }],
     });
 

@@ -18,6 +18,12 @@ export default function SettingsPage() {
   const [credits, setCredits] = useState<{ remaining: number; monthly: number; subscriptionActive: boolean } | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
 
+  // Voice video sample state
+  const [voiceUrl, setVoiceUrl] = useState('');
+  const [voiceCurrent, setVoiceCurrent] = useState<{ url: string | null; fetchedAt: string | null; hasTranscript: boolean; preview: string | null } | null>(null);
+  const [voiceSaving, setVoiceSaving] = useState(false);
+  const [voiceMessage, setVoiceMessage] = useState('');
+
   const { status: subStatus, tier, currentPeriodEnd } = useSubscription();
 
   useEffect(() => {
@@ -28,7 +34,54 @@ export default function SettingsPage() {
         if (data.credits) setCredits(data.credits);
       })
       .catch(() => {});
+
+    fetch('/api/voice-video')
+      .then((r) => r.json())
+      .then((data) => setVoiceCurrent(data))
+      .catch(() => {});
   }, []);
+
+  async function handleSaveVoice(e: React.FormEvent) {
+    e.preventDefault();
+    if (!voiceUrl.trim()) return;
+    setVoiceSaving(true);
+    setVoiceMessage('Fetching transcript...');
+    try {
+      const res = await fetch('/api/voice-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: voiceUrl.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVoiceMessage(`Voice sample saved (${data.chars.toLocaleString()} chars${data.truncated ? ', truncated' : ''}).`);
+        setVoiceUrl('');
+        const refreshed = await fetch('/api/voice-video').then((r) => r.json());
+        setVoiceCurrent(refreshed);
+      } else {
+        setVoiceMessage(data.error || 'Failed to save voice sample.');
+      }
+    } catch {
+      setVoiceMessage('Connection error.');
+    }
+    setVoiceSaving(false);
+  }
+
+  async function handleRemoveVoice() {
+    setVoiceSaving(true);
+    try {
+      await fetch('/api/voice-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remove: true }),
+      });
+      setVoiceCurrent({ url: null, fetchedAt: null, hasTranscript: false, preview: null });
+      setVoiceMessage('Voice sample removed.');
+    } catch {
+      setVoiceMessage('Connection error.');
+    }
+    setVoiceSaving(false);
+  }
 
   async function handleSaveKey(e: React.FormEvent) {
     e.preventDefault();
@@ -156,6 +209,60 @@ export default function SettingsPage() {
           </div>
         ) : (
           <p className="text-text-muted text-[14px]">Loading credits...</p>
+        )}
+      </div>
+
+      {/* Voice Sample */}
+      <div id="voice-sample" className="bg-bg-card border border-border rounded-xl p-6 mb-6 scroll-mt-20">
+        <h2 className="font-serif text-[20px] text-text-bright mb-1">Voice Sample</h2>
+        <p className="text-[13px] text-text-dim mb-5">
+          Drop a YouTube link to one of your own videos. We&apos;ll fetch the transcript and use it to make every script you generate sound like you, not generic AI.
+        </p>
+
+        {voiceCurrent?.hasTranscript ? (
+          <div className="space-y-3">
+            <div className="bg-bg-elevated border border-border rounded-lg px-4 py-3">
+              <div className="text-[12px] text-text-muted mb-1">Current voice sample</div>
+              <a href={voiceCurrent.url || '#'} target="_blank" rel="noreferrer" className="text-[14px] text-amber break-all">
+                {voiceCurrent.url}
+              </a>
+              {voiceCurrent.preview && (
+                <p className="text-[12px] text-text-muted mt-2 italic line-clamp-2">&ldquo;{voiceCurrent.preview}…&rdquo;</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleRemoveVoice}
+                disabled={voiceSaving}
+                className="px-4 py-2.5 text-[13px] text-red border border-red/20 rounded-lg hover:bg-red/10 transition-colors bg-transparent cursor-pointer disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <form onSubmit={handleSaveVoice} className={`flex gap-3 ${voiceCurrent?.hasTranscript ? 'mt-4' : ''}`}>
+          <input
+            type="url"
+            value={voiceUrl}
+            onChange={(e) => setVoiceUrl(e.target.value)}
+            placeholder="https://youtube.com/watch?v=..."
+            className="flex-1 bg-bg-elevated border border-border rounded-lg px-4 py-3 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50 focus:ring-1 focus:ring-amber/20"
+          />
+          <button
+            type="submit"
+            disabled={voiceSaving || !voiceUrl.trim()}
+            className="px-5 py-3 bg-amber text-bg text-[14px] font-medium rounded-lg border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg disabled:opacity-50 shrink-0"
+          >
+            {voiceSaving ? 'Saving...' : voiceCurrent?.hasTranscript ? 'Update' : 'Save'}
+          </button>
+        </form>
+
+        {voiceMessage && (
+          <p className={`text-[13px] mt-3 ${voiceMessage.toLowerCase().includes('fail') || voiceMessage.toLowerCase().includes('error') || voiceMessage.toLowerCase().includes('not') ? 'text-red' : 'text-green'}`}>
+            {voiceMessage}
+          </p>
         )}
       </div>
 

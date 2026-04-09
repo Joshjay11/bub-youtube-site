@@ -11,6 +11,23 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false);
   const router = useRouter();
 
+  // Voice sample nudge
+  const [showVoiceNudge, setShowVoiceNudge] = useState(false);
+  useEffect(() => {
+    fetch('/api/voice-video')
+      .then((r) => r.json())
+      .then((data) => { if (data?.showNudge) setShowVoiceNudge(true); })
+      .catch(() => {});
+  }, []);
+  function dismissVoiceNudge() {
+    setShowVoiceNudge(false);
+    fetch('/api/voice-video', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dismissNudge: true }),
+    }).catch(() => {});
+  }
+
   // Load last session state (must be before any early returns)
   const [session, setSession] = useState<{ current_page?: string; script_word_count?: number; next_step?: string; saved_at?: string } | null>(null);
   useEffect(() => {
@@ -81,6 +98,24 @@ export default function DashboardPage() {
   return (
     <div>
       {noProjectBanner}
+
+      {showVoiceNudge && (
+        <div className="bg-amber/5 border border-amber/20 rounded-xl px-5 py-3 mb-8 flex items-center justify-between gap-4">
+          <span className="text-[13px] text-text-dim">
+            Want scripts that sound like you, not generic AI? Drop a YouTube link to one of your videos →{' '}
+            <a href="/app/settings#voice-sample" className="text-amber font-medium hover:text-amber-bright transition-colors">
+              Add voice sample
+            </a>
+          </span>
+          <button
+            onClick={dismissVoiceNudge}
+            className="text-[13px] text-text-muted hover:text-text-dim transition-colors bg-transparent border-none cursor-pointer shrink-0"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Last Session card */}
       {session && currentProject && (

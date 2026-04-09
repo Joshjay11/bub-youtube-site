@@ -4,6 +4,7 @@ import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits'
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { buildSystemPrompt, VALID_STYLES } from '@/lib/script-prompts';
+import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
 
 const VALID_MODELS = ['sonnet', 'minimax', 'grok'] as const;
 
@@ -119,13 +120,17 @@ export async function POST(request: Request) {
     }
 
     // Build system prompt with per-pass word targets
-    const systemPrompt = buildSystemPrompt(style, model, {
+    const baseSystemPrompt = buildSystemPrompt(style, model, {
       minWords: passMin,
       maxWords: passMax,
       targetWords: halfTarget,
       targetMinutes: Math.round(targetMinutes / 2),
       wpm,
     });
+
+    // Voice Video Sampling: prepend the user's voice transcript if they've set one.
+    const voiceTranscript = await getVoiceVideoTranscript(email);
+    const systemPrompt = prependVoiceVideoBlock(baseSystemPrompt, voiceTranscript);
 
     // Load project bundle
     const admin = createAdminSupabase();
@@ -181,7 +186,7 @@ export async function POST(request: Request) {
           // Pass 1
           sendEvent({ type: 'progress', step: 'pass1', message: `Writing first half...` });
 
-          const pass1Prompt = `${baseContext}\n\nFULL OUTLINE (for context — you know where the story is going):\n${outline}\n\nYou are writing the FIRST HALF of this script. Write ONLY these sections:\n${outlinePart1}\n\nDo NOT write beyond this point. Write your natural length. Let each section breathe.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
+          const pass1Prompt = `${baseContext}\n\nFULL OUTLINE (for context, you know where the story is going):\n${outline}\n\nYou are writing the FIRST HALF of this script. Write ONLY these sections:\n${outlinePart1}\n\nDo NOT write beyond this point. Write your natural length. Let each section breathe.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
           const pass1Output = await callModel(model, systemPrompt, pass1Prompt, apiKey);
 
@@ -190,7 +195,7 @@ export async function POST(request: Request) {
           // Pass 2
           sendEvent({ type: 'progress', step: 'pass2', message: `Writing second half...` });
 
-          const pass2Prompt = `${baseContext}\n\nHere is what was already written (Part 1) — maintain the same voice, tone, and energy. Do NOT repeat any content from Part 1:\n\n${pass1Output}\n\nNow write the SECOND HALF. Write ONLY these sections:\n${outlinePart2 || 'Continue from where Part 1 left off through to the session hook ending.'}\n\nPick up exactly where Part 1 left off. Write your natural length. Do not compress or truncate.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
+          const pass2Prompt = `${baseContext}\n\nHere is what was already written (Part 1). Maintain the same voice, tone, and energy. Do NOT repeat any content from Part 1:\n\n${pass1Output}\n\nNow write the SECOND HALF. Write ONLY these sections:\n${outlinePart2 || 'Continue from where Part 1 left off through to the session hook ending.'}\n\nPick up exactly where Part 1 left off. Write your natural length. Do not compress or truncate.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
           const pass2Output = await callModel(model, systemPrompt, pass2Prompt, apiKey);
 
