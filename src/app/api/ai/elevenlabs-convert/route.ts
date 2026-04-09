@@ -55,7 +55,7 @@ ${rules}
 
 GENERAL RULES:
 - Remove ALL HTML comments (<!-- -->).
-- Remove ALL tone markers in parentheses — convert them into the appropriate format.
+- Remove ALL tone markers in parentheses. Convert them into the appropriate format.
 - Do NOT add any text not in the original. Preserve exact wording.
 - Add blank lines between paragraphs.
 - If over 5,000 characters, add "--- SPLIT HERE FOR NEW GENERATION ---" at nearest paragraph break to 4,500 chars.

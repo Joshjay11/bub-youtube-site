@@ -11,7 +11,7 @@ For each concept, provide:
 Format as JSON array:
 [{"title": "...", "angle": "..."}, ...]
 
-Keep titles under 60 characters. Make each angle genuinely different — not 5 versions of the same idea. At least one should be a contrarian or unexpected take. Return ONLY the JSON array, no other text.`;
+Keep titles under 60 characters. Make each angle genuinely different. Not 5 versions of the same idea. At least one should be a contrarian or unexpected take. Return ONLY the JSON array, no other text.`;
 
 export async function POST(request: Request) {
   try {

@@ -2,7 +2,7 @@ import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
-const SYSTEM_PROMPT = `You are a research assistant for a YouTube video creator. Provide specific, factual, interesting findings. Focus on novel angles and surprising information that would make a video stand out. Be concise and specific — no filler. Cite sources where possible. Respond in plain text paragraphs, not JSON.`;
+const SYSTEM_PROMPT = `You are a research assistant for a YouTube video creator. Provide specific, factual, interesting findings. Focus on novel angles and surprising information that would make a video stand out. Be concise and specific. No filler. Cite sources where possible. Respond in plain text paragraphs, not JSON.`;
 
 const QUERIES = [
   (topic: string) => `What is commonly misunderstood about ${topic}? Give 3-4 specific misconceptions with the reality.`,

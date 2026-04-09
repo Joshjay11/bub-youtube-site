@@ -80,7 +80,7 @@ function splitScriptIntoBeats(script: string, wpm: number = 140): ScriptChunk[] 
 
 const SYSTEM_PROMPT = `You are a cinematic visual director creating AI image prompts for a YouTube video beat sheet.
 
-You will receive SCRIPT CHUNKS — numbered sections of the actual script. Each chunk is one beat. Your job: read each chunk and generate a matching cinematic visual.
+You will receive SCRIPT CHUNKS: numbered sections of the actual script. Each chunk is one beat. Your job: read each chunk and generate a matching cinematic visual.
 
 For each chunk, generate:
 - visual_description: 1 sentence describing what this beat shows
@@ -94,27 +94,27 @@ For each chunk, generate:
 
 ## CAMERA DISTANCE RULES
 
-Cycle through distances — NEVER use the same distance for two consecutive beats:
+Cycle through distances. NEVER use the same distance for two consecutive beats:
 - Extreme close-up (ECU), Close-up (CU), Medium close-up (MCU), Medium shot (MS)
 - Medium wide (MWS), Wide shot (WS), Extreme wide (EWS)
 - Also use: POV first-person, Over-the-shoulder (OTS), Bird's eye view
 
 Include at least: 3 extreme close-ups, 2 wide/extreme wide shots, 1 POV or OTS per 10 beats.
 
-## CAMERA ANGLES (vary — never 3 eye-level shots in a row)
+## CAMERA ANGLES (vary, never 3 eye-level shots in a row)
 
 Eye level, Low angle, High angle, Dutch angle, Over-the-shoulder, Bird's eye, POV
 
 ## SUBJECT SPECIFICITY
 
-NEVER use "a person" or "someone." Read the script chunk — it tells you exactly who and what. Extract the specific role, character, object, or scenario described.
+NEVER use "a person" or "someone." Read the script chunk. It tells you exactly who and what. Extract the specific role, character, object, or scenario described.
 
 ## METAPHORICAL RATIO
 
 Every 3rd or 4th beat MUST use metaphorical/abstract imagery instead of a literal subject.
 Use metaphors especially for: transitions, abstract concepts, emotional peaks.
 
-## LIGHTING (NEVER use "soft dramatic lighting" — be specific with direction)
+## LIGHTING (NEVER use "soft dramatic lighting"; be specific with direction)
 
 - "single monitor glow casting harsh blue side-light"
 - "chiaroscuro lighting, single candle from bottom-left"
@@ -122,7 +122,7 @@ Use metaphors especially for: transitions, abstract concepts, emotional peaks.
 - "overhead fluorescent casting flat unflattering light"
 - "volumetric god rays cutting through dust"
 
-## COLOR STORY (vary per beat — NEVER repeat "muted warm tones")
+## COLOR STORY (vary per beat. NEVER repeat "muted warm tones")
 
 - "teal and amber split-toning"
 - "high contrast B&W with red accent"
@@ -131,12 +131,12 @@ Use metaphors especially for: transitions, abstract concepts, emotional peaks.
 
 ## WHAT NOT TO DO
 
-- NEVER start a prompt with "A person" — start with camera distance
+- NEVER start a prompt with "A person." Start with camera distance
 - NEVER use "soft dramatic lighting" or "muted warm tones"
 - NEVER use same camera distance for consecutive beats
-- NEVER use "with a [adjective] expression" — describe micro-actions
+- NEVER use "with a [adjective] expression." Describe micro-actions
 - NEVER produce more than 2 literal beats in a row without a metaphorical beat
-- NEVER use generic environments — be specific from the script chunk
+- NEVER use generic environments. Be specific from the script chunk
 
 Respond ONLY with valid JSON:
 {
@@ -157,7 +157,7 @@ const QC_PROMPT = `You are a cinematic quality control editor. Review this compl
 
 CHECKS:
 1. CAMERA CYCLING: No two consecutive beats use the same camera distance. Fix violations.
-2. SUBJECTS: No "a person" or "someone" — must be specific from the script.
+2. SUBJECTS: No "a person" or "someone." Must be specific from the script.
 3. DUPLICATES: No two beats have substantially similar prompts. Each frame must be unique.
 4. METAPHORICAL RATIO: At least every 3rd-4th beat is metaphorical/abstract.
 5. LIGHTING: No two consecutive beats have identical lighting. Diversify.
@@ -265,7 +265,7 @@ ${cleanedScript}`;
     const pass2Msg = `Here are the script chunks for the SECOND HALF of the video. Each chunk is one beat.
 Read each chunk and generate a matching cinematic visual.
 
-LAST 3 BEATS FROM FIRST HALF (for camera distance continuity — don't repeat their distances):
+LAST 3 BEATS FROM FIRST HALF (for camera distance continuity, don't repeat their distances):
 ${JSON.stringify(lastThreeBeats, null, 2)}
 
 The last camera distance used was: ${lastCamera}

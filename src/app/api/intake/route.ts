@@ -46,7 +46,7 @@ function formatConfirmationEmail(name: string): string {
   <p style="color: #fff; font-size: 16px; margin: 0 0 16px 0;">Hey ${esc(name)},</p>
   <p style="color: #ccc; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">Thanks for reaching out. We received your project inquiry and will get back to you within 24 hours.</p>
   <p style="color: #ccc; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">In the meantime, if you have any scripts, videos, or notes you'd like us to review, feel free to reply to this email with links or attachments.</p>
-  <p style="color: #999; font-size: 14px; margin: 0;">&mdash; BUB YouTube Writer<br /><span style="color: #d4a342;">youtube.bubwriter.com</span></p>
+  <p style="color: #999; font-size: 14px; margin: 0;">BUB YouTube Writer<br /><span style="color: #d4a342;">youtube.bubwriter.com</span></p>
 </div>`.trim();
 }
 
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       from: FROM_ADDRESS,
       to: INTAKE_EMAIL,
       replyTo: data.email,
-      subject: `New Project Inquiry: ${data.name} — ${data.tier || 'Not specified'}`,
+      subject: `New Project Inquiry: ${data.name} (${data.tier || 'Not specified'})`,
       html: formatIntakeEmail(data),
     });
 

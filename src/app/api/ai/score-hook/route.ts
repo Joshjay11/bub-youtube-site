@@ -7,12 +7,12 @@ const SYSTEM_PROMPT = `You are a YouTube hook evaluator. Score this hook against
 
 The 10 criteria (1 point each, max 10):
 1. Opens mid-action or mid-thought (NOT "Hey guys", "In this video", or any generic intro)
-2. Creates a SPECIFIC curiosity gap (not a vague one — the viewer must need to know what happens next)
+2. Creates a SPECIFIC curiosity gap (not a vague one; the viewer must need to know what happens next)
 3. Contains a number, name, or concrete detail (specificity = credibility)
 4. Makes a promise the video actually keeps (based on the video concept provided)
 5. Excludes people who wouldn't like this video (qualified viewers, not everyone)
 6. Avoids starting with "I" or "So" (these are weak openers)
-7. Creates stakes — why should the viewer care RIGHT NOW?
+7. Creates stakes. Why should the viewer care RIGHT NOW?
 8. Is under 90 words
 9. Matches the title/thumbnail promise (based on the video concept provided)
 10. Would make YOU stop scrolling if someone else said it (the gut check)
