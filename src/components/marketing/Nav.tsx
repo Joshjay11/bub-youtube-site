@@ -10,6 +10,7 @@ const links = [
   { href: "/pricing", label: "Pricing" },
   { href: "/work", label: "Work" },
   { href: "/template", label: "The Script Studio" },
+  { href: "/pricing#done-for-you", label: "Done For You" },
   { href: "/start", label: "Start" },
 ];
 
@@ -78,6 +79,12 @@ export default function Nav() {
           >
             Start a Project
           </Link>
+          <Link
+            href="/welcome"
+            className="ml-2 text-[13px] font-medium text-text-dim hover:text-text-primary transition-colors no-underline px-3 py-2"
+          >
+            Log In
+          </Link>
         </div>
       </div>
 
@@ -98,6 +105,13 @@ export default function Nav() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/welcome"
+            onClick={() => setMobileOpen(false)}
+            className="rounded-md text-sm font-medium px-4 py-3 no-underline text-amber border-t border-border mt-2 pt-4"
+          >
+            Log In
+          </Link>
         </div>
       )}
     </nav>

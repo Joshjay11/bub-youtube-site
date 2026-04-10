@@ -188,7 +188,7 @@ export default function PricingPage() {
 
         {/* Done-For-You Services */}
         <RevealOnScroll>
-          <div className="max-w-[720px] mb-12">
+          <div id="done-for-you" className="max-w-[720px] mb-12 scroll-mt-24">
             <p className="font-sans font-semibold text-xs text-amber tracking-[0.18em] uppercase mb-5">
               Done-For-You Services
             </p>
