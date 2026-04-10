@@ -87,7 +87,7 @@ function WelcomeForm() {
       </div>
       <h1 className="font-serif text-[32px] text-text-bright mb-3">Payment confirmed!</h1>
       <p className="text-[16px] text-text-dim max-w-[440px] mx-auto mb-8 leading-relaxed">
-        Enter the email you used at checkout to get your access link. We&apos;ll send a magic link — no password needed.
+        Enter the email you used at checkout to get your access link. We&apos;ll send a magic link. No password needed.
       </p>
 
       <form onSubmit={handleSubmit} className="max-w-[400px] mx-auto">

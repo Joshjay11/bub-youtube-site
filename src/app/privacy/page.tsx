@@ -15,10 +15,10 @@ export default function PrivacyPolicyPage() {
           <div>
             <h2 className="font-sans font-bold text-lg text-text-bright mb-3">What We Collect</h2>
             <ul className="list-disc pl-5 space-y-1">
-              <li><strong className="text-text-bright">Email address</strong> — for account creation and communication</li>
-              <li><strong className="text-text-bright">Payment information</strong> — processed by Stripe. We never see or store your card number.</li>
-              <li><strong className="text-text-bright">Content you create</strong> — scripts, research notes, project data, and any other content you produce in the app</li>
-              <li><strong className="text-text-bright">Usage data</strong> — pages visited, features used, and general interaction patterns to improve the product</li>
+              <li><strong className="text-text-bright">Email address.</strong> For account creation and communication.</li>
+              <li><strong className="text-text-bright">Payment information.</strong> Processed by Stripe. We never see or store your card number.</li>
+              <li><strong className="text-text-bright">Content you create.</strong> Scripts, research notes, project data, and any other content you produce in the app.</li>
+              <li><strong className="text-text-bright">Usage data.</strong> Pages visited, features used, and general interaction patterns to improve the product.</li>
             </ul>
           </div>
 
@@ -37,17 +37,17 @@ export default function PrivacyPolicyPage() {
             <h2 className="font-sans font-bold text-lg text-text-bright mb-3">Third-Party Services</h2>
             <p>We use the following services to operate BUB YouTube Writer:</p>
             <ul className="list-disc pl-5 space-y-2 mt-2">
-              <li><strong className="text-text-bright">Stripe</strong> — payment processing. Stripe handles all card data under their own privacy policy.</li>
-              <li><strong className="text-text-bright">Supabase</strong> — data storage and authentication. Your project data is stored in Supabase with row-level security.</li>
-              <li><strong className="text-text-bright">AI Providers</strong> (Anthropic/Claude, OpenRouter, Google/Gemini) — script content is sent to AI providers for processing. Content is used only to generate responses and is not stored by these providers beyond the request.</li>
-              <li><strong className="text-text-bright">Vercel</strong> — application hosting.</li>
+              <li><strong className="text-text-bright">Stripe.</strong> Payment processing. Stripe handles all card data under their own privacy policy.</li>
+              <li><strong className="text-text-bright">Supabase.</strong> Data storage and authentication. Your project data is stored in Supabase with row-level security.</li>
+              <li><strong className="text-text-bright">AI Providers</strong> (Anthropic/Claude, OpenRouter, Google/Gemini). Script content is sent to AI providers for processing. Content is used only to generate responses and is not stored by these providers beyond the request.</li>
+              <li><strong className="text-text-bright">Vercel.</strong> Application hosting.</li>
             </ul>
           </div>
 
           <div>
             <h2 className="font-sans font-bold text-lg text-text-bright mb-3">Data Retention</h2>
             <p>
-              Your data is kept as long as your account exists. If you request account deletion, all your data — including projects, scripts, and personal information — is permanently deleted within 30 days.
+              Your data is kept as long as your account exists. If you request account deletion, all your data, including projects, scripts, and personal information, is permanently deleted within 30 days.
             </p>
           </div>
 

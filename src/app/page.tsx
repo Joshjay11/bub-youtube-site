@@ -18,7 +18,7 @@ export default function HomePage() {
             <RevealOnScroll delay={1}>
               <h1 className="font-serif font-normal text-text-bright leading-[1.08] tracking-[-0.02em]" style={{ fontSize: "clamp(42px, 5.5vw, 68px)" }}>
                 Scripts that sound<br />
-                like <em className="text-amber italic">you</em> — backed by<br />
+                like <em className="text-amber italic">you</em>. Backed by<br />
                 <em className="text-amber italic">nine AI models</em> of research
               </h1>
             </RevealOnScroll>
@@ -55,7 +55,7 @@ export default function HomePage() {
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-red to-[#f87171] to-transparent" />
               <p className="font-sans font-semibold text-[13px] text-[#f87171] tracking-[0.12em] uppercase mb-5">The Problem</p>
               <p className="font-sans text-base text-text-primary leading-[1.7]">
-                You spend 20+ hours per video on research. AI tools get you 80% of the way — but that last 20% is where videos succeed or fail. Generic scripts. Thin research. Voice mismatch. One wrong fact triggers Community Notes and kills your engagement by 46%.
+                You spend 20+ hours per video on research. AI tools get you 80% of the way. But that last 20% is where videos succeed or fail. Generic scripts. Thin research. Voice mismatch. One wrong fact triggers Community Notes and kills your engagement by 46%.
               </p>
             </div>
           </RevealOnScroll>
@@ -83,7 +83,7 @@ export default function HomePage() {
           {[
             { num: "01", title: "9-Model Research", desc: "Claude, GPT, Gemini, Mistral, Qwen, Perplexity, Kimi, DeepSeek, and Grok. Every claim cross-referenced across nine models. No single-model bias. No hallucination loops." },
             { num: "02", title: "Fact-Check Report", desc: "Every claim inventoried, categorized as Consensus, Contested, or Opinion, and traced to primary sources. Your insurance against Community Notes." },
-            { num: "03", title: "Retention Engineering", desc: "Hook formulas, pattern interrupts every 20-30 seconds, the 35% pivot, open loops, session hooks — structurally engineered for the 2026 algorithm." },
+            { num: "03", title: "Retention Engineering", desc: "Hook formulas, pattern interrupts every 20-30 seconds, the 35% pivot, open loops, session hooks. Structurally engineered for the 2026 algorithm." },
             { num: "04", title: "Voice DNA Matching", desc: "We study your videos, capture your voice patterns, and build an anti-brand document before writing a word. The script sounds like you." },
             { num: "05", title: "Argument Analysis", desc: "Cross-disciplinary synthesis finds the original angle. Counter-arguments pre-addressed. Model consensus vs. disagreement mapped." },
             { num: "06", title: "Voiceover Engineering", desc: "Broadcast-quality AI voiceovers via ElevenLabs. Custom voice selection, natural pacing, emotional variation. Drop the audio into your editor and go." },
@@ -158,7 +158,7 @@ export default function HomePage() {
               <em className="text-amber italic">Without the 6-person editorial team.</em>
             </h2>
             <p className="text-base text-text-dim mb-9">
-              Your script comes with a fact-check report and argument analysis — not just words.
+              Your script comes with a fact-check report and argument analysis. Not just words.
             </p>
             <Link
               href="/start"

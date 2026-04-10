@@ -4,7 +4,7 @@ import RevealOnScroll from "@/components/marketing/RevealOnScroll";
 
 const processItems = [
   { label: "Multi-Model Research", desc: "7 AI models queried with tailored prompts. Each surfaces different angles and connections. Synthesized into consensus claims, contested claims, and original angles no single source would find." },
-  { label: "Retention-Engineered Structure", desc: "Scripts built on a beat map — hooks, micro-acts, pattern interrupts, the 35% pivot, session hooks. Not generic structure. Engineered for the 2026 satisfaction algorithm." },
+  { label: "Retention-Engineered Structure", desc: "Scripts built on a beat map: hooks, micro-acts, pattern interrupts, the 35% pivot, session hooks. Not generic structure. Engineered for the 2026 satisfaction algorithm." },
   { label: "Fact-Check Report", desc: "Every claim categorized as Consensus, Contested, or Opinion. Sources verified against primary research. High-risk claims flagged. Your insurance against Community Notes." },
   { label: "Voice Consistency", desc: "A canon document ensures every script matches your identity. The anti-brand defines what you never say. A dedicated voice pass catches generic language before delivery." },
   { label: "Three-Pass Editorial", desc: "Hemingway editing strips adverbs. Asimov pass clarifies logic. Bukowski pass kills anything that doesn't sound human. More quality gates than most published books." },
@@ -22,7 +22,7 @@ export default function WorkPage() {
             The <em className="text-amber italic">BUB Show</em> is our<br />living portfolio
           </h1>
           <p className="text-[17px] text-text-dim max-w-[560px] mb-12 leading-[1.75]">
-            Every video on the BUB channel is produced using the same pipeline we use for client work. The research methodology, retention engineering, fact-checking, and voice consistency — it&apos;s all the same process.
+            Every video on the BUB channel is produced using the same pipeline we use for client work. The research methodology, retention engineering, fact-checking, and voice consistency. It&apos;s all the same process.
           </p>
         </RevealOnScroll>
 
@@ -30,7 +30,7 @@ export default function WorkPage() {
           <div className="bg-amber-glow-strong border border-[rgba(212,163,66,0.2)] rounded-[14px] p-12 text-center">
             <h3 className="font-sans font-bold text-[22px] text-text-bright mb-3">The BUB Show</h3>
             <p className="font-sans text-[15px] text-text-primary max-w-[480px] mx-auto mb-7 leading-relaxed">
-              Consciousness, AI, esoteric research — all produced with multi-model synthesis and retention-engineered scripting. What you&apos;d get as a client, demonstrated on our own channel.
+              Consciousness, AI, esoteric research. All produced with multi-model synthesis and retention-engineered scripting. What you&apos;d get as a client, demonstrated on our own channel.
             </p>
             <a
               href="https://www.youtube.com/@bubai4reallife"

@@ -63,7 +63,7 @@ export default function StartPage() {
             Project submitted
           </h1>
           <p className="text-base text-text-dim leading-[1.7]">
-            We&apos;ll review everything and respond within 24 hours with next steps — including our Voice DNA onboarding questionnaire.
+            We&apos;ll review everything and respond within 24 hours with next steps, including our Voice DNA onboarding questionnaire.
           </p>
         </div>
       </MarketingLayout>
@@ -109,9 +109,9 @@ export default function StartPage() {
               <label className="block font-sans font-semibold text-[13px] text-text-primary mb-2">What tier interests you?</label>
               <select className={`${inputClass} cursor-pointer`} value={form.tier} onChange={set('tier')}>
                 <option value="">Select a tier...</option>
-                <option>Research Pack — $225</option>
-                <option>The Script — $500</option>
-                <option>Monthly Retainer — $1,800/mo</option>
+                <option>Research Pack ($225)</option>
+                <option>The Script ($500)</option>
+                <option>Monthly Retainer ($1,800/mo)</option>
                 <option>Not sure yet</option>
               </select>
             </div>
