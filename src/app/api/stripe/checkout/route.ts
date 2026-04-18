@@ -3,12 +3,9 @@ import { createAdminSupabase } from '@/lib/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-function getBaseUrl(request: Request): string {
-  const origin = request.headers.get('origin');
-  if (origin) return origin;
-  const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
-  if (host) return `${proto}://${host}`;
+function getBaseUrl(): string {
+  // Never trust request headers for success/cancel URLs — an attacker
+  // could set Origin to redirect the purchaser to a phishing domain.
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'https://youtube.bubwriter.com';
@@ -76,7 +73,7 @@ export async function POST(request: Request) {
     // Resolve price ID after any tier overrides
     const priceId = priceMap[tier]!;
 
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrl();
     const stripe = getStripe();
 
     // Get authenticated user info if available

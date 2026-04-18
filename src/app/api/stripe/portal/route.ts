@@ -3,12 +3,8 @@ import { createAdminSupabase } from '@/lib/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-function getBaseUrl(request: Request): string {
-  const origin = request.headers.get('origin');
-  if (origin) return origin;
-  const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
-  if (host) return `${proto}://${host}`;
+function getBaseUrl(): string {
+  // Never trust request headers for the billing portal return URL.
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'https://youtube.bubwriter.com';
@@ -50,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     const stripe = getStripe();
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrl();
 
     const session = await stripe.billingPortal.sessions.create({
       customer: userRow.stripe_customer_id,

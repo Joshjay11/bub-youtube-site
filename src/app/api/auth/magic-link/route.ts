@@ -14,12 +14,9 @@ function withSupabaseCookies(response: NextResponse, cookiesToSet: CookieToSet[]
   return response;
 }
 
-function getBaseUrl(request: NextRequest): string {
-  const origin = request.headers.get('origin');
-  if (origin) return origin;
-  const host = request.headers.get('host') || request.headers.get('x-forwarded-host');
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
-  if (host) return `${proto}://${host}`;
+function getBaseUrl(): string {
+  // Never trust request headers for the magic link redirect — an attacker
+  // can set Origin to point the email link anywhere.
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'https://youtube.bubwriter.com';
@@ -56,7 +53,7 @@ export async function POST(request: NextRequest) {
         },
       },
     );
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrl();
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
