@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
 
 const SYSTEM_PROMPT = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script. The part that stops the scroll and makes someone stay.
@@ -29,6 +30,14 @@ Respond ONLY with a JSON array of exactly 5 strings, each being the full hook te
 export async function POST(request: Request) {
   try {
     const { projectId } = await request.json();
+
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (projectId && !(await assertProjectOwned(authUser.id, projectId))) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
+    }
 
     const email = await getUserEmail();
     const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);

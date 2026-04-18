@@ -3,6 +3,7 @@ import { callWithFallback } from '@/lib/ai-fallback';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 import { buildSystemPrompt, VALID_STYLES } from '@/lib/script-prompts';
 import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
 
@@ -89,6 +90,14 @@ export async function POST(request: Request) {
 
     if (!(VALID_MODELS as readonly string[]).includes(model)) {
       return Response.json({ error: 'Invalid model.' }, { status: 400 });
+    }
+
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await assertProjectOwned(authUser.id, projectId))) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
     }
 
     const style = (VALID_STYLES as readonly string[]).includes(rawStyle) ? rawStyle : 'commentary';

@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 
 const SYSTEM_PROMPT = `You are a YouTube hook evaluator. Score this hook against 10 criteria. Be honest and specific.
 
@@ -31,6 +32,14 @@ export async function POST(request: Request) {
 
     if (!hookText || typeof hookText !== 'string' || !hookText.trim()) {
       return Response.json({ error: 'Missing hook text' }, { status: 400 });
+    }
+
+    const authUser = await getAuthUser();
+    if (!authUser) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (projectId && !(await assertProjectOwned(authUser.id, projectId))) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
     }
 
     const email = await getUserEmail();
