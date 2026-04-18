@@ -5,13 +5,13 @@ import { checkSubscriptionAccess } from '@/lib/subscription-check';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { prompt, user_id } = body;
+    const { prompt } = body;
 
     if (!prompt || typeof prompt !== 'string') {
       return Response.json({ error: 'Missing or invalid prompt' }, { status: 400 });
     }
 
-    const email = await getUserEmail() || user_id || null;
+    const email = await getUserEmail();
     const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
     if (!subAllowed) {
       return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
