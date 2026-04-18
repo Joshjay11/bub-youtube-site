@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/app?subscription=success`,
+      success_url: `${baseUrl}/welcome?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing`,
       customer_email: userEmail,
       metadata: {
