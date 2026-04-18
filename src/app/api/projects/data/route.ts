@@ -1,4 +1,5 @@
 import { createAdminSupabase } from '@/lib/supabase';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -7,6 +8,14 @@ export async function GET(request: Request) {
 
   if (!projectId || !toolKey) {
     return Response.json({ error: 'Missing projectId or toolKey' }, { status: 400 });
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!(await assertProjectOwned(user.id, projectId))) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
   }
 
   const supabase = createAdminSupabase();
@@ -27,6 +36,14 @@ export async function PUT(request: Request) {
 
     if (!projectId || !toolKey || data === undefined) {
       return Response.json({ error: 'Missing projectId, toolKey, or data' }, { status: 400 });
+    }
+
+    const user = await getAuthUser();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await assertProjectOwned(user.id, projectId))) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
     }
 
     const supabase = createAdminSupabase();

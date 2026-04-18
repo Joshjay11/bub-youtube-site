@@ -1,4 +1,5 @@
 import { createAdminSupabase } from '@/lib/supabase';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -6,6 +7,14 @@ export async function GET(request: Request) {
 
   if (!projectId) {
     return Response.json({ error: 'Missing projectId' }, { status: 400 });
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!(await assertProjectOwned(user.id, projectId))) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
   }
 
   const supabase = createAdminSupabase();
@@ -18,7 +27,6 @@ export async function GET(request: Request) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
-  // Transform array of rows into keyed object
   const bundle: Record<string, unknown> = {};
   for (const row of data || []) {
     bundle[row.tool_key] = row.data;
