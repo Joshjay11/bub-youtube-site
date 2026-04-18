@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase, createServerSupabase } from '@/lib/supabase';
 
 // Simple XOR deobfuscation for stored API keys
 function deobfuscate(encoded: string): string {
@@ -16,7 +16,7 @@ export async function resolveApiKey(email: string | null): Promise<{
     return { apiKey: process.env.ANTHROPIC_API_KEY || null, source: 'platform', creditsRemaining: 999 };
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   // 1. Check BYOK key
   const { data: settings } = await supabase
@@ -48,7 +48,7 @@ export async function resolveApiKey(email: string | null): Promise<{
 }
 
 export async function decrementCredits(email: string) {
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
   const { data } = await supabase
     .from('purchases')
     .select('ai_credits_remaining')
@@ -65,7 +65,7 @@ export async function decrementCredits(email: string) {
 
 export async function getUserEmail(): Promise<string | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   return user?.email || null;
 }

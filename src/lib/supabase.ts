@@ -15,9 +15,10 @@ export function createBrowserSupabase() {
   );
 }
 
-// Server client with cookie context — used in server components and route handlers
-// for auth operations (getUser, getSession, exchangeCodeForSession)
-export async function createCookieSupabase() {
+// Cookie-aware server client — reads the authenticated user's session.
+// Use in API routes and server components that need to know WHO is calling.
+// Use createAdminSupabase() for service-role operations that bypass RLS.
+export async function createServerSupabase() {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -59,6 +60,3 @@ export function createAdminSupabase() {
     },
   );
 }
-
-// Keep old name as alias for backwards compat with existing routes
-export const createServerSupabase = createAdminSupabase;

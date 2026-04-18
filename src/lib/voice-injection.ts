@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
 
 /**
  * Voice Video Sampling v1 (Tier A) injection helpers.
@@ -15,7 +15,7 @@ export async function getVoiceVideoTranscript(email: string | null): Promise<str
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
 
   try {
-    const supabase = createServerSupabase();
+    const supabase = createAdminSupabase();
     const { data } = await supabase
       .from('user_settings')
       .select('voice_video_transcript')

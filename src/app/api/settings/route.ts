@@ -1,4 +1,5 @@
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
+import { getUserEmail } from '@/lib/ai-credits';
 
 // Simple XOR obfuscation for API keys at rest (use proper encryption in production)
 function obfuscate(text: string): string {
@@ -8,19 +9,13 @@ function obfuscate(text: string): string {
   ).toString('base64');
 }
 
-async function getUserEmail(): Promise<string | null> {
-  const supabase = createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.email || null;
-}
-
 export async function GET() {
   const email = await getUserEmail();
   if (!email) {
     return Response.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   // Get settings
   const { data: settings } = await supabase
@@ -59,7 +54,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Invalid input' }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   const encrypted = anthropic_api_key ? obfuscate(anthropic_api_key) : null;
 
@@ -74,4 +69,3 @@ export async function POST(request: Request) {
 
   return Response.json({ success: true });
 }
-

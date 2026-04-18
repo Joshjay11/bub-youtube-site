@@ -1,5 +1,5 @@
 import { getStripe } from '@/lib/stripe';
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
 import type Stripe from 'stripe';
 
 // Map Stripe subscription status to our internal status
@@ -20,7 +20,7 @@ async function updateUserByCustomerId(
   customerId: string,
   updates: Record<string, unknown>,
 ) {
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   // Try users table first
   const { data: userRow } = await supabase
@@ -44,7 +44,7 @@ async function updateUserByEmail(
   email: string,
   updates: Record<string, unknown>,
 ) {
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
   await supabase
     .from('users')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   switch (event.type) {
     case 'checkout.session.completed': {

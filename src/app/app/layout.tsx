@@ -1,4 +1,4 @@
-import { createCookieSupabase, createAdminSupabase } from '@/lib/supabase';
+import { createServerSupabase, createAdminSupabase } from '@/lib/supabase';
 import { redirect } from 'next/navigation';
 import AppShell from '@/components/app/AppShell';
 
@@ -23,7 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const supabase = await createCookieSupabase();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

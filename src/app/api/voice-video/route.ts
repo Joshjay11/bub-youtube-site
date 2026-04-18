@@ -1,13 +1,13 @@
 import { getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
 import { fetchVoiceVideo } from '@/lib/voice-video-fetcher';
 
 export async function GET() {
   const email = await getUserEmail();
   if (!email) return Response.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
   const { data } = await supabase
     .from('user_settings')
     .select('voice_video_url, voice_video_fetched_at, voice_video_transcript, voice_nudge_dismissed')
@@ -37,7 +37,7 @@ export async function PATCH(request: Request) {
   }
 
   if (body.dismissNudge === true) {
-    const supabase = createServerSupabase();
+    const supabase = createAdminSupabase();
     await supabase
       .from('user_settings')
       .upsert(
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     return Response.json({ success: false, error: 'Invalid request body.' }, { status: 400 });
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
 
   // Remove voice sample
   if (body.remove === true) {

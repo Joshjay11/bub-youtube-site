@@ -1,4 +1,4 @@
-import { createServerSupabase } from '@/lib/supabase';
+import { createAdminSupabase } from '@/lib/supabase';
 
 /**
  * Check if a user has an active subscription that allows AI features.
@@ -22,7 +22,7 @@ export async function checkSubscriptionAccess(email: string | null): Promise<{
     return { allowed: false, status: 'none', message: 'Authentication required.' };
   }
 
-  const supabase = createServerSupabase();
+  const supabase = createAdminSupabase();
   const { data: user } = await supabase
     .from('users')
     .select('subscription_status')
