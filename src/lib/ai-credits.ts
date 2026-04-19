@@ -1,8 +1,17 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase';
 
-// Simple XOR deobfuscation for stored API keys
+function getEncryptionKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      '[byok] SUPABASE_SERVICE_ROLE_KEY missing — refusing to encrypt with fallback. Set the env var in Vercel before deploying.',
+    );
+  }
+  return key;
+}
+
 function deobfuscate(encoded: string): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-key';
+  const key = getEncryptionKey();
   const bytes = Buffer.from(encoded, 'base64');
   return bytes.map((b, i) => b ^ key.charCodeAt(i % key.length)).reduce((s, b) => s + String.fromCharCode(b), '');
 }

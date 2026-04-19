@@ -1,9 +1,18 @@
 import { createAdminSupabase } from '@/lib/supabase';
 import { getUserEmail } from '@/lib/ai-credits';
 
-// Simple XOR obfuscation for API keys at rest (use proper encryption in production)
+function getEncryptionKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) {
+    throw new Error(
+      '[byok] SUPABASE_SERVICE_ROLE_KEY missing — refusing to encrypt with fallback. Set the env var in Vercel before deploying.',
+    );
+  }
+  return key;
+}
+
 function obfuscate(text: string): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-key';
+  const key = getEncryptionKey();
   return Buffer.from(
     text.split('').map((c, i) => c.charCodeAt(0) ^ key.charCodeAt(i % key.length))
   ).toString('base64');
