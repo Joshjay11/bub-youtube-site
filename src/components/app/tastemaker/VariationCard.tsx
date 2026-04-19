@@ -13,19 +13,19 @@ export interface VariationMeta {
 
 export const VARIATION_META: Record<VariationKey, VariationMeta> = {
   teach: {
-    name: 'Teach Mode',
+    name: 'Teach',
     tagline: 'For explainers, tutorials, and deep dives.',
     metaphor: "You're standing in a lecture hall.",
     accent: '#60a5fa',
   },
   argue: {
-    name: 'Argue Mode',
+    name: 'Argue',
     tagline: 'For commentary, reactions, and hot takes.',
     metaphor: "You're standing in a stadium.",
     accent: '#f87171',
   },
   connect: {
-    name: 'Connect Mode',
+    name: 'Connect',
     tagline: 'For vlogs, personal stories, and community updates.',
     metaphor: "You're standing in a living room.",
     accent: '#34d399',

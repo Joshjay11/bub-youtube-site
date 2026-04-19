@@ -365,7 +365,7 @@ Emphasize: more first-person language, anecdotal scaffolding, sensory specificit
 
       const variationPrompt = (key: 'teach' | 'argue' | 'connect') => {
         const spec = variationSpec[key];
-        return `You are generating a "${key.charAt(0).toUpperCase() + key.slice(1)} Mode" variation of this creator's Portable Taste Profile. This variation emphasizes their voice as it appears in ${
+        return `You are generating a "${key.charAt(0).toUpperCase() + key.slice(1)}" variation of this creator's Portable Taste Profile. This variation emphasizes their voice as it appears in ${
           key === 'teach' ? 'EXPLAINER and EDUCATIONAL' : key === 'argue' ? 'COMMENTARY and OPINION' : 'VLOG, PERSONAL STORY, and CONNECTION'
         } content.
 
