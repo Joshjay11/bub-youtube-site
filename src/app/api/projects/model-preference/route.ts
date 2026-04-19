@@ -1,19 +1,20 @@
 import { createAdminSupabase } from '@/lib/supabase';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
     const { projectId, chosenModel, rejectedModel } = await request.json();
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } },
-    );
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthUser();
     if (!user) return Response.json({ ok: false }, { status: 401 });
+
+    if (!projectId || typeof projectId !== 'string') {
+      return Response.json({ ok: false, error: 'Missing projectId' }, { status: 400 });
+    }
+
+    if (!(await assertProjectOwned(user.id, projectId))) {
+      return Response.json({ ok: false }, { status: 404 });
+    }
 
     const admin = createAdminSupabase();
     await admin.from('model_preferences').insert({
