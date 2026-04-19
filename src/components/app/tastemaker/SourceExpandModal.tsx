@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useEscapeKey } from '@/lib/use-escape-key';
 import { SOURCE_BADGE_LABELS, type Source } from './types';
 
 interface SourceExpandModalProps {
@@ -33,6 +34,8 @@ export default function SourceExpandModal({
       setEditingNotes(false);
     }
   }, [source]);
+
+  useEscapeKey(onClose, source !== null);
 
   if (!source) return null;
 

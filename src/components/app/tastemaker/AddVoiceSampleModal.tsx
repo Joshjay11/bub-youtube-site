@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useEscapeKey } from '@/lib/use-escape-key';
 
 interface CreatedSample {
   id: string;
@@ -40,6 +41,8 @@ export default function AddVoiceSampleModal({ open, onClose, onCreated }: AddVoi
   const [pasteContent, setPasteContent] = useState('');
   const [pasteTitle, setPasteTitle] = useState('');
   const [pasteNotes, setPasteNotes] = useState('');
+
+  useEscapeKey(() => { reset(); onClose(); }, open);
 
   if (!open) return null;
 

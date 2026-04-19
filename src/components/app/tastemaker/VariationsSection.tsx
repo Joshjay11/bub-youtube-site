@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useEscapeKey } from '@/lib/use-escape-key';
 import VariationCard, { VARIATION_META, type VariationKey } from './VariationCard';
 
 export interface Variations {
@@ -17,6 +18,8 @@ const ORDER: VariationKey[] = ['teach', 'argue', 'connect'];
 
 export default function VariationsSection({ variations }: VariationsSectionProps) {
   const [open, setOpen] = useState<VariationKey | null>(null);
+
+  useEscapeKey(() => setOpen(null), open !== null);
 
   return (
     <section className="space-y-3">
