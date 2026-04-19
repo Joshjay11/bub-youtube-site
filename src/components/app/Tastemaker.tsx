@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
 import { useProject, type Project } from '@/lib/project-context';
-import { getTastemakerState, type TastemakerState } from '@/lib/tastemaker-state';
+import { getTastemakerState, TASTEMAKER_THRESHOLDS, type TastemakerState } from '@/lib/tastemaker-state';
 import ProgressStaircase from './tastemaker/ProgressStaircase';
 import SourcesGrid from './tastemaker/SourcesGrid';
 import SourceExpandModal from './tastemaker/SourceExpandModal';
@@ -425,8 +425,8 @@ export default function Tastemaker() {
               <ProgressStaircase completedCount={liveCompletedCount} />
             </div>
             <p className="text-[13px] text-text-dim">
-              Complete {Math.max(0, 7 - liveCompletedCount)} more project
-              {7 - liveCompletedCount !== 1 ? 's' : ''} to unlock your Taste Profile.
+              Complete {Math.max(0, TASTEMAKER_THRESHOLDS.base - liveCompletedCount)} more project
+              {TASTEMAKER_THRESHOLDS.base - liveCompletedCount !== 1 ? 's' : ''} to unlock your Taste Profile.
             </p>
           </div>
 
