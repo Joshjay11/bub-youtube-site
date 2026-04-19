@@ -5,6 +5,7 @@ import { useProject } from '@/lib/project-context';
 import { useProjectData, SaveIndicator } from '@/lib/use-project-data';
 import { useRegisterPageContext } from '@/contexts/PageContextProvider';
 import { notifyCreditChange } from '@/components/app/CreditHealthBar';
+import SendToTastemakerButton from '@/components/app/SendToTastemakerButton';
 
 interface WriterData {
   script_draft: string;
@@ -278,9 +279,17 @@ export default function DualModelWriter({ targetMinutes = 12, paceLabel = 'conve
               <h3 className="text-[16px] text-text-bright font-medium">Your Script</h3>
               <span className="text-[12px] text-text-muted">{data.word_count} words (~{Math.round(data.word_count / wpm)} min at {wpm} WPM)</span>
             </div>
-            <button onClick={handleCopyDraft} className="flex items-center gap-1.5 text-[12px] text-text-muted hover:text-text-dim transition-colors bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
-              {copied ? 'Copied ✓' : 'Copy Script'}
-            </button>
+            <div className="flex items-center gap-2">
+              <SendToTastemakerButton
+                content={data.script_draft}
+                title={`${currentProject?.title ?? 'Untitled'} - Script`}
+                sourceLabel="Script"
+                disabled={data.word_count < 200}
+              />
+              <button onClick={handleCopyDraft} className="flex items-center gap-1.5 text-[12px] text-text-muted hover:text-text-dim transition-colors bg-transparent border border-border rounded-lg px-3 py-1.5 cursor-pointer hover:border-border-light">
+                {copied ? 'Copied ✓' : 'Copy Script'}
+              </button>
+            </div>
           </div>
           <textarea
             value={data.script_draft}
