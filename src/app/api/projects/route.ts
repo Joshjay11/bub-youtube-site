@@ -30,7 +30,7 @@ export async function GET() {
   const admin = createAdminSupabase();
   const { data, error } = await admin
     .from('projects')
-    .select('id, title, status, created_at, updated_at')
+    .select('id, title, status, included_in_tastemaker, created_at, updated_at')
     .eq('user_id', authUser.id)
     .order('updated_at', { ascending: false });
 
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       title: title.trim(),
       status: 'idea',
     })
-    .select('id, title, status, created_at, updated_at')
+    .select('id, title, status, included_in_tastemaker, created_at, updated_at')
     .single();
 
   if (error) {
