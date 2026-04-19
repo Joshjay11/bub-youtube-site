@@ -45,7 +45,7 @@ export default function SourceCard({ source, onToggle, onExpand, onDelete }: Sou
       </p>
 
       <div className="mt-auto flex items-center justify-between text-[11px] text-text-muted">
-        <span>{source.wordCount.toLocaleString()} words</span>
+        <span>{source.wordCount > 0 ? `${source.wordCount.toLocaleString()} words` : ''}</span>
         <span>{new Date(source.createdAt).toLocaleDateString()}</span>
       </div>
 

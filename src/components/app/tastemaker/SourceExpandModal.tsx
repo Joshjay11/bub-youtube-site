@@ -147,8 +147,12 @@ export default function SourceExpandModal({
             <pre className="text-[13px] text-text-dim whitespace-pre-wrap font-sans leading-relaxed">
               {source.content}
             </pre>
-          ) : (
+          ) : isVoiceSample ? (
             <p className="text-[13px] text-text-muted italic">Loading content...</p>
+          ) : (
+            <p className="text-[13px] text-text-muted italic">
+              The full content lives in the Script Studio. Use &ldquo;Open in Script Studio&rdquo; to view or edit this project.
+            </p>
           )}
         </div>
 

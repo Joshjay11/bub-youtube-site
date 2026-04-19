@@ -119,6 +119,7 @@ export async function POST() {
     });
 
     const completedCount = completedProjects.length;
+    const completedProjectIds = completedProjects.map(([id]) => id);
     const tastemakerState = getTastemakerState(completedCount);
 
     if (tastemakerState === 'building') {
@@ -127,6 +128,7 @@ export async function POST() {
         user_id: userId,
         tastemaker_state: 'building' as TastemakerState,
         completed_projects: completedCount,
+        completed_project_ids: completedProjectIds,
         total_projects: projects.length,
         required: TASTEMAKER_THRESHOLDS.base,
         remaining: TASTEMAKER_THRESHOLDS.base - completedCount,
@@ -411,6 +413,7 @@ Respond ONLY with valid JSON:
       status: 'ready',
       user_id: userId,
       tastemaker_state: tastemakerState,
+      completed_project_ids: completedProjectIds,
       stats,
       prose: baseProse,
       variations,
