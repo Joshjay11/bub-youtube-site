@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import { createAdminSupabase } from '@/lib/supabase';
 import { countWords, extractDocxText } from '@/lib/docx-parser';
+import { validateFileContent } from '@/lib/file-validation';
 
 const MAX_FILE_BYTES = 500 * 1024;
 const MAX_WORDS_PER_SAMPLE = 10_000;
@@ -67,6 +68,10 @@ async function parseMultipart(request: NextRequest): Promise<CreatePayload | Res
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = sourceType === 'upload_docx' ? 'docx' : sourceType === 'upload_md' ? 'md' : 'txt';
+  const contentMismatch = validateFileContent(buffer, ext);
+  if (contentMismatch) return errorResponse(contentMismatch, 415);
+
   let content: string;
   try {
     content = sourceType === 'upload_docx' ? await extractDocxText(buffer) : buffer.toString('utf8');
