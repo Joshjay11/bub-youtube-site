@@ -184,8 +184,16 @@ export default function Tastemaker() {
   const [stale, setStale] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [expanded, setExpanded] = useState<Source | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const hasFetched = useRef(false);
   const userIdRef = useRef<string>('default');
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showMutationError = useCallback((message: string) => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    setMutationError(message);
+    errorTimerRef.current = setTimeout(() => setMutationError(null), 4000);
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -296,9 +304,11 @@ export default function Tastemaker() {
       });
       if (!res.ok) {
         setProjects(prev => prev.map(p => (p.id === id ? { ...p, included_in_tastemaker: !included } : p)));
+        showMutationError('Failed to update project. Try again.');
       }
     } catch {
       setProjects(prev => prev.map(p => (p.id === id ? { ...p, included_in_tastemaker: !included } : p)));
+      showMutationError('Network error. Check your connection and try again.');
     }
   }
 
@@ -313,9 +323,11 @@ export default function Tastemaker() {
       });
       if (!res.ok) {
         setVoiceSamples(prev => prev.map(v => (v.id === id ? { ...v, included_in_tastemaker: !included } : v)));
+        showMutationError('Failed to update voice sample. Try again.');
       }
     } catch {
       setVoiceSamples(prev => prev.map(v => (v.id === id ? { ...v, included_in_tastemaker: !included } : v)));
+      showMutationError('Network error. Check your connection and try again.');
     }
   }
 
@@ -335,34 +347,60 @@ export default function Tastemaker() {
     setExpanded(null);
     try {
       const res = await fetch(`/api/tastemaker/voice-samples/${id}`, { method: 'DELETE' });
-      if (!res.ok) setVoiceSamples(previous);
+      if (!res.ok) {
+        setVoiceSamples(previous);
+        showMutationError('Failed to delete voice sample. Try again.');
+      }
     } catch {
       setVoiceSamples(previous);
+      showMutationError('Network error. Check your connection and try again.');
     }
   }
 
   async function saveVoiceSampleTitle(id: string, title: string) {
+    const previousSamples = voiceSamples;
+    const previousExpanded = expanded;
     setVoiceSamples(prev => prev.map(v => (v.id === id ? { ...v, title } : v)));
     setExpanded(prev => (prev && prev.id === id ? { ...prev, title } : prev));
     try {
-      await fetch(`/api/tastemaker/voice-samples/${id}`, {
+      const res = await fetch(`/api/tastemaker/voice-samples/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
       });
-    } catch { /* non-blocking */ }
+      if (!res.ok) {
+        setVoiceSamples(previousSamples);
+        setExpanded(previousExpanded);
+        showMutationError('Failed to update title. Try again.');
+      }
+    } catch {
+      setVoiceSamples(previousSamples);
+      setExpanded(previousExpanded);
+      showMutationError('Network error. Check your connection and try again.');
+    }
   }
 
   async function saveVoiceSampleNotes(id: string, notes: string) {
+    const previousSamples = voiceSamples;
+    const previousExpanded = expanded;
     setVoiceSamples(prev => prev.map(v => (v.id === id ? { ...v, notes } : v)));
     setExpanded(prev => (prev && prev.id === id ? { ...prev, notes } : prev));
     try {
-      await fetch(`/api/tastemaker/voice-samples/${id}`, {
+      const res = await fetch(`/api/tastemaker/voice-samples/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes }),
       });
-    } catch { /* non-blocking */ }
+      if (!res.ok) {
+        setVoiceSamples(previousSamples);
+        setExpanded(previousExpanded);
+        showMutationError('Failed to update notes. Try again.');
+      }
+    } catch {
+      setVoiceSamples(previousSamples);
+      setExpanded(previousExpanded);
+      showMutationError('Network error. Check your connection and try again.');
+    }
   }
 
   async function expandSource(source: Source) {
@@ -572,6 +610,15 @@ export default function Tastemaker() {
         onClose={() => setAddOpen(false)}
         onCreated={onVoiceSampleCreated}
       />
+
+      {mutationError && (
+        <div
+          role="alert"
+          className="fixed bottom-4 right-4 z-50 bg-red text-white px-4 py-3 rounded-lg shadow-lg text-[13px] max-w-sm"
+        >
+          {mutationError}
+        </div>
+      )}
     </div>
   );
 }
