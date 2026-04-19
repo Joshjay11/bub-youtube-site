@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 interface TrackingEntry {
   id: string;
+  url: string;
   title: string;
   publishDate: string;
   titleFormula: string;
@@ -24,6 +25,7 @@ function genId() {
 }
 
 const EMPTY: Omit<TrackingEntry, 'id'> = {
+  url: '',
   title: '',
   publishDate: '',
   titleFormula: '',
@@ -42,6 +44,53 @@ export default function PerformanceTracker() {
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState<Omit<TrackingEntry, 'id'>>(EMPTY);
 
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [channelName, setChannelName] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  async function fetchVideoInfo(urlToFetch: string) {
+    const trimmed = urlToFetch.trim();
+    if (!trimmed) {
+      setThumbnailUrl(null);
+      setChannelName(null);
+      setFetchError(null);
+      return;
+    }
+    setIsFetching(true);
+    setFetchError(null);
+    try {
+      const res = await fetch(`/api/tracker/oembed?url=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setFetchError(data.error || 'Could not fetch video info');
+        setThumbnailUrl(null);
+        setChannelName(null);
+        return;
+      }
+      setDraft((d) => ({
+        ...d,
+        url: data.canonicalUrl,
+        title: data.title || d.title,
+      }));
+      setThumbnailUrl(data.thumbnailUrl || null);
+      setChannelName(data.channelName || null);
+    } catch {
+      setFetchError('Could not fetch video info');
+      setThumbnailUrl(null);
+      setChannelName(null);
+    } finally {
+      setIsFetching(false);
+    }
+  }
+
+  function resetAutofillState() {
+    setThumbnailUrl(null);
+    setChannelName(null);
+    setFetchError(null);
+    setIsFetching(false);
+  }
+
   function handleSave() {
     if (!draft.title.trim()) return;
     if (editing) {
@@ -52,6 +101,7 @@ export default function PerformanceTracker() {
     }
     setDraft(EMPTY);
     setIsAdding(false);
+    resetAutofillState();
   }
 
   function handleEdit(entry: TrackingEntry) {
@@ -73,6 +123,7 @@ export default function PerformanceTracker() {
     setEditing(null);
     setDraft(EMPTY);
     setIsAdding(false);
+    resetAutofillState();
   }
 
   // Compute averages for insight banner
@@ -131,6 +182,46 @@ export default function PerformanceTracker() {
       {isAdding && (
         <div className="bg-bg-card border border-amber/20 rounded-xl p-5 space-y-4">
           <h3 className="text-[15px] font-medium text-text-bright">{editing ? 'Edit Entry' : 'Log Published Video'}</h3>
+
+          <div>
+            <label className="block text-[13px] text-text-dim mb-1">
+              YouTube URL <span className="text-text-muted font-normal">(optional, paste a link and we&apos;ll fill in the details)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={draft.url}
+                onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))}
+                onBlur={(e) => fetchVideoInfo(e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+                className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5 pr-10 text-[14px] text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50"
+              />
+              {isFetching && (
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-amber" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
+            </div>
+            {fetchError && (
+              <p className="text-[12px] text-amber mt-1.5">{fetchError} &middot; you can still log manually.</p>
+            )}
+            {(thumbnailUrl || channelName) && !fetchError && (
+              <div className="mt-2 flex items-start gap-3 bg-bg-elevated border border-border/50 rounded-lg p-2">
+                {thumbnailUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={thumbnailUrl} alt="Video thumbnail" className="w-32 h-auto rounded" />
+                )}
+                {channelName && (
+                  <div className="text-[12px] text-text-muted pt-1">
+                    <div className="text-text-dim">Channel</div>
+                    <div className="text-text-bright">{channelName}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="block text-[13px] text-text-dim mb-1">Video Title</label>
