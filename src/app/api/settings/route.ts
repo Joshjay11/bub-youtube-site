@@ -1,22 +1,6 @@
 import { createAdminSupabase } from '@/lib/supabase';
 import { getUserEmail } from '@/lib/ai-credits';
-
-function getEncryptionKey(): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) {
-    throw new Error(
-      '[byok] SUPABASE_SERVICE_ROLE_KEY missing — refusing to encrypt with fallback. Set the env var in Vercel before deploying.',
-    );
-  }
-  return key;
-}
-
-function obfuscate(text: string): string {
-  const key = getEncryptionKey();
-  return Buffer.from(
-    text.split('').map((c, i) => c.charCodeAt(0) ^ key.charCodeAt(i % key.length))
-  ).toString('base64');
-}
+import { encrypt } from '@/lib/byok-crypto';
 
 export async function GET() {
   const email = await getUserEmail();
@@ -65,7 +49,7 @@ export async function POST(request: Request) {
 
   const supabase = createAdminSupabase();
 
-  const encrypted = anthropic_api_key ? obfuscate(anthropic_api_key) : null;
+  const encrypted = anthropic_api_key ? encrypt(anthropic_api_key) : null;
 
   await supabase.from('user_settings').upsert(
     {

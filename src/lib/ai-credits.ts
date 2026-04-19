@@ -1,20 +1,5 @@
 import { createAdminSupabase, createServerSupabase } from '@/lib/supabase';
-
-function getEncryptionKey(): string {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) {
-    throw new Error(
-      '[byok] SUPABASE_SERVICE_ROLE_KEY missing — refusing to encrypt with fallback. Set the env var in Vercel before deploying.',
-    );
-  }
-  return key;
-}
-
-function deobfuscate(encoded: string): string {
-  const key = getEncryptionKey();
-  const bytes = Buffer.from(encoded, 'base64');
-  return bytes.map((b, i) => b ^ key.charCodeAt(i % key.length)).reduce((s, b) => s + String.fromCharCode(b), '');
-}
+import { decrypt, encrypt, isLegacyCiphertext } from '@/lib/byok-crypto';
 
 export async function resolveApiKey(email: string | null): Promise<{
   apiKey: string | null;
@@ -35,9 +20,28 @@ export async function resolveApiKey(email: string | null): Promise<{
     .single();
 
   if (settings?.anthropic_api_key_encrypted) {
-    const byokKey = deobfuscate(settings.anthropic_api_key_encrypted);
-    if (byokKey.startsWith('sk-ant-')) {
-      return { apiKey: byokKey, source: 'byok', creditsRemaining: -1 };
+    const ciphertext = settings.anthropic_api_key_encrypted;
+    try {
+      const byokKey = decrypt(ciphertext);
+      if (byokKey.startsWith('sk-ant-')) {
+        // Transparent migration: re-encrypt legacy XOR rows with AES on read.
+        if (isLegacyCiphertext(ciphertext)) {
+          try {
+            const upgraded = encrypt(byokKey);
+            await supabase
+              .from('user_settings')
+              .update({ anthropic_api_key_encrypted: upgraded })
+              .eq('email', email);
+          } catch (err) {
+            // Migration is best-effort; decrypt already succeeded so access still works.
+            console.error('[byok] legacy migration write failed', err);
+          }
+        }
+        return { apiKey: byokKey, source: 'byok', creditsRemaining: -1 };
+      }
+    } catch (err) {
+      // Decrypt failed — fall through to credits. Don't expose raw error to user.
+      console.error('[byok] decrypt failed', err);
     }
   }
 
