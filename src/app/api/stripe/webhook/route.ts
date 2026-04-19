@@ -75,6 +75,27 @@ export async function POST(request: Request) {
 
   const supabase = createAdminSupabase();
 
+  // Idempotency: insert the event before processing. If the id already
+  // exists (Stripe retry or operator resend), short-circuit with 200 so
+  // Stripe stops retrying without running the handler twice.
+  const { error: dedupError } = await supabase
+    .from('stripe_events')
+    .insert({
+      id: event.id,
+      type: event.type,
+      payload: event as unknown as Record<string, unknown>,
+    });
+
+  if (dedupError) {
+    if (dedupError.code === '23505') {
+      console.log(`[stripe-webhook] duplicate event ${event.id} (${event.type}) — skipping`);
+      return Response.json({ received: true, deduped: true });
+    }
+    // Other DB errors must NOT be acked — let Stripe retry.
+    console.error('[stripe-webhook] dedup insert failed', dedupError);
+    return Response.json({ error: 'dedup failure' }, { status: 500 });
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       try {
