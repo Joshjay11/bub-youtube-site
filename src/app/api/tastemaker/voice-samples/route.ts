@@ -10,6 +10,7 @@ const MAX_SAMPLES_PER_USER = 50;
 const MAX_TOTAL_BYTES_PER_USER = 10 * 1024 * 1024;
 const MAX_TITLE_CHARS = 100;
 const MAX_NOTES_CHARS = 200;
+const PASTE_MAX_BYTES = 2 * 1024 * 1024;
 
 type SourceType = 'upload_md' | 'upload_txt' | 'upload_docx' | 'paste';
 
@@ -91,6 +92,18 @@ async function parseMultipart(request: NextRequest): Promise<CreatePayload | Res
 }
 
 async function parsePaste(request: NextRequest): Promise<CreatePayload | Response> {
+  const contentLengthHeader = request.headers.get('content-length');
+  if (!contentLengthHeader) {
+    return errorResponse('Content-Length header required for paste submissions.', 411);
+  }
+  const contentLength = Number(contentLengthHeader);
+  if (!Number.isFinite(contentLength) || contentLength <= 0) {
+    return errorResponse('Invalid Content-Length.', 400);
+  }
+  if (contentLength > PASTE_MAX_BYTES) {
+    return errorResponse(`Paste exceeds the ${Math.round(PASTE_MAX_BYTES / (1024 * 1024))}MB limit.`, 413);
+  }
+
   let body: { title?: unknown; notes?: unknown; content?: unknown };
   try {
     body = await request.json();
