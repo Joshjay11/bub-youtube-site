@@ -60,20 +60,44 @@ export async function resolveApiKey(email: string | null): Promise<{
   return { apiKey: null, source: null, creditsRemaining: 0 };
 }
 
-export async function decrementCredits(email: string) {
-  const supabase = createAdminSupabase();
-  const { data } = await supabase
-    .from('purchases')
-    .select('ai_credits_remaining')
-    .eq('email', email)
-    .single();
-
-  if (data && data.ai_credits_remaining > 0) {
-    await supabase
-      .from('purchases')
-      .update({ ai_credits_remaining: data.ai_credits_remaining - 1 })
-      .eq('email', email);
+/**
+ * Atomically decrement the caller's credit balance. Returns the new balance,
+ * or null if the caller has fewer than `amount` credits (no decrement occurred).
+ */
+export async function decrementCredits(
+  email: string,
+  amount: number = 1,
+): Promise<number | null> {
+  const admin = createAdminSupabase();
+  const { data, error } = await admin.rpc('decrement_credits', {
+    p_email: email,
+    p_amount: amount,
+  });
+  if (error) {
+    console.error('[credits] decrement RPC failed', { error });
+    return null;
   }
+  return (data as number | null) ?? null;
+}
+
+/**
+ * Atomically refund credits. Returns the new balance or null if the email
+ * does not map to a purchases row.
+ */
+export async function incrementCredits(
+  email: string,
+  amount: number = 1,
+): Promise<number | null> {
+  const admin = createAdminSupabase();
+  const { data, error } = await admin.rpc('increment_credits', {
+    p_email: email,
+    p_amount: amount,
+  });
+  if (error) {
+    console.error('[credits] increment RPC failed', { error });
+    return null;
+  }
+  return (data as number | null) ?? null;
 }
 
 export async function getUserEmail(): Promise<string | null> {
