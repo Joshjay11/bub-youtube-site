@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are a YouTube retention engineer auditing a script for structural quality.
@@ -56,6 +56,8 @@ Respond ONLY with valid JSON:
 }`;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { scriptText } = await request.json();
 
@@ -75,7 +77,12 @@ export async function POST(request: Request) {
     }
 
     if (source === 'credits' && email) {
-      await decrementCredits(email);
+      const remaining = await decrementCredits(email, 1);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
     }
 
     const client = new Anthropic({ apiKey });
@@ -100,12 +107,15 @@ export async function POST(request: Request) {
       if (first !== -1 && last > first) {
         parsed = JSON.parse(raw.slice(first, last + 1));
       } else {
-        return Response.json({ error: 'Failed to parse audit response', raw: raw.slice(0, 300) }, { status: 500 });
+        throw new Error('Failed to parse audit response');
       }
     }
 
     return Response.json({ audit: parsed });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged);
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

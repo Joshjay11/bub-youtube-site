@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const V2_RULES = `ElevenLabs V2 FORMATTING RULES:
@@ -32,6 +32,8 @@ Tone marker conversions:
 Additional: [sighs], [laughs], [curious], [whispers]. Do NOT over-tag. ~1 tag per 3-5 sentences.`;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { script, version } = await request.json();
     if (!script || !version) return Response.json({ error: 'Missing script or version' }, { status: 400 });
@@ -43,7 +45,14 @@ export async function POST(request: Request) {
     }
     const { apiKey, source } = await resolveApiKey(email);
     if (!apiKey) return Response.json({ error: 'No AI credits remaining.', needsUpgrade: true }, { status: 402 });
-    if (source === 'credits' && email) await decrementCredits(email);
+    if (source === 'credits' && email) {
+      const remaining = await decrementCredits(email, 1);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
+    }
 
     const rules = version === 'v3' ? V3_RULES : V2_RULES;
     const systemPrompt = `You are an ElevenLabs script formatting specialist. Convert this YouTube voiceover script into ElevenLabs-ready format.
@@ -79,6 +88,9 @@ Output ONLY the converted script.`;
       needs_split: charCount > 5000,
     });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged);
+    }
     return Response.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
   }
 }

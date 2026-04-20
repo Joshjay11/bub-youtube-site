@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
 
@@ -90,6 +90,8 @@ CRITICAL EDITING CONSTRAINT:
 - RESPOND ONLY WITH THE JSON. No markdown fences. No preamble. No explanation outside the JSON.`;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { text, editor } = await request.json();
 
@@ -109,7 +111,12 @@ export async function POST(request: Request) {
     }
 
     if (source === 'credits' && email) {
-      await decrementCredits(email);
+      const remaining = await decrementCredits(email, 1);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
     }
 
     let contextNote = 'Use all three editorial blades. Tag each issue with which editor caught it.';
@@ -144,10 +151,10 @@ export async function POST(request: Request) {
         try {
           parsed = JSON.parse(raw.slice(first, last + 1));
         } catch {
-          return Response.json({ error: 'Failed to parse editor response', raw: raw.slice(0, 300) }, { status: 500 });
+          throw new Error('Failed to parse editor response');
         }
       } else {
-        return Response.json({ error: 'Failed to parse editor response', raw: raw.slice(0, 300) }, { status: 500 });
+        throw new Error('Failed to parse editor response');
       }
     }
 
@@ -162,6 +169,9 @@ export async function POST(request: Request) {
 
     return Response.json({ result: parsed });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged);
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

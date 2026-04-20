@@ -1,6 +1,6 @@
 import { createAdminSupabase } from '@/lib/supabase';
 import { callWithFallback } from '@/lib/ai-fallback';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { getAuthUser } from '@/lib/auth';
 import {
@@ -245,8 +245,14 @@ export async function POST() {
       );
     }
 
-    if (source === 'credits' && email) {
-      await decrementCredits(email);
+    const charging = source === 'credits' && !!email;
+    let creditsCharged = 0;
+    if (charging) {
+      const r = await decrementCredits(email!, 1);
+      if (r === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
     }
 
     // ── Build shared input payload ────────────────────────────────────────
@@ -305,16 +311,25 @@ Respond ONLY with valid JSON:
   "growth_suggestions": "markdown string with 3-4 arrow bullet suggestions"
 }`;
 
-    const baseResponse = await callWithFallback({
-      messages: [
-        { role: 'system', content: baseSystemPrompt },
-        { role: 'user', content: `${baseUserMessage}\n\nGenerate the three sections as described.` },
-      ],
-      primaryModel: FLASH_MODEL,
-      maxTokens: 4000,
-      temperature: 0.7,
-      jsonMode: true,
-    });
+    let baseResponse;
+    try {
+      baseResponse = await callWithFallback({
+        messages: [
+          { role: 'system', content: baseSystemPrompt },
+          { role: 'user', content: `${baseUserMessage}\n\nGenerate the three sections as described.` },
+        ],
+        primaryModel: FLASH_MODEL,
+        maxTokens: 4000,
+        temperature: 0.7,
+        jsonMode: true,
+      });
+    } catch (err) {
+      // Base profile is the one credit the user paid for — refund if it fails.
+      if (charging && creditsCharged > 0) {
+        await incrementCredits(email!, creditsCharged);
+      }
+      return Response.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
+    }
 
     let baseProse: { voice_patterns: string; portable_profile: string; growth_suggestions: string };
     try {
@@ -325,6 +340,9 @@ Respond ONLY with valid JSON:
         growth_suggestions: String(parsed.growth_suggestions ?? ''),
       };
     } catch {
+      if (charging && creditsCharged > 0) {
+        await incrementCredits(email!, creditsCharged);
+      }
       return Response.json({ error: 'Failed to generate profile' }, { status: 500 });
     }
 

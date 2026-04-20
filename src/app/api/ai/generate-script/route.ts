@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { callWithFallback } from '@/lib/ai-fallback';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { getAuthUser, assertProjectOwned } from '@/lib/auth';
@@ -122,11 +122,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Deduct 2 credits for two passes
-    if (source === 'credits' && email) {
-      await decrementCredits(email);
-      await decrementCredits(email);
-    }
+    // Credits are now decremented per pass inside the stream, with refunds
+    // on per-pass failure. See the per-pass logic below.
 
     // Build system prompt with per-pass word targets
     const baseSystemPrompt = buildSystemPrompt(style, model, {
@@ -188,25 +185,69 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         }
 
+        const charging = source === 'credits' && !!email;
+
         try {
           // Split outline
           const { part1: outlinePart1, part2: outlinePart2 } = splitOutline(outline);
 
-          // Pass 1
+          // ── Pass 1 ───────────────────────────────────────────────────
+          if (charging) {
+            const r1 = await decrementCredits(email!, 1);
+            if (r1 === null) {
+              sendEvent({ type: 'error', error: 'Insufficient credits.' });
+              controller.close();
+              return;
+            }
+          }
+
           sendEvent({ type: 'progress', step: 'pass1', message: `Writing first half...` });
 
           const pass1Prompt = `${baseContext}\n\nFULL OUTLINE (for context, you know where the story is going):\n${outline}\n\nYou are writing the FIRST HALF of this script. Write ONLY these sections:\n${outlinePart1}\n\nDo NOT write beyond this point. Write your natural length. Let each section breathe.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
-          const pass1Output = await callModel(model, systemPrompt, pass1Prompt, apiKey);
+          let pass1Output: string;
+          try {
+            pass1Output = await callModel(model, systemPrompt, pass1Prompt, apiKey);
+          } catch (err) {
+            if (charging) await incrementCredits(email!, 1);
+            const msg = err instanceof Error ? err.message : 'Pass 1 failed';
+            sendEvent({ type: 'error', error: msg });
+            controller.close();
+            return;
+          }
 
           sendEvent({ type: 'progress', step: 'pass1_done', message: `First half complete (${pass1Output.trim().split(/\s+/).length} words)` });
 
-          // Pass 2
+          // ── Pass 2 ───────────────────────────────────────────────────
+          if (charging) {
+            const r2 = await decrementCredits(email!, 1);
+            if (r2 === null) {
+              // Ran out between passes. Return pass 1 as partial result.
+              const partialScript = pass1Output.trim();
+              const wordCount = partialScript.trim().split(/\s+/).length;
+              sendEvent({ type: 'complete', script: partialScript, model, wordCount, partial: true });
+              controller.close();
+              return;
+            }
+          }
+
           sendEvent({ type: 'progress', step: 'pass2', message: `Writing second half...` });
 
           const pass2Prompt = `${baseContext}\n\nHere is what was already written (Part 1). Maintain the same voice, tone, and energy. Do NOT repeat any content from Part 1:\n\n${pass1Output}\n\nNow write the SECOND HALF. Write ONLY these sections:\n${outlinePart2 || 'Continue from where Part 1 left off through to the session hook ending.'}\n\nPick up exactly where Part 1 left off. Write your natural length. Do not compress or truncate.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
-          const pass2Output = await callModel(model, systemPrompt, pass2Prompt, apiKey);
+          let pass2Output: string;
+          try {
+            pass2Output = await callModel(model, systemPrompt, pass2Prompt, apiKey);
+          } catch (err) {
+            // Pass 2 failed but pass 1 succeeded. Refund pass 2 credit, return pass 1.
+            if (charging) await incrementCredits(email!, 1);
+            console.error('[generate-script] pass 2 failed, returning partial', err);
+            const partialScript = pass1Output.trim();
+            const wordCount = partialScript.trim().split(/\s+/).length;
+            sendEvent({ type: 'complete', script: partialScript, model, wordCount, partial: true });
+            controller.close();
+            return;
+          }
 
           sendEvent({ type: 'progress', step: 'pass2_done', message: `Second half complete (${pass2Output.trim().split(/\s+/).length} words)` });
 

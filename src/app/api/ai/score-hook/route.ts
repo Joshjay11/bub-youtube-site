@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { getAuthUser, assertProjectOwned } from '@/lib/auth';
@@ -27,6 +27,8 @@ Respond ONLY with a JSON object:
 {"scores":[{"criterion":1,"score":1,"reasoning":"...","fix":null},...],"total":7,"summary":"One sentence overall assessment."}`;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { hookText, projectId } = await request.json();
 
@@ -78,7 +80,12 @@ export async function POST(request: Request) {
     }
 
     if (source === 'credits' && email) {
-      await decrementCredits(email);
+      const remaining = await decrementCredits(email, 1);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
     }
 
     const client = new Anthropic({ apiKey });
@@ -110,10 +117,10 @@ export async function POST(request: Request) {
         try {
           parsed = JSON.parse(text.slice(firstBrace, lastBrace + 1));
         } catch {
-          return Response.json({ error: 'Failed to parse hook score', raw: text.slice(0, 300) }, { status: 500 });
+          throw new Error('Failed to parse hook score');
         }
       } else {
-        return Response.json({ error: 'Failed to parse hook score', raw: text.slice(0, 300) }, { status: 500 });
+        throw new Error('Failed to parse hook score');
       }
     }
 
@@ -124,6 +131,9 @@ export async function POST(request: Request) {
       remaining: newRemaining,
     });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged);
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

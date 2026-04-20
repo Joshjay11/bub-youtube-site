@@ -1,5 +1,5 @@
 import { callWithFallback } from '@/lib/ai-fallback';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 // ─── Script Cleaning ────────────────────────────────────────────────────────
@@ -197,6 +197,8 @@ interface BeatSheet {
 // ─── Route Handler ──────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { script, wpm: clientWpm } = await request.json();
     if (!script?.trim()) {
@@ -209,11 +211,16 @@ export async function POST(request: Request) {
       return Response.json({ error: subMessage, needsSubscription: true }, { status: 403 });
     }
     const { source } = await resolveApiKey(email);
+    const charging = source === 'credits' && !!email;
 
-    // 2 credits for three-pass beat generation
-    if (source === 'credits' && email) {
-      await decrementCredits(email);
-      await decrementCredits(email);
+    // Pass 1 credit
+    if (charging) {
+      const r1 = await decrementCredits(email!, 1);
+      if (r1 === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email!;
     }
 
     const wpm = clientWpm || 140;
@@ -255,7 +262,41 @@ ${cleanedScript}`;
     try {
       firstHalfBeats = parseJSON(pass1.content) as unknown as BeatSheet;
     } catch {
-      return Response.json({ error: 'Failed to parse first half beats' }, { status: 500 });
+      throw new Error('Failed to parse first half beats');
+    }
+
+    // Pass 2 credit
+    if (charging) {
+      const r2 = await decrementCredits(chargedEmail!, 1);
+      if (r2 === null) {
+        // Ran out between passes. Return first-half beats as partial.
+        const partialBeats: Beat[] = firstHalf.map((chunk, i) => {
+          const aiBeat = (firstHalfBeats.beats || [])[i];
+          return {
+            beat_number: chunk.beat_number,
+            script_excerpt: chunk.script_text.split(/\s+/).slice(0, 12).join(' ') + '...',
+            word_range: `words ${chunk.word_start}-${chunk.word_end}`,
+            word_count: chunk.word_count,
+            visual_description: aiBeat?.visual_description || '',
+            visual_type: aiBeat?.visual_type || 'b_roll',
+            image_prompt: aiBeat?.image_prompt || '',
+            slide_note: aiBeat?.slide_note || '',
+          };
+        });
+        return Response.json({
+          style_anchor: 'shot on 35mm film, cinematic, 16:9',
+          beats: partialBeats,
+          partial: true,
+          metadata: {
+            total_words: totalWords,
+            wpm,
+            words_per_beat: wordsPerBeat,
+            beat_count: partialBeats.length,
+            estimated_duration: `${Math.round(totalWords / wpm)} minutes`,
+          },
+        });
+      }
+      creditsCharged = 2;
     }
 
     // Step 3: Pass 2 — AI generates visuals for second half, with continuity context
@@ -290,7 +331,7 @@ ${cleanedScript}`;
     try {
       secondHalfBeats = parseJSON(pass2.content) as unknown as BeatSheet;
     } catch {
-      return Response.json({ error: 'Failed to parse second half beats' }, { status: 500 });
+      throw new Error('Failed to parse second half beats');
     }
 
     // Step 4: Merge both halves
@@ -375,6 +416,9 @@ Review and fix visual content only. DO NOT change beat numbers or script excerpt
       },
     });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged);
+    }
     return Response.json({ error: err instanceof Error ? err.message : 'Failed' }, { status: 500 });
   }
 }
