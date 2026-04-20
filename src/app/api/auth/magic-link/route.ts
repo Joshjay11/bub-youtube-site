@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 type CookieToSet = {
   name: string;
@@ -25,11 +26,38 @@ function getBaseUrl(): string {
 export async function POST(request: NextRequest) {
   const cookiesToSet: CookieToSet[] = [];
   try {
-    const { email } = await request.json();
+    const { email: rawEmail } = await request.json();
 
-    if (!email || typeof email !== 'string') {
+    if (!rawEmail || typeof rawEmail !== 'string') {
       return withSupabaseCookies(
         NextResponse.json({ error: 'Email is required' }, { status: 400 }),
+        cookiesToSet,
+      );
+    }
+
+    const email = rawEmail.trim().toLowerCase();
+    const ip = request.headers.get('x-real-ip') || 'unknown';
+
+    // Per-email: one link every 30 seconds (prevents email bombing).
+    const emailLimit = await rateLimit(`rl:magic-link:email:${email}`, 1, 30);
+    if (!emailLimit.allowed) {
+      return withSupabaseCookies(
+        NextResponse.json(
+          { error: `Please wait ${emailLimit.retryAfterSeconds}s before requesting another link.` },
+          { status: 429, headers: { 'Retry-After': String(emailLimit.retryAfterSeconds) } },
+        ),
+        cookiesToSet,
+      );
+    }
+
+    // Per-IP: 10 requests per hour (prevents enumeration / scraping).
+    const ipLimit = await rateLimit(`rl:magic-link:ip:${ip}`, 10, 3600);
+    if (!ipLimit.allowed) {
+      return withSupabaseCookies(
+        NextResponse.json(
+          { error: 'Too many requests from this network. Try again later.' },
+          { status: 429, headers: { 'Retry-After': String(ipLimit.retryAfterSeconds) } },
+        ),
         cookiesToSet,
       );
     }
