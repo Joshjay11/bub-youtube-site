@@ -1,14 +1,13 @@
 import { createAdminSupabase } from '@/lib/supabase';
 
 /**
- * Check if a user has an active subscription that allows AI features.
+ * Check if a user has access to AI features.
  *
- * Allowed statuses:
- *   - 'active'    → always allowed
- *   - 'past_due'  → allowed (grace)
- *   - 'canceled'  → allowed ONLY while subscription_current_period_end is in the future.
- *                   Once the period ends, treated as lapsed.
- *   - anything else → denied
+ * Source of truth: users.has_access (boolean).
+ * Set to true by the Stripe webhook on checkout.session.completed.
+ * Set to false by the Stripe webhook on customer.subscription.deleted.
+ *
+ * Returns { allowed, status, message }.
  */
 export async function checkSubscriptionAccess(email: string | null): Promise<{
   allowed: boolean;
@@ -18,35 +17,27 @@ export async function checkSubscriptionAccess(email: string | null): Promise<{
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return { allowed: false, status: 'none', message: 'Authentication required.' };
   }
-
   if (!email) {
     return { allowed: false, status: 'none', message: 'Authentication required.' };
   }
 
   const supabase = createAdminSupabase();
-  const { data: user } = await supabase
+  const { data: user, error } = await supabase
     .from('users')
-    .select('subscription_status, subscription_current_period_end')
+    .select('has_access')
     .eq('email', email)
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    console.error('[subscription-check] query failed', { email, error });
+    return { allowed: false, status: 'error', message: 'Subscription check failed.' };
+  }
 
   if (!user) {
     return { allowed: false, status: 'none', message: 'No account found. Please subscribe.' };
   }
 
-  const status = user.subscription_status || 'none';
-  const currentPeriodEnd = user.subscription_current_period_end
-    ? new Date(user.subscription_current_period_end)
-    : null;
-
-  if (status === 'active' || status === 'past_due') {
-    return { allowed: true, status };
-  }
-
-  if (status === 'canceled') {
-    if (currentPeriodEnd && currentPeriodEnd.getTime() > Date.now()) {
-      return { allowed: true, status };
-    }
+  if (!user.has_access) {
     return {
       allowed: false,
       status: 'lapsed',
@@ -54,11 +45,5 @@ export async function checkSubscriptionAccess(email: string | null): Promise<{
     };
   }
 
-  return {
-    allowed: false,
-    status,
-    message: status === 'lapsed'
-      ? 'Your subscription has ended. Resubscribe to continue using AI features.'
-      : 'An active subscription is required.',
-  };
+  return { allowed: true, status: 'active' };
 }
