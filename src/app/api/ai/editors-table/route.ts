@@ -34,20 +34,12 @@ BUKOWSKI'S RAZOR (The Bullshit Detector)
 
 AI TELL DETECTION (CRITICAL):
 Flag these specific patterns that reveal AI-generated or AI-assisted text:
-- Em dashes used as connectors. Humans use them sparingly. AI uses them constantly
-- "In today's [anything]..." or "Now more than ever..."
-- "It's worth noting that..." / "Interestingly..." / "Importantly..."
-- "Let's dive in" / "Let's unpack" / "Let's explore"
-- "At the end of the day..."
-- "The landscape of..." / "In the realm of..."
-- "Leverage" / "Utilize" / "Optimize" / "Synergy"
-- "Game-changing" / "Revolutionary" / "Groundbreaking"
+- "Utilize" / "Optimize"
+- "Revolutionary" / "Groundbreaking"
 - Sentences that start with "This is" followed by an adjective
-- Triple structure cliches used repeatedly
-- Hedge stacking: "It seems like it might potentially be..."
 - "Navigate" used metaphorically
-- "Robust" / "Comprehensive" / "Holistic" / "Nuanced"
-- Filler transitions: "That said," / "With that in mind," / "Moving on,"
+- "Comprehensive" / "Holistic"
+- Filler transitions: "With that in mind," / "Moving on,"
 - Starting sentences with "So," when not in conversation
 
 YOUR OUTPUT FORMAT. You MUST respond in valid JSON with this exact structure:
