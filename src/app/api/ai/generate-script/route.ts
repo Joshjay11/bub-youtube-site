@@ -5,7 +5,11 @@ import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { getAuthUser, assertProjectOwned } from '@/lib/auth';
 import { buildSystemPrompt, VALID_STYLES } from '@/lib/script-prompts';
-import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
+import { getVoiceVideoTranscript } from '@/lib/voice-injection';
+import {
+  composeWriterSystemPrompt,
+  type ModelFamily,
+} from '@/lib/prompts/compose-writer-system-prompt';
 
 const VALID_MODELS = ['sonnet', 'minimax', 'grok'] as const;
 
@@ -13,6 +17,15 @@ const OPENROUTER_MODELS: Record<string, string> = {
   minimax: 'minimax/minimax-m2.5',
   grok: 'x-ai/grok-4.1-fast',
 };
+
+function resolveModelFamily(model: string): ModelFamily {
+  if (model === 'minimax') return 'minimax';
+  if (model === 'grok') return 'grok';
+  return 'claude';
+}
+
+const TASK_BLOCK_GENERATE_SCRIPT =
+  'Produce the requested script section. Apply every rule and reference layer above to every word of the output. The user message below specifies which section to write, the outline context, and the target word count.';
 
 function splitOutline(outline: string): { part1: string; part2: string } {
   // Try splitting by numbered sections, headers, or bullet-style sections
@@ -125,8 +138,10 @@ export async function POST(request: Request) {
     // Credits are now decremented per pass inside the stream, with refunds
     // on per-pass failure. See the per-pass logic below.
 
-    // Build system prompt with per-pass word targets
-    const baseSystemPrompt = buildSystemPrompt(style, model, {
+    // Role block: legacy per-style/per-model script-prompts content with per-pass
+    // word-count substitution. Same content for both passes; cadence layer re-rolls
+    // per call so pass1 and pass2 each get a fresh random pair of transcripts.
+    const roleBlock = buildSystemPrompt(style, model, {
       minWords: passMin,
       maxWords: passMax,
       targetWords: halfTarget,
@@ -134,9 +149,8 @@ export async function POST(request: Request) {
       wpm,
     });
 
-    // Voice Video Sampling: prepend the user's voice transcript if they've set one.
     const voiceTranscript = await getVoiceVideoTranscript(email);
-    const systemPrompt = prependVoiceVideoBlock(baseSystemPrompt, voiceTranscript);
+    const modelFamily = resolveModelFamily(model);
 
     // Load project bundle
     const admin = createAdminSupabase();
@@ -205,9 +219,17 @@ export async function POST(request: Request) {
 
           const pass1Prompt = `${baseContext}\n\nFULL OUTLINE (for context, you know where the story is going):\n${outline}\n\nYou are writing the FIRST HALF of this script. Write ONLY these sections:\n${outlinePart1}\n\nDo NOT write beyond this point. Write your natural length. Let each section breathe.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
+          const { systemPrompt: pass1SystemPrompt } = composeWriterSystemPrompt({
+            route: 'generate-script',
+            modelFamily,
+            roleBlock,
+            taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
+            voiceTranscript,
+          });
+
           let pass1Output: string;
           try {
-            pass1Output = await callModel(model, systemPrompt, pass1Prompt, apiKey);
+            pass1Output = await callModel(model, pass1SystemPrompt, pass1Prompt, apiKey);
           } catch (err) {
             if (charging) await incrementCredits(email!, 1);
             const msg = err instanceof Error ? err.message : 'Pass 1 failed';
@@ -235,9 +257,17 @@ export async function POST(request: Request) {
 
           const pass2Prompt = `${baseContext}\n\nHere is what was already written (Part 1). Maintain the same voice, tone, and energy. Do NOT repeat any content from Part 1:\n\n${pass1Output}\n\nNow write the SECOND HALF. Write ONLY these sections:\n${outlinePart2 || 'Continue from where Part 1 left off through to the session hook ending.'}\n\nPick up exactly where Part 1 left off. Write your natural length. Do not compress or truncate.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
+          const { systemPrompt: pass2SystemPrompt } = composeWriterSystemPrompt({
+            route: 'generate-script',
+            modelFamily,
+            roleBlock,
+            taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
+            voiceTranscript,
+          });
+
           let pass2Output: string;
           try {
-            pass2Output = await callModel(model, systemPrompt, pass2Prompt, apiKey);
+            pass2Output = await callModel(model, pass2SystemPrompt, pass2Prompt, apiKey);
           } catch (err) {
             // Pass 2 failed but pass 1 succeeded. Refund pass 2 credit, return pass 1.
             if (charging) await incrementCredits(email!, 1);
