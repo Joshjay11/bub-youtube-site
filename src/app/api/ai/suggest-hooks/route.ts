@@ -128,13 +128,26 @@ export async function POST(request: Request) {
     const client = new Anthropic({ apiKey });
 
     const voiceTranscript = await getVoiceVideoTranscript(email);
-    const { systemPrompt } = composeWriterSystemPrompt({
+    const { systemPrompt, metadata } = composeWriterSystemPrompt({
       route: 'suggest-hooks',
       modelFamily: 'claude',
       roleBlock: ROLE_BLOCK_SUGGEST_HOOKS,
       taskBlock: TASK_BLOCK_SUGGEST_HOOKS,
       voiceTranscript,
     });
+
+    console.log(
+      '[prompt-metadata]',
+      JSON.stringify({
+        route: 'suggest-hooks',
+        model: 'claude-sonnet-4-20250514',
+        cadenceTranscriptIds: metadata.cadenceTranscriptIds,
+        layersIncluded: metadata.layersIncluded,
+        voiceTranscriptLength: metadata.voiceTranscriptLength,
+        totalChars: metadata.totalChars,
+        timestamp: new Date().toISOString(),
+      }),
+    );
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',

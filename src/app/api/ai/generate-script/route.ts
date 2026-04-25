@@ -219,13 +219,14 @@ export async function POST(request: Request) {
 
           const pass1Prompt = `${baseContext}\n\nFULL OUTLINE (for context, you know where the story is going):\n${outline}\n\nYou are writing the FIRST HALF of this script. Write ONLY these sections:\n${outlinePart1}\n\nDo NOT write beyond this point. Write your natural length. Let each section breathe.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
-          const { systemPrompt: pass1SystemPrompt } = composeWriterSystemPrompt({
-            route: 'generate-script',
-            modelFamily,
-            roleBlock,
-            taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
-            voiceTranscript,
-          });
+          const { systemPrompt: pass1SystemPrompt, metadata: pass1Metadata } =
+            composeWriterSystemPrompt({
+              route: 'generate-script',
+              modelFamily,
+              roleBlock,
+              taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
+              voiceTranscript,
+            });
 
           let pass1Output: string;
           try {
@@ -257,13 +258,14 @@ export async function POST(request: Request) {
 
           const pass2Prompt = `${baseContext}\n\nHere is what was already written (Part 1). Maintain the same voice, tone, and energy. Do NOT repeat any content from Part 1:\n\n${pass1Output}\n\nNow write the SECOND HALF. Write ONLY these sections:\n${outlinePart2 || 'Continue from where Part 1 left off through to the session hook ending.'}\n\nPick up exactly where Part 1 left off. Write your natural length. Do not compress or truncate.\n\nVIDEO STYLE: ${style.toUpperCase()}\nTARGET for this half: approximately ${halfTarget} words.`;
 
-          const { systemPrompt: pass2SystemPrompt } = composeWriterSystemPrompt({
-            route: 'generate-script',
-            modelFamily,
-            roleBlock,
-            taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
-            voiceTranscript,
-          });
+          const { systemPrompt: pass2SystemPrompt, metadata: pass2Metadata } =
+            composeWriterSystemPrompt({
+              route: 'generate-script',
+              modelFamily,
+              roleBlock,
+              taskBlock: TASK_BLOCK_GENERATE_SCRIPT,
+              voiceTranscript,
+            });
 
           let pass2Output: string;
           try {
@@ -286,6 +288,20 @@ export async function POST(request: Request) {
 
           const fullScript = `${pass1Output.trim()}\n\n${pass2Output.trim()}`;
           const wordCount = fullScript.trim().split(/\s+/).length;
+
+          console.log(
+            '[prompt-metadata]',
+            JSON.stringify({
+              route: 'generate-script',
+              model,
+              pass1CadenceTranscriptIds: pass1Metadata.cadenceTranscriptIds,
+              pass2CadenceTranscriptIds: pass2Metadata.cadenceTranscriptIds,
+              layersIncluded: pass1Metadata.layersIncluded,
+              voiceTranscriptLength: pass1Metadata.voiceTranscriptLength,
+              totalChars: pass1Metadata.totalChars,
+              timestamp: new Date().toISOString(),
+            }),
+          );
 
           sendEvent({ type: 'complete', script: fullScript, model, wordCount });
           controller.close();
