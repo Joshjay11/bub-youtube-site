@@ -1,13 +1,15 @@
 import { createAdminSupabase } from '@/lib/supabase';
 
 /**
- * Voice Video Sampling v1 (Tier A) injection helpers.
+ * Voice Video Sampling: DB helper.
  *
- * Reads the user's stored video transcript and prepends it to the system prompt
- * of writing routes so generated scripts mimic the user's spoken voice.
+ * Reads the user's stored video transcript so writer routes can pass it to
+ * composeWriterSystemPrompt's voiceTranscript option. The composer owns
+ * the layer header and prompt-stack placement; this module only fetches
+ * the raw transcript string.
  *
- * NOT for analysis routes (score, audit, scan). Only call from routes that
- * generate spoken-word output: generate-script, suggest-hooks, editors-table.
+ * Only relevant for routes that generate spoken-word output (generate-script,
+ * suggest-hooks, editors-table). Never call from analysis routes.
  */
 
 export async function getVoiceVideoTranscript(email: string | null): Promise<string | null> {
@@ -31,11 +33,4 @@ export async function getVoiceVideoTranscript(email: string | null): Promise<str
     // Graceful degradation: never block generation if the read fails.
     return null;
   }
-}
-
-const VOICE_BLOCK_HEADER = `The user has provided a sample of their own voice from a past video they wrote. Study this sample carefully. Match its sentence rhythm, vocabulary, energy level, signature phrasing, and conversational patterns in your output. Do not copy specific content from the sample. Match only the voice and style. If the user's voice in the sample conflicts with other instructions in this prompt, the user's voice takes precedence.`;
-
-export function prependVoiceVideoBlock(systemPrompt: string, transcript: string | null): string {
-  if (!transcript || !transcript.trim()) return systemPrompt;
-  return `${VOICE_BLOCK_HEADER}\n\n<user_voice_sample>\n${transcript}\n</user_voice_sample>\n\n---\n\n${systemPrompt}`;
 }
