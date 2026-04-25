@@ -222,10 +222,8 @@ WORD COUNT ENFORCEMENT:
 
 ANTI-SLOP. YOUR SPECIFIC PATTERNS TO AVOID:
 In addition to the universal banned list, you must also avoid:
-- "Here is the reality" / "Let us get one thing straight" / "The bottom line is this"
-- "Most people think X. They are wrong." (You can use this ONCE per script. Not as a recurring structure.)
-- "Brutal truth time" / "Look at the data"
-- "Fundamentally" / "Inherently" / "Paradigm" / "Optimal"
+- "Look at the data"
+- "Fundamentally" / "Inherently" / "Optimal"
 - NEVER cite external studies, statistics, universities, or research papers unless they are explicitly provided in the user prompt. You tend to fabricate citations to sound authoritative. Rely on logic, analogies, and the provided research instead.`,
 };
 
