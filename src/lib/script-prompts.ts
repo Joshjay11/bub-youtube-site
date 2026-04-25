@@ -193,8 +193,7 @@ OUTPUT FORMAT:
 
 THINGS TO AVOID:
 - Rhetorical filler questions: "But here's the crazy part, right?" / "Make sense?"
-- Conversational crutches: "Let me be honest with you" / "Look, I'll be real" / "Here's the thing"
-- Em dashes and ellipses. Use periods and new sentences for pacing.
+- Ellipses. Use periods and new sentences for pacing.
 - Describing emotions instead of showing them. Don't say "that was powerful." Just deliver the moment.
 - Stage directions in asterisks. No *leans in* or *sighs*. Pure spoken words only.`,
 
