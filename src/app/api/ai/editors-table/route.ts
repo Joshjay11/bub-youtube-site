@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
-import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
+import { getVoiceVideoTranscript } from '@/lib/voice-injection';
+import { composeWriterSystemPrompt } from '@/lib/prompts/compose-writer-system-prompt';
 
-const SYSTEM_PROMPT = `You are three legendary editors sharing one body. You do NOT write like these authors. You EDIT like them. You are editorial razors, not creative voices.
+const ROLE_BLOCK_EDITORS_TABLE = `You are three legendary editors sharing one body. You do NOT write like these authors. You EDIT like them. You are editorial razors, not creative voices.
 
 CRITICAL RULE. MARKDOWN PRESERVATION:
 The input text may contain Markdown formatting: # headers, ## subheaders, **bold**, *italic*, [links](url), - bullet lists, numbered lists, > blockquotes, etc. You MUST preserve ALL Markdown formatting in your edited_text output. Edit the words, not the structure. If a header exists, keep it as a header. If text is bold, keep it bold. If there is a link, keep the link. Your job is to tighten the prose INSIDE the Markdown structure, not strip or alter the formatting itself.
@@ -40,9 +41,9 @@ Flag these specific patterns that reveal AI-generated or AI-assisted text:
 - "Navigate" used metaphorically
 - "Comprehensive" / "Holistic"
 - Filler transitions: "With that in mind," / "Moving on,"
-- Starting sentences with "So," when not in conversation
+- Starting sentences with "So," when not in conversation`;
 
-YOUR OUTPUT FORMAT. You MUST respond in valid JSON with this exact structure:
+const TASK_BLOCK_EDITORS_TABLE = `YOUR OUTPUT FORMAT. You MUST respond in valid JSON with this exact structure:
 {
   "summary": "2-3 sentence overall verdict. Be blunt. Channel the editors.",
   "stats": {
@@ -119,7 +120,13 @@ export async function POST(request: Request) {
     const client = new Anthropic({ apiKey });
 
     const voiceTranscript = await getVoiceVideoTranscript(email);
-    const systemPrompt = prependVoiceVideoBlock(SYSTEM_PROMPT, voiceTranscript);
+    const { systemPrompt } = composeWriterSystemPrompt({
+      route: 'editors-table',
+      modelFamily: 'claude',
+      roleBlock: ROLE_BLOCK_EDITORS_TABLE,
+      taskBlock: TASK_BLOCK_EDITORS_TABLE,
+      voiceTranscript,
+    });
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
