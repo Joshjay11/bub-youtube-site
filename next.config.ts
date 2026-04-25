@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   // /api/ai/**. Keep this glob in sync with that module's read paths.
   outputFileTracingIncludes: {
     '/api/ai/**': ['./src/lib/prompts/**/*'],
+    '/api/_debug/**': ['./src/lib/prompts/**/*'], // smoke test route reads same prompt files
   },
 };
 
