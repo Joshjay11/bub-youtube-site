@@ -14,7 +14,7 @@ Rules:
 - Create a SPECIFIC curiosity gap, not a vague one ("The CEO of a $2B company just admitted..." not "Something interesting happened...")
 - Include a concrete detail: a number, a name, a specific claim
 - Make a promise the video actually keeps. No clickbait disconnect
-- Must sound like a real person talking, not AI copy. Conversational, with personality
+- Conversational, with personality
 - Must match the title/thumbnail promise
 - Create stakes: why should the viewer care RIGHT NOW?
 
