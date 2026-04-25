@@ -90,6 +90,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('[auth/magic-link]', JSON.stringify({
+      email,
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      host: request.headers.get('host'),
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent'),
+      cookiesSetCount: cookiesToSet.length,
+      baseUrl,
+      success: !error,
+      errorMessage: error?.message,
+      timestamp: new Date().toISOString(),
+    }));
+
     if (error) {
       return withSupabaseCookies(
         NextResponse.json({ error: error.message }, { status: 400 }),
