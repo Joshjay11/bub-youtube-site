@@ -3,9 +3,10 @@ import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from 
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 import { createAdminSupabase } from '@/lib/supabase';
 import { getAuthUser, assertProjectOwned } from '@/lib/auth';
-import { getVoiceVideoTranscript, prependVoiceVideoBlock } from '@/lib/voice-injection';
+import { getVoiceVideoTranscript } from '@/lib/voice-injection';
+import { composeWriterSystemPrompt } from '@/lib/prompts/compose-writer-system-prompt';
 
-const SYSTEM_PROMPT = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script. The part that stops the scroll and makes someone stay.
+const ROLE_BLOCK_SUGGEST_HOOKS = `You are a YouTube hook writer. You write the first 15-30 seconds of a video script. The part that stops the scroll and makes someone stay.
 
 Rules:
 - Each hook must be UNDER 90 words
@@ -16,9 +17,9 @@ Rules:
 - Make a promise the video actually keeps. No clickbait disconnect
 - Conversational, with personality
 - Must match the title/thumbnail promise
-- Create stakes: why should the viewer care RIGHT NOW?
+- Create stakes: why should the viewer care RIGHT NOW?`;
 
-Generate 5 distinct hook options. Each should take a different approach:
+const TASK_BLOCK_SUGGEST_HOOKS = `Generate 5 distinct hook options. Each should take a different approach:
 1. Contradiction hook. Open with something that challenges what the viewer assumes
 2. Story hook. Drop into a specific moment or scenario
 3. Question hook. Ask something the viewer can't help but want answered
@@ -127,7 +128,13 @@ export async function POST(request: Request) {
     const client = new Anthropic({ apiKey });
 
     const voiceTranscript = await getVoiceVideoTranscript(email);
-    const systemPrompt = prependVoiceVideoBlock(SYSTEM_PROMPT, voiceTranscript);
+    const { systemPrompt } = composeWriterSystemPrompt({
+      route: 'suggest-hooks',
+      modelFamily: 'claude',
+      roleBlock: ROLE_BLOCK_SUGGEST_HOOKS,
+      taskBlock: TASK_BLOCK_SUGGEST_HOOKS,
+      voiceTranscript,
+    });
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
