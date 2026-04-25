@@ -1,0 +1,135 @@
+{
+  "pool_version": "1.0.0",
+  "created": "2026-04-24",
+  "purpose": "Cadence interference material for Bub YouTube Writer's three writer models (Claude Sonnet, Minimax M2.5, Grok Fast). Injected into system prompts of generate-script, suggest-hooks, and editors-table routes to disrupt RLHF-induced rhythm homogenization.",
+  "injection_count_default": 2,
+  "injection_count_max": 3,
+  "rotation_strategy": "random_without_replacement_per_generation",
+  "framing_file": "INJECTION_FRAMING.md",
+  "transcripts": [
+    {
+      "id": "01_gods_in_machine",
+      "file": "transcripts/01_gods_in_machine.md",
+      "word_count": 1699,
+      "approx_tokens": 2200,
+      "rhythm_rating": "A+",
+      "primary_features": [
+        "extreme_fragmentation",
+        "one_word_sentences",
+        "repetition_as_rhythm",
+        "hard_pivots"
+      ],
+      "notes": "Strongest fragmentation in the pool. 'No. Hell no. Of course not.' triad patterns. Use when you want maximum permission to break into fragments."
+    },
+    {
+      "id": "02_competition",
+      "file": "transcripts/02_competition.md",
+      "word_count": 2585,
+      "approx_tokens": 3300,
+      "rhythm_rating": "A",
+      "primary_features": [
+        "widest_length_variety",
+        "two_character_dialogue_opener",
+        "self_correction",
+        "rhetorical_question_cascades"
+      ],
+      "notes": "Widest sentence-length range in pool. Opens with character dialogue (Jamie/Locke) which demonstrates abrupt register shifts."
+    },
+    {
+      "id": "03_inner_war",
+      "file": "transcripts/03_inner_war.md",
+      "word_count": 2639,
+      "approx_tokens": 3400,
+      "rhythm_rating": "A-",
+      "primary_features": [
+        "quote_to_cadence_pivot",
+        "declarative_short_sentences",
+        "rhetorical_cascades",
+        "question_answer_self_dialogue"
+      ],
+      "notes": "Opens with Robert Greene quote, then pivots hard into Jason cadence. Good demonstration of register switching."
+    },
+    {
+      "id": "04_reality_bending",
+      "file": "transcripts/04_reality_bending.md",
+      "word_count": 2259,
+      "approx_tokens": 2900,
+      "rhythm_rating": "A-",
+      "primary_features": [
+        "rhetorical_question_cascades",
+        "direct_address_variety",
+        "call_back_structure",
+        "instructional_with_rhythm"
+      ],
+      "notes": "Strong instructional cadence that still maintains rhythmic variety. Good model for tutorial-type YouTube content."
+    },
+    {
+      "id": "05_transforming_life",
+      "file": "transcripts/05_transforming_life.md",
+      "word_count": 1485,
+      "approx_tokens": 1900,
+      "rhythm_rating": "A-",
+      "primary_features": [
+        "conversational_asides",
+        "right_right_patterns",
+        "self_interruption",
+        "audience_acknowledgment_breaks"
+      ],
+      "notes": "Most conversational of the pool. 'Right? Right.' patterns. Mid-sentence audience addresses."
+    },
+    {
+      "id": "06_decoding_reality",
+      "file": "transcripts/06_decoding_reality.md",
+      "word_count": 1447,
+      "approx_tokens": 1900,
+      "rhythm_rating": "B+",
+      "primary_features": [
+        "one_line_declaratives",
+        "single_word_responses",
+        "indeed_thoughts_constructions"
+      ],
+      "notes": "Heavy use of one-line constructions ('Indeed. Thoughts are things.'). Good for affirmative rhythm."
+    },
+    {
+      "id": "07_mental_wellness",
+      "file": "transcripts/07_mental_wellness.md",
+      "word_count": 1570,
+      "approx_tokens": 2000,
+      "rhythm_rating": "B+",
+      "primary_features": [
+        "narrative_texture",
+        "character_voice_switches",
+        "long_form_flow_breaks",
+        "story_embedded_exposition"
+      ],
+      "notes": "More narrative-heavy with story elements. Use when rhythmic variety over longer prose stretches is needed."
+    },
+    {
+      "id": "08_failing_forward",
+      "file": "transcripts/08_failing_forward.md",
+      "word_count": 1302,
+      "approx_tokens": 1700,
+      "rhythm_rating": "B",
+      "primary_features": [
+        "syntactic_inversions",
+        "instructional_broken_up",
+        "stance_statements",
+        "short_paragraph_pacing"
+      ],
+      "notes": "Instructional content with rhythmic breaks. 'Deflate them, you must.' syntactic inversions. Shortest transcript."
+    }
+  ],
+  "selection_guidance": {
+    "cost_optimization": "If cost is a concern, prefer shorter transcripts (05, 06, 07, 08) to reduce per-generation tokens.",
+    "signal_maximization": "If rhythm signal is weak in output, prefer higher-rated transcripts (01, 02, 03).",
+    "variety_rotation": "Random without replacement across the pool means each generation pulls a different combination — this is the core of the camouflage strategy."
+  },
+  "future_expansion": {
+    "target_pool_size": 10,
+    "dropped_candidates_needing_cleanup": [
+      "02_Loosh_is_emotional_energy_and_archons_feed_on_loosh.txt — contains Bob Monroe quote that confuses cadence signal; could be added if block quotes are stripped",
+      "In_the_beginning_God_created_the_heavens_the_Earth_and_energy_vampirism.txt — ~20 lines of Monroe block quote at the start; dominates cadence; would need heavier editing"
+    ],
+    "additions_welcome": "Any new transcript with high sentence-length variety, fragment use, and low AI-tell vocabulary density. Target ~1500-2500 words per transcript."
+  }
+}
