@@ -8,12 +8,20 @@ type ModelFamily = 'claude' | 'minimax' | 'grok';
 const VALID_ROUTES: WriterRoute[] = ['generate-script', 'suggest-hooks', 'editors-table'];
 const VALID_MODELS: ModelFamily[] = ['claude', 'minimax', 'grok'];
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
 export async function GET(request: NextRequest) {
   // Auth gate — only logged-in users can hit this
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  const isAdmin = !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
+  const wantsFullPrompt = request.headers.get('x-debug-full') === '1';
 
   const { searchParams } = new URL(request.url);
   const route = (searchParams.get('route') || 'generate-script') as WriterRoute;
@@ -52,18 +60,20 @@ export async function GET(request: NextRequest) {
     cadenceCount: cadenceCount as 2 | 3,
   });
 
+  const bleedChecks = {
+    hasUnfilledTranscriptPlaceholder: composed.systemPrompt.includes('{{TRANSCRIPT_'),
+    hasExcerpt3WhenCadence2: cadenceCount === 2 && composed.systemPrompt.includes('EXCERPT 3'),
+    hasSoulCoreContent: composed.systemPrompt.includes('SOUL CORE'),
+    hasFramingDelimiter: composed.systemPrompt.includes('BEGIN REFERENCE EXCERPT 1'),
+    hasRoleBlock: composed.systemPrompt.includes('[DEBUG ROLE BLOCK'),
+    hasTaskBlock: composed.systemPrompt.includes('[DEBUG TASK BLOCK'),
+    hasVoiceWhenRequested: includeVoice ? composed.systemPrompt.includes('CREATOR REFERENCE MATERIAL') : true,
+  };
+
   return NextResponse.json({
     requestedParams: { route, model, cadenceCount, includeVoice },
     metadata: composed.metadata,
-    systemPrompt: composed.systemPrompt,
-    bleedChecks: {
-      hasUnfilledTranscriptPlaceholder: composed.systemPrompt.includes('{{TRANSCRIPT_'),
-      hasExcerpt3WhenCadence2: cadenceCount === 2 && composed.systemPrompt.includes('EXCERPT 3'),
-      hasSoulCoreContent: composed.systemPrompt.includes('SOUL CORE'),
-      hasFramingDelimiter: composed.systemPrompt.includes('BEGIN REFERENCE EXCERPT 1'),
-      hasRoleBlock: composed.systemPrompt.includes('[DEBUG ROLE BLOCK'),
-      hasTaskBlock: composed.systemPrompt.includes('[DEBUG TASK BLOCK'),
-      hasVoiceWhenRequested: includeVoice ? composed.systemPrompt.includes('CREATOR REFERENCE MATERIAL') : true,
-    },
+    bleedChecks,
+    ...(isAdmin && wantsFullPrompt ? { systemPrompt: composed.systemPrompt } : {}),
   });
 }
