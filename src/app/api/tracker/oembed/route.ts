@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractYouTubeVideoId, buildCanonicalYouTubeUrl } from '@/lib/youtube-url';
+import { getAuthUser } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
+
+const RATE_LIMIT = 100;
+const RATE_WINDOW_SECONDS = 60 * 60;
 
 export async function GET(request: NextRequest) {
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const identifier = (user.email || user.id).toLowerCase();
+  const rl = await rateLimit(`rl:oembed:${identifier}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Hourly oEmbed limit reached.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rl.retryAfterSeconds) },
+      },
+    );
+  }
+
   const url = request.nextUrl.searchParams.get('url');
 
   if (!url) {
@@ -23,6 +45,7 @@ export async function GET(request: NextRequest) {
         'User-Agent': 'Mozilla/5.0 (compatible; BUB-YouTube-Writer/1.0)',
       },
       signal: AbortSignal.timeout(5000),
+      redirect: 'error',
     });
 
     if (response.status === 404) {
@@ -46,15 +69,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
+
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      typeof (data as { title?: unknown }).title !== 'string' ||
+      typeof (data as { author_name?: unknown }).author_name !== 'string'
+    ) {
+      return NextResponse.json(
+        { error: 'Unexpected oEmbed response shape' },
+        { status: 502 },
+      );
+    }
+
+    const oembed = data as {
+      title: string;
+      author_name: string;
+      author_url?: string;
+      thumbnail_url?: string;
+    };
 
     return NextResponse.json({
       videoId,
       canonicalUrl,
-      title: data.title || '',
-      channelName: data.author_name || '',
-      channelUrl: data.author_url || '',
-      thumbnailUrl: data.thumbnail_url || '',
+      title: oembed.title,
+      channelName: oembed.author_name,
+      channelUrl: typeof oembed.author_url === 'string' ? oembed.author_url : '',
+      thumbnailUrl: typeof oembed.thumbnail_url === 'string' ? oembed.thumbnail_url : '',
     });
   } catch (error) {
     console.error('oEmbed fetch error:', error);
