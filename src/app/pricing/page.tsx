@@ -162,28 +162,6 @@ export default function PricingPage() {
           </p>
         </RevealOnScroll>
 
-        {/* Email Capture Placeholder */}
-        <RevealOnScroll>
-          <div className="bg-bg-card border border-border rounded-[14px] p-10 text-center mb-16 max-w-[640px] mx-auto">
-            <h3 className="font-sans font-bold text-[18px] text-text-bright mb-2">Free Download: The YouTube Hook Scorecard</h3>
-            <p className="text-sm text-text-dim mb-6 leading-relaxed">
-              The same 10-point framework BUB uses to evaluate YouTube hooks. Includes 3 graded examples.
-            </p>
-            {/* TODO: Wire email capture to Resend or Loops — see infrastructure doc */}
-            <div className="flex gap-3 max-w-[420px] mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 bg-bg-elevated border border-border rounded-md px-4 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-amber/50"
-              />
-              <button className="bg-amber text-bg px-6 py-3 rounded-md font-bold text-sm border-none cursor-pointer transition-all hover:bg-amber-bright hover:text-bg whitespace-nowrap">
-                Send It &rarr;
-              </button>
-            </div>
-            <p className="text-xs text-text-muted mt-3">No spam. Just the scorecard. Unsubscribe anytime.</p>
-          </div>
-        </RevealOnScroll>
-
         <hr className="rule" />
 
         {/* Done-For-You Services */}
