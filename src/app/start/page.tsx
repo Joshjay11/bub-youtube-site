@@ -14,6 +14,7 @@ export default function StartPage() {
     length: '',
     deadline: '',
     source: '',
+    website: '', // honeypot — real users never fill this
   });
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -89,6 +90,21 @@ export default function StartPage() {
 
         <RevealOnScroll delay={1}>
           <form onSubmit={handleSubmit}>
+            <div
+              aria-hidden="true"
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+            >
+              <label htmlFor="website">Website (leave blank)</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={form.website}
+                onChange={set('website')}
+              />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block font-sans font-semibold text-[13px] text-text-primary mb-2">Name *</label>

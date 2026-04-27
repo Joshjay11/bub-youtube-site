@@ -1,7 +1,11 @@
 import { Resend } from 'resend';
+import { rateLimit } from '@/lib/rate-limit';
 
 const FROM_ADDRESS = 'BUB YouTube Writer <noreply@bubwriter.com>';
 const INTAKE_EMAIL = process.env.INTAKE_EMAIL || 'support@bubwriter.com';
+const INTAKE_RATE_LIMIT = 5;
+const INTAKE_WINDOW_SECONDS = 60 * 60;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -16,6 +20,10 @@ interface IntakeData {
   length: string;
   deadline: string;
   source: string;
+}
+
+interface IntakeBody extends IntakeData {
+  website?: string;
 }
 
 function formatIntakeEmail(data: IntakeData): string {
@@ -36,7 +44,7 @@ function formatIntakeEmail(data: IntakeData): string {
     <tr><td style="padding: 8px 0; color: #999;">Found us via</td><td style="padding: 8px 0; color: #fff;">${esc(data.source) || '<span style="color:#666">Not specified</span>'}</td></tr>
   </table>
   <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;" />
-  <p style="color: #888; font-size: 13px; margin: 0;">Reply directly to this email to respond to ${esc(data.name)} at ${esc(data.email)}.</p>
+  <p style="color: #888; font-size: 13px; margin: 0;">Submitter email: ${esc(data.email)}</p>
 </div>`.trim();
 }
 
@@ -61,21 +69,59 @@ function esc(str: string): string {
 
 export async function POST(request: Request) {
   try {
-    const data: IntakeData = await request.json();
+    const data: IntakeBody = await request.json();
 
-    if (!data.name?.trim() || !data.email?.trim()) {
-      return Response.json({ error: 'Name and email are required.' }, { status: 400 });
+    // Honeypot: real users never see or fill the `website` field.
+    // If it's filled, silently ack so the bot doesn't learn to skip it.
+    if (typeof data.website === 'string' && data.website.trim().length > 0) {
+      return Response.json({ success: true });
     }
 
-    const resend = getResend();
+    const name = (data.name ?? '').toString().trim();
+    const email = (data.email ?? '').toString().trim().toLowerCase();
 
-    // Send intake email to Jayson
+    if (!name || !email) {
+      return Response.json({ error: 'Name and email are required.' }, { status: 400 });
+    }
+    if (!EMAIL_RE.test(email)) {
+      return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    const rl = await rateLimit(`rl:intake:ip:${ip}`, INTAKE_RATE_LIMIT, INTAKE_WINDOW_SECONDS);
+    if (!rl.allowed) {
+      return Response.json(
+        { error: 'Too many submissions. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rl.retryAfterSeconds) },
+        },
+      );
+    }
+
+    const sanitized: IntakeData = {
+      name,
+      email,
+      channel: (data.channel ?? '').toString(),
+      tier: (data.tier ?? '').toString(),
+      topic: (data.topic ?? '').toString(),
+      length: (data.length ?? '').toString(),
+      deadline: (data.deadline ?? '').toString(),
+      source: (data.source ?? '').toString(),
+    };
+
+    const resend = getResend();
+    const replyTo = process.env.INTAKE_REPLY_TO || INTAKE_EMAIL;
+
     const { error: intakeError } = await resend.emails.send({
       from: FROM_ADDRESS,
       to: INTAKE_EMAIL,
-      replyTo: data.email,
-      subject: `New Project Inquiry: ${data.name} (${data.tier || 'Not specified'})`,
-      html: formatIntakeEmail(data),
+      replyTo,
+      subject: `New Project Inquiry: ${sanitized.name} (${sanitized.tier || 'Not specified'})`,
+      html: formatIntakeEmail(sanitized),
     });
 
     if (intakeError) {
@@ -83,12 +129,12 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Failed to send inquiry. Please try again.' }, { status: 500 });
     }
 
-    // Send confirmation to the creator (non-blocking — don't fail the request if this errors)
+    // Confirmation to the submitter is best-effort.
     resend.emails.send({
       from: FROM_ADDRESS,
-      to: data.email,
+      to: sanitized.email,
       subject: 'We got your project inquiry',
-      html: formatConfirmationEmail(data.name),
+      html: formatConfirmationEmail(sanitized.name),
     }).catch((err) => console.error('Confirmation email failed:', err));
 
     return Response.json({ success: true });
