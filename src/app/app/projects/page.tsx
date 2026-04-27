@@ -28,6 +28,12 @@ export default function ProjectsPage() {
   const [newTitle, setNewTitle] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  function showError(message: string) {
+    setErrorMessage(message);
+    setTimeout(() => setErrorMessage(null), 5000);
+  }
 
   async function handleCreate() {
     if (!newTitle.trim()) return;
@@ -40,11 +46,32 @@ export default function ProjectsPage() {
     setEditTitle(project.title);
   }
 
-  function handleSaveEdit(id: string) {
-    if (editTitle.trim()) {
-      updateProject(id, { title: editTitle.trim() });
-    }
+  async function handleSaveEdit(id: string) {
+    const trimmed = editTitle.trim();
     setEditingId(null);
+    if (!trimmed) return;
+    try {
+      await updateProject(id, { title: trimmed });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to rename project');
+    }
+  }
+
+  async function handleStatusChange(id: string, status: Project['status']) {
+    try {
+      await updateProject(id, { status });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to change status');
+    }
+  }
+
+  async function handleDelete(id: string, title: string) {
+    if (!confirm(`Delete "${title}"? All saved tool data for this project will be removed.`)) return;
+    try {
+      await deleteProject(id);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to delete project');
+    }
   }
 
   const sorted = [...projects].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -55,6 +82,12 @@ export default function ProjectsPage() {
       <p className="text-text-dim text-[15px] mb-8">
         Each project collects all your module data for one video. Select a project to make it active across all tools.
       </p>
+
+      {errorMessage && (
+        <div className="bg-red/10 border border-red/30 text-red rounded-xl px-4 py-3 mb-6 text-[14px]">
+          {errorMessage}
+        </div>
+      )}
 
       {/* Create new project */}
       <div className="flex gap-3 mb-8">
@@ -123,7 +156,7 @@ export default function ProjectsPage() {
                     <div className="flex items-center gap-3 mt-1">
                       <select
                         value={project.status}
-                        onChange={(e) => updateProject(project.id, { status: e.target.value as Project['status'] })}
+                        onChange={(e) => handleStatusChange(project.id, e.target.value as Project['status'])}
                         className="bg-transparent text-[12px] text-text-muted focus:outline-none cursor-pointer"
                       >
                         {STATUSES.map((s) => (
@@ -157,7 +190,7 @@ export default function ProjectsPage() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => deleteProject(project.id)}
+                      onClick={() => handleDelete(project.id, project.title)}
                       className="p-1.5 text-text-muted hover:text-red transition-colors"
                       title="Delete"
                     >

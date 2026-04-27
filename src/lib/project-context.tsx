@@ -16,8 +16,8 @@ interface ProjectContextValue {
   loading: boolean;
   setCurrentProject: (project: Project | null) => void;
   createProject: (title: string) => Promise<Project | null>;
-  updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
-  deleteProject: (id: string) => void;
+  updateProject: (id: string, updates: { title?: string; status?: Project['status'] }) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   refreshProjects: () => Promise<void>;
 }
 
@@ -108,20 +108,34 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, [setCurrentProject]);
 
-  const updateProject = useCallback((id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      )
-    );
-    setCurrentProjectRaw((curr) =>
-      curr?.id === id ? { ...curr, ...updates, updatedAt: new Date().toISOString() } : curr
-    );
+  const updateProject = useCallback(async (id: string, updates: { title?: string; status?: Project['status'] }) => {
+    const res = await fetch(`/api/projects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update project');
+    }
+    const data = await res.json();
+    const project = mapRow(data.project);
+    setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
+    setCurrentProjectRaw((curr) => (curr?.id === id ? project : curr));
   }, []);
 
-  const deleteProject = useCallback((id: string) => {
+  const deleteProject = useCallback(async (id: string) => {
+    const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to delete project');
+    }
     setProjects((prev) => prev.filter((p) => p.id !== id));
-    setCurrentProjectRaw((curr) => (curr?.id === id ? null : curr));
+    setCurrentProjectRaw((curr) => {
+      if (curr?.id !== id) return curr;
+      try { localStorage.removeItem(LAST_PROJECT_KEY); } catch {}
+      return null;
+    });
   }, []);
 
   return (
