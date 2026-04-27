@@ -1,5 +1,5 @@
 import { callOpenRouter } from '@/lib/openrouter';
-import { decrementCredits, getUserEmail, resolveApiKey } from '@/lib/ai-credits';
+import { decrementCredits, incrementCredits, getUserEmail, resolveApiKey } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const PROMPT_TEMPLATE = `You are a YouTube script architect. Given the following video brief, create a section-by-section outline for the script.
@@ -38,6 +38,8 @@ VIDEO BRIEF:
 `;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { brief } = await request.json();
 
@@ -45,7 +47,6 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing brief' }, { status: 400 });
     }
 
-    // Check credits (this uses system OpenRouter key, but still costs 1 credit)
     const email = await getUserEmail();
     const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
     if (!subAllowed) {
@@ -61,7 +62,12 @@ export async function POST(request: Request) {
     }
 
     if (source === 'credits' && email) {
-      await decrementCredits(email);
+      const remaining = await decrementCredits(email);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
     }
 
     const prompt = PROMPT_TEMPLATE + brief.trim();
@@ -70,7 +76,6 @@ export async function POST(request: Request) {
     try {
       responseText = await callOpenRouter(prompt);
     } catch (orError) {
-      // Fallback: if OpenRouter fails (no key, etc.), try Anthropic Haiku
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
       const apiKey = process.env.ANTHROPIC_API_KEY;
       if (!apiKey) throw orError;
@@ -89,13 +94,18 @@ export async function POST(request: Request) {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      return Response.json({ error: 'Failed to parse outline', raw: responseText }, { status: 500 });
+      throw new Error('Failed to parse outline');
     }
 
     const newRemaining = source === 'byok' ? -1 : source === 'credits' ? creditsRemaining - 1 : 999;
 
     return Response.json({ outline: parsed.sections, remaining: newRemaining });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged).catch((refundErr) => {
+        console.error('[compile-outline] refund failed', { email: chargedEmail, refundErr });
+      });
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

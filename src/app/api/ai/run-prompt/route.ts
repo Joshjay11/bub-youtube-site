@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const body = await request.json();
     const { prompt } = body;
@@ -26,6 +28,15 @@ export async function POST(request: Request) {
       }, { status: 402 });
     }
 
+    if (source === 'credits' && email) {
+      const remaining = await decrementCredits(email);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
+    }
+
     const client = new Anthropic({ apiKey });
 
     const stream = await client.messages.stream({
@@ -34,11 +45,15 @@ export async function POST(request: Request) {
       messages: [{ role: 'user', content: prompt }],
     });
 
-    if (source === 'credits' && email) {
-      await decrementCredits(email);
-    }
-
     const newRemaining = source === 'byok' ? -1 : source === 'credits' ? creditsRemaining - 1 : 999;
+
+    // Capture for use inside the stream's error path. After this point the
+    // outer catch can no longer refund (we've handed control to the stream),
+    // so the stream itself is responsible for refunding on error.
+    const refundEmail = chargedEmail;
+    const refundAmount = creditsCharged;
+    creditsCharged = 0;
+    chargedEmail = null;
 
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
@@ -59,6 +74,11 @@ export async function POST(request: Request) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`));
           controller.close();
         } catch (err) {
+          if (refundAmount > 0 && refundEmail) {
+            await incrementCredits(refundEmail, refundAmount).catch((refundErr) => {
+              console.error('[run-prompt] stream refund failed', { email: refundEmail, refundErr });
+            });
+          }
           const message = err instanceof Error ? err.message : 'Stream error';
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: 'error', error: message })}\n\n`)
@@ -76,6 +96,11 @@ export async function POST(request: Request) {
       },
     });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged).catch((refundErr) => {
+        console.error('[run-prompt] refund failed', { email: chargedEmail, refundErr });
+      });
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

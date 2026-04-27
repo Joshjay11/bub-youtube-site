@@ -1,5 +1,5 @@
 import { callWithFallback } from '@/lib/ai-fallback';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are a research assistant for a YouTube video creator. Provide specific, factual, interesting findings. Focus on novel angles and surprising information that would make a video stand out. Be concise and specific. No filler. Cite sources where possible. Respond in plain text paragraphs, not JSON.`;
@@ -21,6 +21,8 @@ const ANGLE_LABELS = [
 ];
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { topic } = await request.json();
 
@@ -28,7 +30,6 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Missing topic' }, { status: 400 });
     }
 
-    // Check credits
     const email = await getUserEmail();
     const { allowed: subAllowed, message: subMessage } = await checkSubscriptionAccess(email);
     if (!subAllowed) {
@@ -41,10 +42,14 @@ export async function POST(request: Request) {
     }
 
     if (source === 'credits' && email) {
-      await decrementCredits(email);
+      const remaining = await decrementCredits(email);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
     }
 
-    // Run all 5 queries in parallel
     const results = await Promise.allSettled(
       QUERIES.map((queryFn, i) =>
         callWithFallback({
@@ -65,6 +70,11 @@ export async function POST(request: Request) {
       )
     );
 
+    const fulfilledCount = results.filter((r) => r.status === 'fulfilled').length;
+    if (fulfilledCount === 0) {
+      throw new Error('All research queries failed');
+    }
+
     const research = results.map((r, i) => {
       if (r.status === 'fulfilled') return r.value;
       return { angle: ANGLE_LABELS[i], findings: `Research failed for this angle: ${r.reason}`, provider: 'none' };
@@ -74,6 +84,11 @@ export async function POST(request: Request) {
 
     return Response.json({ research, remaining: newRemaining });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged).catch((refundErr) => {
+        console.error('[topic-research] refund failed', { email: chargedEmail, refundErr });
+      });
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }

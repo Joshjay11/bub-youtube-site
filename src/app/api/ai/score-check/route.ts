@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { resolveApiKey, decrementCredits, getUserEmail } from '@/lib/ai-credits';
+import { resolveApiKey, decrementCredits, incrementCredits, getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
 
 const SYSTEM_PROMPT = `You are a YouTube content strategist evaluating a video idea. Score this idea on exactly 9 criteria, each rated 1-5. Be honest and critical. Do not inflate scores.
@@ -19,6 +19,8 @@ Respond ONLY with a JSON object, no other text:
 {"scores": [{"criterion": "Curiosity", "score": 4, "reason": "one sentence why"}, {"criterion": "Audience Relevance", "score": 3, "reason": "..."}, ...]}`;
 
 export async function POST(request: Request) {
+  let creditsCharged = 0;
+  let chargedEmail: string | null = null;
   try {
     const { idea } = await request.json();
 
@@ -40,6 +42,15 @@ export async function POST(request: Request) {
       }, { status: 402 });
     }
 
+    if (source === 'credits' && email) {
+      const remaining = await decrementCredits(email);
+      if (remaining === null) {
+        return Response.json({ error: 'Insufficient credits.', needsUpgrade: true }, { status: 402 });
+      }
+      creditsCharged = 1;
+      chargedEmail = email;
+    }
+
     const client = new Anthropic({ apiKey });
 
     const response = await client.messages.create({
@@ -49,10 +60,6 @@ export async function POST(request: Request) {
       messages: [{ role: 'user', content: `The video idea to evaluate: ${idea.trim()}` }],
     });
 
-    if (source === 'credits' && email) {
-      await decrementCredits(email);
-    }
-
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
     const jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
 
@@ -60,13 +67,18 @@ export async function POST(request: Request) {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      return Response.json({ error: 'Failed to parse AI response', raw: text }, { status: 500 });
+      throw new Error('Failed to parse AI response');
     }
 
     const newRemaining = source === 'byok' ? -1 : source === 'credits' ? creditsRemaining - 1 : 999;
 
     return Response.json({ aiScores: parsed.scores, remaining: newRemaining, source });
   } catch (err) {
+    if (creditsCharged > 0 && chargedEmail) {
+      await incrementCredits(chargedEmail, creditsCharged).catch((refundErr) => {
+        console.error('[score-check] refund failed', { email: chargedEmail, refundErr });
+      });
+    }
     const message = err instanceof Error ? err.message : 'Internal server error';
     return Response.json({ error: message }, { status: 500 });
   }
