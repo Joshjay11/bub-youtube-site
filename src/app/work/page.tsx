@@ -3,7 +3,7 @@ import MarketingLayout from "@/components/marketing/MarketingLayout";
 import RevealOnScroll from "@/components/marketing/RevealOnScroll";
 
 const processItems = [
-  { label: "Multi-Model Research", desc: "7 AI models queried with tailored prompts. Each surfaces different angles and connections. Synthesized into consensus claims, contested claims, and original angles no single source would find." },
+  { label: "Multi-Model Research", desc: "9 AI models queried with tailored prompts. Each surfaces different angles and connections. Synthesized into consensus claims, contested claims, and original angles no single source would find." },
   { label: "Retention-Engineered Structure", desc: "Scripts built on a beat map: hooks, micro-acts, pattern interrupts, the 35% pivot, session hooks. Not generic structure. Engineered for the 2026 satisfaction algorithm." },
   { label: "Fact-Check Report", desc: "Every claim categorized as Consensus, Contested, or Opinion. Sources verified against primary research. High-risk claims flagged. Your insurance against Community Notes." },
   { label: "Voice Consistency", desc: "A canon document ensures every script matches your identity. The anti-brand defines what you never say. A dedicated voice pass catches generic language before delivery." },

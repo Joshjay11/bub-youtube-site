@@ -123,7 +123,7 @@ export default function HomePage() {
             { price: "$500", sub: "per project", name: "The Script", desc: "Voice-matched, retention-engineered script + research + strategic brief. 2 revisions.", href: "/pricing", featured: true },
             { price: "$750", sub: "per project", name: "Script + Voice", desc: "Everything in The Script plus broadcast-quality ElevenLabs voiceover + music cues.", href: "/pricing" },
             { price: "$1,200", sub: "per project", name: "Creative Package", desc: "Script, voiceover, beat sheet, B-roll list, image prompts, thumbnail concepts.", href: "/pricing" },
-            { price: "$1,600", sub: "per month", name: "Retainer", desc: "4 scripts + voiceovers/month. Channel strategy. Niche exclusivity. 47% savings.", href: "/pricing" },
+            { price: "$1,800", sub: "per month", name: "Retainer", desc: "4 scripts + voiceovers/month. Channel strategy. Niche exclusivity. 47% savings.", href: "/pricing" },
           ].map((tier, i) => (
             <RevealOnScroll key={tier.name} delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
               <Link

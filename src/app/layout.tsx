@@ -24,7 +24,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "BUB YouTube Writer - Research-Driven YouTube Scripts",
   description:
-    "Retention-engineered YouTube scripts backed by 7 AI models of research. Fact-check reports, argument analysis, and voice-matched scripts starting at $500.",
+    "Retention-engineered YouTube scripts backed by 9 AI models of research. Fact-check reports, argument analysis, and voice-matched scripts starting at $500.",
 };
 
 export default function RootLayout({
