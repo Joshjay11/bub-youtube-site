@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 3;
-const RATE_WINDOW = 24 * 60 * 60 * 1000;
+const RATE_WINDOW_SECONDS = 24 * 60 * 60;
 
 function getIP(request: NextRequest): string {
   return (
@@ -10,20 +10,6 @@ function getIP(request: NextRequest): string {
     request.headers.get('x-real-ip') ||
     'unknown'
   );
-}
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
 }
 
 const SYSTEM_PROMPT = `You are a YouTube script retention analyst built on a specific retention engineering methodology. You audit scripts for structural quality across 9 categories using detailed scoring criteria. You are direct, specific, and never vague. You reference exact lines, phrases, or sections from the script when scoring.
@@ -209,13 +195,17 @@ Respond ONLY in valid JSON. No markdown, no backticks, no preamble. Match this e
 export async function POST(request: NextRequest) {
   const ip = getIP(request);
 
-  if (!checkRateLimit(ip)) {
+  const rl = await rateLimit(`rl:audit:ip:${ip}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
+  if (!rl.allowed) {
     return NextResponse.json(
       {
         error:
           "You've used all 3 free audits for today. Come back tomorrow, or get unlimited analysis in the Script Studio.",
       },
-      { status: 429 },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rl.retryAfterSeconds) },
+      },
     );
   }
 

@@ -1,29 +1,10 @@
 import { buildSystemPrompt } from '@/lib/thinking-partner-prompts';
 import { getUserEmail } from '@/lib/ai-credits';
 import { checkSubscriptionAccess } from '@/lib/subscription-check';
+import { rateLimit } from '@/lib/rate-limit';
 
-// In-memory rate limiter (per-process)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const MAX_MESSAGES_PER_DAY = 50;
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now >= entry.resetAt) {
-    const tomorrow = new Date();
-    tomorrow.setUTCHours(24, 0, 0, 0);
-    rateLimitMap.set(userId, { count: 1, resetAt: tomorrow.getTime() });
-    return { allowed: true, remaining: MAX_MESSAGES_PER_DAY - 1 };
-  }
-
-  if (entry.count >= MAX_MESSAGES_PER_DAY) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  entry.count += 1;
-  return { allowed: true, remaining: MAX_MESSAGES_PER_DAY - entry.count };
-}
+const WINDOW_SECONDS = 24 * 60 * 60;
 
 export async function POST(request: Request) {
   try {
@@ -45,15 +26,21 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Thinking Partner not configured' }, { status: 503 });
     }
 
-    // Rate limit by IP (in production, use auth user ID)
-    const identifier = request.headers.get('x-forwarded-for') || 'anonymous';
-    const { allowed, remaining } = checkRateLimit(identifier);
-    if (!allowed) {
+    // Rate limit by authenticated email when available, fall back to IP.
+    const identifier = email
+      ? `user:${email.toLowerCase()}`
+      : `ip:${request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous'}`;
+    const rl = await rateLimit(`rl:thinking-partner:${identifier}`, MAX_MESSAGES_PER_DAY, WINDOW_SECONDS);
+    if (!rl.allowed) {
       return Response.json(
-        { error: 'Daily message limit reached (50/day). Resets at midnight UTC.', remaining: 0 },
-        { status: 429 },
+        { error: `Daily message limit reached (${MAX_MESSAGES_PER_DAY}/day).`, remaining: 0 },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rl.retryAfterSeconds) },
+        },
       );
     }
+    const remaining = rl.remaining;
 
     const systemPrompt = buildSystemPrompt(stage || 'reference');
 
