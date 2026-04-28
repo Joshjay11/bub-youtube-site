@@ -91,7 +91,7 @@ export default function PricingPage() {
                 Founding Member
               </span>
               <div className="mb-6">
-                <div className="font-serif font-bold text-4xl text-amber">$19</div>
+                <div className="font-serif font-bold text-4xl text-amber">$29</div>
                 <div className="text-xs text-text-muted mt-1">/month</div>
                 <p className="text-sm text-text-dim mt-3 leading-relaxed">Lock in this rate forever</p>
                 <p className="text-xs text-amber/80 mt-1">Limited to first 50 subscribers</p>
@@ -114,7 +114,7 @@ export default function PricingPage() {
                 Most Popular
               </span>
               <div className="mb-6">
-                <div className="font-serif font-bold text-4xl text-amber">$29</div>
+                <div className="font-serif font-bold text-4xl text-amber">$39</div>
                 <div className="text-xs text-text-muted mt-1">/month</div>
                 <p className="text-sm text-text-dim mt-3 leading-relaxed">Full access to the complete workflow</p>
               </div>
@@ -136,10 +136,10 @@ export default function PricingPage() {
                 Best Value
               </span>
               <div className="mb-6">
-                <div className="font-serif font-bold text-4xl text-amber">$249</div>
+                <div className="font-serif font-bold text-4xl text-amber">$389</div>
                 <div className="text-xs text-text-muted mt-1">/year</div>
-                <p className="text-sm text-text-dim mt-3 leading-relaxed">Save $99/year</p>
-                <p className="text-xs text-text-muted mt-1">$20.75/month</p>
+                <p className="text-sm text-text-dim mt-3 leading-relaxed">Save $79/year</p>
+                <p className="text-xs text-text-muted mt-1">$32.42/month</p>
               </div>
               <ul className="list-none p-0 flex-1">
                 {SUBSCRIPTION_FEATURES.map((f) => <CheckItem key={f}>{f}</CheckItem>)}

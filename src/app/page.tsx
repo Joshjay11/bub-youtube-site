@@ -118,7 +118,7 @@ export default function HomePage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { price: "$19", sub: "/month", name: "BUB Writer", desc: "Full 6-stage workflow. AI scripting, research, retention tools, beat sheets, voiceover export.", href: "/pricing" },
+            { price: "$29", sub: "/month", name: "BUB Writer", desc: "Full 6-stage workflow. AI scripting, research, retention tools, beat sheets, voiceover export.", href: "/pricing" },
             { price: "$225", sub: "per project", name: "Research Pack", desc: "9-model synthesis, fact-check report, argument analysis, angle recommendations.", href: "/pricing" },
             { price: "$500", sub: "per project", name: "The Script", desc: "Voice-matched, retention-engineered script + research + strategic brief. 2 revisions.", href: "/pricing", featured: true },
             { price: "$750", sub: "per project", name: "Script + Voice", desc: "Everything in The Script plus broadcast-quality ElevenLabs voiceover + music cues.", href: "/pricing" },

@@ -22,14 +22,14 @@ export default function TemplatePage() {
               The Script Studio
             </p>
             <h1 className="font-serif text-text-bright leading-[1.1] mb-5" style={{ fontSize: "clamp(34px, 4.5vw, 52px)" }}>
-              The system behind our <em className="text-amber italic">$500 scripts</em>.<br />Starting at $29/mo
+              The system behind our <em className="text-amber italic">$500 scripts</em>.<br />Starting at $39/mo
             </h1>
             <p className="text-[17px] text-text-dim max-w-[560px] mx-auto mb-9 leading-[1.75]">
               An interactive web app with research frameworks, hook formulas, AI-powered prompts, retention tools, a pacing calculator, and the script canvas we use on every client project.
             </p>
             <div className="flex gap-4 justify-center items-center flex-wrap">
               <Link href="/pricing" className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px inline-block">
-                Get Started · $29/mo
+                Get Started · $39/mo
               </Link>
               <span className="text-[13px] text-text-muted">Full access. Cancel anytime.</span>
             </div>
@@ -123,7 +123,7 @@ export default function TemplatePage() {
         <div className="text-center mt-12">
           <RevealOnScroll>
             <Link href="/pricing" className="bg-amber text-bg px-9 py-4 rounded-md font-bold text-base no-underline transition-all hover:bg-amber-bright hover:text-bg hover:-translate-y-px inline-block">
-              Get Started · $29/mo
+              Get Started · $39/mo
             </Link>
             <p className="text-[13px] text-text-muted mt-3">Full access. Cancel anytime.</p>
           </RevealOnScroll>

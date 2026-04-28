@@ -33,9 +33,9 @@ export async function POST(request: Request) {
     let { tier } = await request.json();
 
     const priceMap: Record<string, string | undefined> = {
-      founding: process.env.STRIPE_FOUNDING_PRICE_ID,
-      pro: process.env.STRIPE_PRO_PRICE_ID,
-      annual: process.env.STRIPE_ANNUAL_PRICE_ID,
+      founding: process.env.STRIPE_PRICE_FOUNDING,
+      pro: process.env.STRIPE_PRICE_CREATOR_MONTHLY,
+      annual: process.env.STRIPE_PRICE_CREATOR_ANNUAL,
     };
 
     // Validate tier before any checks

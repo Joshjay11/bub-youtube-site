@@ -152,7 +152,7 @@ export default function AuditResults({ audit, wordCount, estimatedMinutes }: Aud
           The Script Studio doesn&apos;t just find the problems. It fixes them.
         </p>
         <p className="text-text-dim text-sm mb-6 leading-relaxed">
-          AI-powered hook generation, retention engineering, and a full pre-production pipeline. Starting at $29/mo.
+          AI-powered hook generation, retention engineering, and a full pre-production pipeline. Starting at $29/mo for founding members.
         </p>
 
         <a

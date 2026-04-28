@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const TIER_LABELS: Record<string, string> = {
-  founding: 'Founding Member — $19/month',
-  pro: 'Pro — $29/month',
-  annual: 'Annual — $249/year',
+  founding: 'Founding Member — $29/month',
+  pro: 'Pro — $39/month',
+  annual: 'Annual — $389/year',
 };
 
 export default function SettingsPage() {
